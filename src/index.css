@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2E7D32;
+  --color-secondary: #66BB6A;
+  --color-accent: #A5D6A7;
+  --color-bg-light: #F8FAF7;
+  --color-text-main: #1F2937;
+  --color-ink: #1F2937;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-delayed: float-delayed 8s ease-in-out infinite;
+  --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
+  --animate-spin-slow: spin 20s linear infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+  }
+  @keyframes float-delayed {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.4; }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #F8FAF7;
+  color: #1F2937;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F0;
+}
+::-webkit-scrollbar-thumb {
+  background: #C3D8C2;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #90B88F;
+}
+
+/* Premium Gradient Overlays */
+.bg-mesh {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(165, 214, 167, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(102, 187, 106, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(46, 125, 50, 0.05) 0px, transparent 50%);
+}
+
+.bg-premium-green {
+  background: linear-gradient(135deg, #1B4D22 0%, #2E7D32 50%, #1b3d1f 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #1b4d22 0%, #2E7D32 70%, #66BB6A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-nav {
+  background: rgba(248, 250, 247, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(46, 125, 50, 0.06);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(46, 125, 50, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+}
+
+.glass-card-hover:hover {
+  border-color: rgba(46, 125, 50, 0.2);
+  box-shadow: 0 10px 40px rgba(46, 125, 50, 0.06);
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 50px 10px rgba(46, 125, 50, 0.1);
+}
+
+/* Seed growing animation classes */
+.seed-leaf-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-leaf 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes draw-leaf {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.seed-dot {
+  animation: grow-seed 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes grow-seed {
+  0% {
+    transform: scale(0.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
