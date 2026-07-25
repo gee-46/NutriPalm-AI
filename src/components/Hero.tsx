@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { ArrowRight, Play, CheckCircle, Shield, Sparkles, Compass, Sprout, Database } from "lucide-react";
 import { motion } from "framer-motion";
 
-export const Hero: React.FC = () => {
+interface HeroProps {
+  onExplore?: () => void;
+}
+
+export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
+  const [isInitializing, setIsInitializing] = useState(false);
   const handleScrollTo = (id: string) => {
     const element = document.querySelector(id);
     if (element) {
@@ -142,11 +147,33 @@ export const Hero: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] as any }}
           >
             <button
-              onClick={() => handleScrollTo("#dashboard")}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#235F26] active:scale-95 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200"
+              onClick={async () => {
+                if (onExplore && !isInitializing) {
+                  setIsInitializing(true);
+                  await new Promise((resolve) => setTimeout(resolve, 600));
+                  onExplore();
+                } else if (!onExplore) {
+                  handleScrollTo("#dashboard");
+                }
+              }}
+              disabled={isInitializing}
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#235F26] active:scale-95 transition-all duration-300 cursor-pointer ${
+                isInitializing
+                  ? "shadow-emerald-500/50 scale-[0.98] glow-green"
+                  : "shadow-lg shadow-primary/20 hover:shadow-primary/30"
+              }`}
             >
-              Explore Prototype
-              <ArrowRight className="w-4 h-4" />
+              {isInitializing ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                  Initializing NutriPalm AI...
+                </>
+              ) : (
+                <>
+                  Explore Prototype
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
             <button
               onClick={() => handleScrollTo("#workflow")}

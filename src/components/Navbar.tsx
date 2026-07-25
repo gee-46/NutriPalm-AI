@@ -2,9 +2,23 @@ import React, { useState, useEffect } from "react";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onExplore?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  const handleExploreClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onExplore && !isInitializing) {
+      setIsInitializing(true);
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      onExplore();
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,11 +34,13 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { name: "Home", href: "#home" },
-    { name: "About", href: "#about" },
+    { name: "About Us", href: "#about" },
+    { name: "Problems", href: "#problem" },
+    { name: "Solutions", href: "#solution" },
     { name: "Features", href: "#features" },
     { name: "Workflow", href: "#workflow" },
+    { name: "Console Preview", href: "#dashboard" },
     { name: "Roadmap", href: "#roadmap" },
-    { name: "Contact", href: "#contact" },
   ];
 
   const handleScrollTo = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -56,42 +72,19 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo and Brand */}
         <a href="#home" onClick={(e) => handleScrollTo(e, "#home")} className="flex items-center gap-3 group">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1B4D22] to-[#66BB6A] text-white shadow-md overflow-hidden">
-            <svg
-              className="w-6 h-6"
-              viewBox="0 0 100 100"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M50 75 Q50 50 50 35"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
-              <path
-                d="M50 55 C40 50 35 40 48 30 C50 38 48 48 50 55"
-                fill="rgba(255, 255, 255, 0.2)"
-                stroke="white"
-                strokeWidth="4"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M50 45 C60 40 65 30 52 20 C50 28 52 38 50 45"
-                fill="rgba(255, 255, 255, 0.4)"
-                stroke="white"
-                strokeWidth="4"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden border border-gray-200/50 shadow-xs shrink-0 bg-white">
+            <img
+              src="/samruddhi-logo.jpeg"
+              alt="Samruddhi Organics Logo"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
           <div className="flex flex-col justify-center text-left">
             <span className="text-sm font-extrabold tracking-tight text-gray-950 group-hover:text-primary transition-colors leading-tight">
               NutriPalm <span className="text-primary">AI</span>
             </span>
-            <span className="text-[8px] font-bold text-gray-450 mt-1 leading-none uppercase tracking-wider">
-              BY SAMRUDDHI ORGANICS
+            <span className="text-[8px] font-semibold text-gray-500 mt-1 leading-none tracking-wider">
+              by Samruddhi Organics
             </span>
           </div>
         </a>
@@ -111,16 +104,28 @@ export const Navbar: React.FC = () => {
           ))}
         </div>
 
-        {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-4">
-          <a
-            href="#dashboard"
-            onClick={(e) => handleScrollTo(e, "#dashboard")}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-[#235F26] active:scale-95 shadow-md shadow-primary/10 transition-all duration-200"
+          <button
+            onClick={handleExploreClick}
+            disabled={isInitializing}
+            className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-[#235F26] active:scale-95 transition-all duration-300 cursor-pointer ${
+              isInitializing
+                ? "shadow-emerald-500/50 scale-[0.98] glow-green"
+                : "shadow-md shadow-primary/10 hover:shadow-primary/20"
+            }`}
           >
-            Explore Prototype
-            <ArrowUpRight className="w-4 h-4" />
-          </a>
+            {isInitializing ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                Initializing NutriPalm AI...
+              </>
+            ) : (
+              <>
+                Explore Prototype
+                <ArrowUpRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
         </div>
 
         {/* Mobile Toggle */}
@@ -164,14 +169,30 @@ export const Navbar: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <a
-                href="#dashboard"
-                onClick={(e) => handleScrollTo(e, "#dashboard")}
-                className="w-full flex items-center justify-center gap-1.5 px-6 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#235F26] shadow-lg shadow-primary/15 transition-all"
+              <button
+                onClick={(e) => {
+                  setIsMobileMenuOpen(false);
+                  handleExploreClick(e);
+                }}
+                disabled={isInitializing}
+                className={`w-full flex items-center justify-center gap-1.5 px-6 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#235F26] transition-all cursor-pointer ${
+                  isInitializing
+                    ? "shadow-emerald-500/50 scale-[0.98] glow-green"
+                    : "shadow-lg shadow-primary/15"
+                }`}
               >
-                Explore Prototype
-                <ArrowUpRight className="w-5 h-5" />
-              </a>
+                {isInitializing ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                    Initializing NutriPalm AI...
+                  </>
+                ) : (
+                  <>
+                    Explore Prototype
+                    <ArrowUpRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
             </motion.div>
           </motion.div>
         )}

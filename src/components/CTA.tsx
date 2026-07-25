@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
-export const CTA: React.FC = () => {
+interface CTAProps {
+  onExplore?: () => void;
+}
+
+export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
+  const [isInitializing, setIsInitializing] = useState(false);
   const handleScrollTo = (id: string) => {
     const element = document.querySelector(id);
     if (element) {
@@ -17,7 +22,7 @@ export const CTA: React.FC = () => {
   };
 
   return (
-    <section className="py-24 bg-white relative overflow-hidden border-t border-gray-100">
+    <section id="cta" className="py-24 bg-white relative overflow-hidden border-t border-gray-100">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Main CTA Panel */}
@@ -59,11 +64,33 @@ export const CTA: React.FC = () => {
 
             {/* Button */}
             <button
-              onClick={() => handleScrollTo("#dashboard")}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-[#1B4D22] bg-[#A5D6A7] hover:bg-white active:scale-95 shadow-lg shadow-black/10 hover:shadow-[#A5D6A7]/25 transition-all duration-200"
+              onClick={async () => {
+                if (onExplore && !isInitializing) {
+                  setIsInitializing(true);
+                  await new Promise((resolve) => setTimeout(resolve, 600));
+                  onExplore();
+                } else if (!onExplore) {
+                  handleScrollTo("#dashboard");
+                }
+              }}
+              disabled={isInitializing}
+              className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold transition-all duration-300 cursor-pointer ${
+                isInitializing
+                  ? "bg-white text-[#1B4D22] shadow-[#A5D6A7]/50 scale-[0.98]"
+                  : "text-[#1B4D22] bg-[#A5D6A7] hover:bg-white active:scale-95 shadow-lg shadow-black/10 hover:shadow-[#A5D6A7]/25"
+              }`}
             >
-              Explore Prototype
-              <ArrowUpRight className="w-4 h-4" />
+              {isInitializing ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-[#1B4D22] border-t-transparent rounded-full animate-spin shrink-0" />
+                  Initializing NutriPalm AI...
+                </>
+              ) : (
+                <>
+                  Explore Prototype
+                  <ArrowUpRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         </motion.div>
