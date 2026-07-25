@@ -1,6 +1,81 @@
 import React from "react";
-import { Leaf, FlaskConical, Target, ShieldCheck, ArrowRight, ArrowDown, ChevronRight, Activity, HelpCircle, EyeOff, LayoutGrid, BarChart3 } from "lucide-react";
+import { ShieldCheck, ArrowRight, HelpCircle, EyeOff, LayoutGrid, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
+
+const teamMembers = [
+  {
+    id: "sathwik",
+    name: "Sathwik Krishna",
+    role: "Founder & CEO",
+    imgSrc: "/sathwik-krishna.jpg",
+    initials: "SK",
+    imgPos: "object-[center_20%]",
+    desc: "Founder & CEO of Samruddhi Organics, leading the company's vision of transforming agriculture through innovation, sustainability, and technology. Spearheading the development of NutriPalm AI to empower farmers with intelligent digital solutions and data-driven decision-making."
+  },
+  {
+    id: "dhanush",
+    name: "Dhanush",
+    role: "Managing Partner",
+    imgSrc: "/suhan.png",
+    initials: "D",
+    imgPos: "object-[center_16%]",
+    desc: "Oversees strategic operations, business growth initiatives, and organizational planning while supporting the execution of NutriPalm AI's vision."
+  },
+  {
+    id: "suhan",
+    name: "Suhan",
+    role: "Managing Partner",
+    imgSrc: "/dhanush.png",
+    initials: "S",
+    imgPos: "object-[center_12%]",
+    desc: "Leads strategic partnerships, operational coordination, and cross-functional collaboration to drive the growth and successful implementation of NutriPalm AI."
+  },
+  {
+    id: "samruddhi-pai",
+    name: "Samruddhi Pai",
+    role: "Marketing Head",
+    imgSrc: "/samruddhi-pai.png",
+    initials: "SP",
+    imgPos: "object-[center_18%]",
+    desc: "Leads the marketing initiatives for NutriPalm AI, focusing on brand strategy, campaign planning, community outreach, and creating impactful communication that connects innovation with the agricultural community."
+  },
+  {
+    id: "nihal",
+    name: "Nihal P K",
+    role: "Marketing Head",
+    imgSrc: "/nihal.jpg",
+    initials: "NP",
+    imgPos: "object-[center_18%]",
+    desc: "Drives marketing strategy and brand engagement for NutriPalm AI by planning campaigns, strengthening outreach initiatives, and promoting the platform's vision to farmers, partners, and the wider AgriTech ecosystem."
+  },
+  {
+    id: "bhumika",
+    name: "Bhumika Rao",
+    role: "Marketing Head",
+    imgSrc: "/bhumika.jpg",
+    initials: "BR",
+    imgPos: "object-[center_18%]",
+    desc: "Leads brand communication and marketing initiatives for NutriPalm AI, focusing on creative campaigns, community engagement, digital outreach, and strengthening the platform's presence across the AgriTech ecosystem."
+  },
+  {
+    id: "karthik",
+    name: "Karthik H V",
+    role: "Social Media Marketing",
+    imgSrc: "/karthik.jpg",
+    initials: "KH",
+    imgPos: "object-[center_18%]",
+    desc: "Leads NutriPalm AI's social media presence by creating engaging content, managing digital campaigns, strengthening community engagement, and increasing the platform's visibility across social media channels."
+  },
+  {
+    id: "gautam",
+    name: "Gautam N Chipkar",
+    role: "Technical Lead – AI & Platform Engineering",
+    imgSrc: "/gautam.png",
+    initials: "GC",
+    imgPos: "object-[center_40%]",
+    desc: "Leads the AI strategy, system architecture, and technical development of NutriPalm AI. Responsible for designing the platform, integrating Digital Twin concepts, developing intelligent workflows, and building scalable AI-powered solutions that enable data-driven precision agriculture."
+  }
+];
 
 export const About: React.FC = () => {
   const milestones = [
@@ -157,6 +232,113 @@ export const About: React.FC = () => {
                 </p>
               </motion.div>
             ))}
+          </div>
+        </div>
+
+        {/* SECTION: LEADERSHIP TEAM */}
+        <div className="mb-28 w-full overflow-hidden relative">
+          <div className="text-center mb-16">
+            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">Leadership</span>
+            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">Our Leadership Team</h3>
+          </div>
+
+          {/* Infinite Horizontal Marquee Carousel */}
+          <div className="w-full overflow-hidden relative py-6 mask-gradient">
+            <div className="flex gap-8 w-max animate-marquee hover:[animation-play-state:paused] py-4">
+              
+              {/* First Set of Cards */}
+              {teamMembers.map((member, idx) => (
+                <motion.div
+                  key={`${member.id}-first`}
+                  className="glass-card rounded-[28px] p-8 bg-white border border-gray-150 flex flex-col items-center justify-between text-center hover:-translate-y-1.5 hover:shadow-lg hover:border-primary/20 transition-all duration-300 relative group overflow-hidden w-[340px] sm:w-[340px] w-[290px] h-[400px] shrink-0"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] as any }}
+                >
+                  {/* Glow border highlight */}
+                  <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-primary to-secondary opacity-70" />
+                  
+                  {/* Circular Avatar */}
+                  <div className="relative mb-4 w-24 h-24 rounded-full overflow-hidden border-2 border-primary/20 shadow-md flex items-center justify-center bg-gray-100 z-10 shrink-0">
+                    <img
+                      src={member.imgSrc}
+                      alt={member.name}
+                      className={`w-full h-full object-cover ${member.imgPos} transition-transform duration-500 group-hover:scale-105 z-10 relative`}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    {/* Fallback Initials */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 text-[#2E7D32] font-black text-2xl z-0">
+                      {member.initials}
+                    </div>
+                  </div>
+
+                  <div className="flex-grow flex flex-col justify-center">
+                    {/* Role */}
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
+                      {member.role}
+                    </span>
+
+                    {/* Name */}
+                    <h4 className="text-base font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors leading-tight">
+                      {member.name}
+                    </h4>
+
+                    {/* Description */}
+                    <p className="text-[11.5px] text-gray-500 leading-normal max-w-[280px]">
+                      {member.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Second Set of Cards for Seamless Infinite Loop */}
+              {teamMembers.map((member) => (
+                <div
+                  key={`${member.id}-second`}
+                  className="glass-card rounded-[28px] p-8 bg-white border border-gray-150 flex flex-col items-center justify-between text-center hover:-translate-y-1.5 hover:shadow-lg hover:border-primary/20 transition-all duration-300 relative group overflow-hidden w-[340px] sm:w-[340px] w-[290px] h-[400px] shrink-0"
+                >
+                  {/* Glow border highlight */}
+                  <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-primary to-secondary opacity-70" />
+                  
+                  {/* Circular Avatar */}
+                  <div className="relative mb-4 w-24 h-24 rounded-full overflow-hidden border-2 border-primary/20 shadow-md flex items-center justify-center bg-gray-100 z-10 shrink-0">
+                    <img
+                      src={member.imgSrc}
+                      alt={member.name}
+                      className={`w-full h-full object-cover ${member.imgPos} transition-transform duration-500 group-hover:scale-105 z-10 relative`}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    {/* Fallback Initials */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 text-[#2E7D32] font-black text-2xl z-0">
+                      {member.initials}
+                    </div>
+                  </div>
+
+                  <div className="flex-grow flex flex-col justify-center">
+                    {/* Role */}
+                    <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
+                      {member.role}
+                    </span>
+
+                    {/* Name */}
+                    <h4 className="text-base font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors leading-tight">
+                      {member.name}
+                    </h4>
+
+                    {/* Description */}
+                    <p className="text-[11.5px] text-gray-500 leading-normal max-w-[280px]">
+                      {member.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+            </div>
           </div>
         </div>
 
