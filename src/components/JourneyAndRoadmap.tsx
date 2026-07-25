@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { 
-  CheckCircle2, PlayCircle, Calendar, Sparkles, CloudSun, 
+  Calendar, CloudSun, 
   Orbit, Eye, AlertTriangle, TrendingUp, Cpu, Radio, Plane 
 } from "lucide-react";
 import { SectionHeading } from "./SectionHeading";
