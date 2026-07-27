@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ShieldCheck, ArrowRight, HelpCircle, EyeOff, LayoutGrid, BarChart3 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 
 const teamMembers = [
   {
@@ -78,6 +78,19 @@ const teamMembers = [
 ];
 
 export const About: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { once: true, amount: 0.35 });
+  const [hasEntered, setHasEntered] = useState(false);
+
+  useEffect(() => {
+    if (isInView) {
+      const timer = setTimeout(() => {
+        setHasEntered(true);
+      }, 2200);
+      return () => clearTimeout(timer);
+    }
+  }, [isInView]);
+
   const milestones = [
     {
       emoji: "🌱",
@@ -236,7 +249,7 @@ export const About: React.FC = () => {
         </div>
 
         {/* SECTION: LEADERSHIP TEAM */}
-        <div className="mb-28 w-full overflow-hidden relative">
+        <div ref={containerRef} className="mb-28 w-full overflow-hidden relative">
           <div className="text-center mb-16">
             <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">Leadership</span>
             <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">Our Leadership Team</h3>
@@ -244,17 +257,16 @@ export const About: React.FC = () => {
 
           {/* Infinite Horizontal Marquee Carousel */}
           <div className="w-full overflow-hidden relative py-6 mask-gradient">
-            <div className="flex gap-8 w-max animate-marquee hover:[animation-play-state:paused] py-4">
+            <div className={`flex gap-8 w-max py-4 ${hasEntered ? "animate-marquee hover:[animation-play-state:paused]" : ""}`}>
               
               {/* First Set of Cards */}
               {teamMembers.map((member, idx) => (
                 <motion.div
                   key={`${member.id}-first`}
                   className="glass-card rounded-[28px] p-8 bg-white border border-gray-150 flex flex-col items-center justify-between text-center hover:-translate-y-1.5 hover:shadow-lg hover:border-primary/20 transition-all duration-300 relative group overflow-hidden w-[340px] sm:w-[340px] w-[290px] h-[400px] shrink-0"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] as any }}
+                  initial={{ opacity: 0, y: 60, scale: 0.95 }}
+                  animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.95 }}
+                  transition={{ duration: 0.75, delay: idx * 0.2, ease: "easeOut" }}
                 >
                   {/* Glow border highlight */}
                   <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-primary to-secondary opacity-70" />
