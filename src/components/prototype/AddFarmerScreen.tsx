@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Layers, MapPin, Sprout, ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
-import type { Farmer } from "./FarmerScreen";
 
 interface AddFarmerScreenProps {
-  onSave: (farmer: Omit<Farmer, "id" | "joinDate">) => void;
+  onSave: (farmer: any) => void;
   onCancel: () => void;
 }
 
