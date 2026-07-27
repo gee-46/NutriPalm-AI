@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -9,8 +9,9 @@
   --color-text-main: #1F2937;
   --color-ink: #1F2937;
   
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-display: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
   
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float-delayed 8s ease-in-out infinite;
@@ -36,7 +37,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
   background-color: #F8FAF7;
   color: #1F2937;
   overflow-x: hidden;
