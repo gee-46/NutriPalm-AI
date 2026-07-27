@@ -1,150 +1,289 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  TrendingUp, 
-  BarChart3, 
-  PieChart, 
-  Calendar, 
-  Sparkles, 
-  ArrowUpRight 
+  TrendingUp, BarChart3, PieChart, Calendar, Sparkles, 
+  ArrowUpRight, Bot, Activity, Droplets, Users, LayoutGrid, Cpu, 
+  Download, Share2, Printer, CheckCircle, AlertTriangle
 } from "lucide-react";
 
-export const AnalyticsScreen: React.FC = () => {
-  const [hoveredLinePoint, setHoveredLinePoint] = useState<number | null>(null);
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
-  const [hoveredPieSlice, setHoveredPieSlice] = useState<string | null>(null);
+// Premium Animated Counter Component
+const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: number }> = ({ 
+  value, 
+  suffix = "", 
+  decimals = 0 
+}) => {
+  const [count, setCount] = useState(0);
 
-  // 1. Soil Health Trends (Jan - Jun)
-  const linePoints = [
-    { month: "Jan", val: 62, x: 40, y: 110 },
-    { month: "Feb", val: 65, x: 100, y: 102 },
-    { month: "Mar", val: 72, x: 160, y: 85 },
-    { month: "Apr", val: 76, x: 220, y: 75 },
-    { month: "May", val: 81, x: 280, y: 62 },
-    { month: "Jun", val: 84, x: 340, y: 55 }
-  ];
+  useEffect(() => {
+    const duration = 1000;
+    const startTime = performance.now();
 
-  // 2. Fertilizer Usage (N, P, K volumes)
-  const bars = [
-    { chemical: "Nitrogen (N)", weight: 480, height: 95, x: 50, color: "from-amber-400 to-amber-500", glow: "rgba(245, 158, 11, 0.4)" },
-    { chemical: "Phosphorus (P)", weight: 240, height: 50, x: 150, color: "from-lime-400 to-lime-500", glow: "rgba(132, 204, 22, 0.4)" },
-    { chemical: "Potassium (K)", weight: 880, height: 140, x: 250, color: "from-emerald-500 to-emerald-600", glow: "rgba(16, 185, 129, 0.4)" }
-  ];
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = easeProgress * value;
+      setCount(currentValue);
 
-  // 3. Crop Distribution
-  const pieSlices = [
-    { name: "Oil Palm", percentage: 65, color: "#1B4D22", dashArray: "339.2", dashOffset: "0" },
-    { name: "Coconut Palm", percentage: 20, color: "#2E7D32", dashArray: "339.2", dashOffset: "-220.5" },
-    { name: "Cocoa", percentage: 10, color: "#66BB6A", dashArray: "339.2", dashOffset: "-288.3" },
-    { name: "Coffee", percentage: 5, color: "#A5D6A7", dashArray: "339.2", dashOffset: "-322.2" }
-  ];
-
-  // 4. Recommendation History
-  const history = [
-    { id: "REC-2026-9041", date: "June 12, 2026", farmer: "N. Swamy", health: "81%", prescribed: "Mix-B (K-High)", status: "Applied" },
-    { id: "REC-2026-8812", date: "June 08, 2026", farmer: "K. R. Rao", health: "74%", prescribed: "Mix-A (Nitrogen-High)", status: "Applied" },
-    { id: "REC-2026-8794", date: "May 28, 2026", farmer: "M. Devamma", health: "68%", prescribed: "Mix-B (K-High)", status: "Applied" },
-    { id: "REC-2026-8510", date: "May 15, 2026", farmer: "Rajesh Kumar", health: "76%", prescribed: "Zinc Foliar Spray", status: "Pending" }
-  ];
-
-  // SVG Area path generator
-  const areaPath = `M ${linePoints[0].x} 150 L ${linePoints.map(p => `${p.x} ${p.y}`).join(" L ")} L ${linePoints[linePoints.length - 1].x} 150 Z`;
-  const linePath = `M ${linePoints.map(p => `${p.x} ${p.y}`).join(" L ")}`;
-
-  // Motion stagger configs
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCount(value);
       }
-    }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value]);
+
+  return (
+    <span>
+      {decimals > 0 ? count.toFixed(decimals) : Math.round(count)}
+      {suffix}
+    </span>
+  );
+};
+
+export const AnalyticsScreen: React.FC = () => {
+  const [lastUpdated] = useState("Just Now");
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Hover states for custom SVG graphs
+  const [hoveredFarmerPoint, setHoveredFarmerPoint] = useState<number | null>(null);
+  const [hoveredRecPoint, setHoveredRecPoint] = useState<number | null>(null);
+  const [hoveredYieldBar, setHoveredYieldBar] = useState<number | null>(null);
+  const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
+  const [hoveredHeatmapIndex, setHoveredHeatmapIndex] = useState<number | null>(null);
+
+  // 1. KPI Cards Data
+  const kpiCards = [
+    { label: "Registered Farmers", val: 142, trend: "+12%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Users className="w-5 h-5" />, spark: [30, 42, 58, 80, 110, 142] },
+    { label: "Active Farm Plots", val: 39, trend: "+8%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <LayoutGrid className="w-5 h-5" />, spark: [12, 18, 22, 28, 35, 39] },
+    { label: "AI Recommendations", val: 185, trend: "+24%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Bot className="w-5 h-5" />, spark: [40, 75, 110, 130, 160, 185] },
+    { label: "Average Soil Health", val: 84, suffix: "%", trend: "+4%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Activity className="w-5 h-5" />, spark: [78, 80, 81, 83, 82, 84] },
+    { label: "Yield Improvement", val: 18.2, suffix: "%", trend: "+14%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <TrendingUp className="w-5 h-5" />, spark: [10, 12, 14, 15, 17, 18.2] },
+    { label: "Active IoT Sensors", val: 118, trend: "Online", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Cpu className="w-5 h-5" />, spark: [90, 102, 108, 112, 116, 118] }
+  ];
+
+  // 2. Crop Distribution Pie Chart Data
+  const cropSlices = [
+    { name: "Oil Palm", pct: 65, color: "#1B4D22", dashArray: "339.2", dashOffset: "0" },
+    { name: "Rice", pct: 15, color: "#2E7D32", dashArray: "339.2", dashOffset: "-220.5" },
+    { name: "Sugarcane", pct: 10, color: "#4CAF50", dashArray: "339.2", dashOffset: "-271.4" },
+    { name: "Banana", pct: 6, color: "#81C784", dashArray: "339.2", dashOffset: "-305.3" },
+    { name: "Vegetables", pct: 4, color: "#C8E6C9", dashArray: "339.2", dashOffset: "-325.6" }
+  ];
+
+  // 3. Farmer Registration Growth Line Data
+  const farmerGrowth = [
+    { month: "Jan", count: 24, x: 20, y: 120 },
+    { month: "Feb", count: 42, x: 70, y: 100 },
+    { month: "Mar", count: 58, x: 120, y: 85 },
+    { month: "Apr", count: 76, x: 170, y: 70 },
+    { month: "May", count: 98, x: 220, y: 55 },
+    { month: "Jun", count: 124, x: 270, y: 35 },
+    { month: "Jul", count: 142, x: 320, y: 20 }
+  ];
+  const farmerGrowthPath = `M ${farmerGrowth.map(p => `${p.x} ${p.y}`).join(" L ")}`;
+
+  // 4. AI Recommendation Trends Area Data (Generated vs Accepted vs Pending vs Completed)
+  const recTrends = [
+    { month: "Jan", gen: 20, acc: 15, pen: 3, comp: 12, x: 20 },
+    { month: "Feb", gen: 40, acc: 32, pen: 5, comp: 28, x: 70 },
+    { month: "Mar", gen: 65, acc: 55, pen: 4, comp: 50, x: 120 },
+    { month: "Apr", gen: 95, acc: 80, pen: 10, comp: 72, x: 170 },
+    { month: "May", gen: 135, acc: 110, pen: 15, comp: 95, x: 220 },
+    { month: "Jun", gen: 160, acc: 140, pen: 12, comp: 128, x: 270 },
+    { month: "Jul", gen: 185, acc: 165, pen: 10, comp: 155, x: 320 }
+  ];
+  const recGenPath = `M ${recTrends[0].x} 140 L ${recTrends.map(p => `${p.x} ${140 - p.gen / 1.5}`).join(" L ")} L ${recTrends[recTrends.length - 1].x} 140 Z`;
+  const recAccPath = `M ${recTrends[0].x} 140 L ${recTrends.map(p => `${p.x} ${140 - p.acc / 1.5}`).join(" L ")} L ${recTrends[recTrends.length - 1].x} 140 Z`;
+
+  // 5. Soil Health Trends Multi-Line Chart (12 Months)
+  const soilMonths = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+  const soilMetrics = {
+    nitrogen: [55, 58, 62, 60, 64, 68, 65, 70, 72, 75, 73, 75],
+    phosphorus: [40, 42, 45, 48, 52, 50, 53, 56, 58, 60, 62, 68],
+    potassium: [30, 32, 35, 40, 42, 48, 50, 52, 55, 58, 57, 57],
+    ph: [5.2, 5.3, 5.4, 5.5, 5.5, 5.6, 5.7, 5.8, 5.8, 5.8, 5.8, 5.85],
+    carbon: [1.1, 1.2, 1.2, 1.3, 1.3, 1.4, 1.4, 1.45, 1.5, 1.6, 1.7, 1.82]
   };
 
-  const itemVariants: any = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
+  // 6. Monthly Yield Prediction Bar Chart (Expected vs Actual vs Improvement)
+  const monthlyYield = [
+    { label: "Jan", exp: 3.2, act: 3.0, imp: 0.2, x: 20 },
+    { label: "Feb", exp: 3.4, act: 3.2, imp: 0.2, x: 70 },
+    { label: "Mar", exp: 3.6, act: 3.5, imp: 0.3, x: 120 },
+    { label: "Apr", exp: 3.8, act: 3.8, imp: 0.4, x: 170 },
+    { label: "May", exp: 4.2, act: 4.1, imp: 0.5, x: 220 },
+    { label: "Jun", exp: 4.5, act: 4.5, imp: 0.7, x: 270 }
+  ];
+
+  // 7. Water Usage Analytics Area Chart
+  const waterUsage = [
+    { label: "Mon", consumption: 1800, optimal: 1500, optimized: 1320, x: 20 },
+    { label: "Tue", consumption: 1950, optimal: 1500, optimized: 1280, x: 70 },
+    { label: "Wed", consumption: 2100, optimal: 1550, optimized: 1350, x: 120 },
+    { label: "Thu", consumption: 1850, optimal: 1600, optimized: 1310, x: 170 },
+    { label: "Fri", consumption: 1750, optimal: 1500, optimized: 1290, x: 220 },
+    { label: "Sat", consumption: 1600, optimal: 1450, optimized: 1200, x: 270 },
+    { label: "Sun", consumption: 1550, optimal: 1400, optimized: 1180, x: 320 }
+  ];
+  const waterConsPath = `M ${waterUsage[0].x} 140 L ${waterUsage.map(p => `${p.x} ${140 - p.consumption / 18}`).join(" L ")} L ${waterUsage[waterUsage.length - 1].x} 140 Z`;
+  const waterOptPath = `M ${waterUsage[0].x} 140 L ${waterUsage.map(p => `${p.x} ${140 - p.optimized / 18}`).join(" L ")} L ${waterUsage[waterUsage.length - 1].x} 140 Z`;
+
+  // 8. Horizontal Sensor online percentage
+  const sensors = [
+    { label: "Temperature", pct: 98, color: "bg-emerald-500" },
+    { label: "Humidity", pct: 96, color: "bg-emerald-500" },
+    { label: "Soil Moisture", pct: 94, color: "bg-emerald-500" },
+    { label: "pH Sensor Grid", pct: 92, color: "bg-emerald-500" },
+    { label: "EC Salinity", pct: 90, color: "bg-emerald-500" },
+    { label: "Rain Gauge", pct: 100, color: "bg-emerald-500" },
+    { label: "Wind Velocity", pct: 95, color: "bg-emerald-500" }
+  ];
+
+  // 9. Heatmap Farm Blocks
+  const heatmapFarms = [
+    { name: "Swamy North Plot (2A)", score: 92, status: "Healthy", color: "bg-emerald-600 border-emerald-300 shadow-emerald-500/10", farmer: "Swaminathan Gowda", crop: "Oil Palm", recommendation: "N-Top Up", inspection: "2 days ago" },
+    { name: "Kothagudem South", score: 72, status: "Moderate", color: "bg-lime-500 border-lime-200 shadow-lime-500/10", farmer: "K. Ramachandra Rao", crop: "Oil Palm", recommendation: "Nitrate Supp", inspection: "Yesterday" },
+    { name: "Devamma Palm Zone 1", score: 55, status: "Warning", color: "bg-orange-500 border-orange-200 shadow-orange-500/10", farmer: "M. Devamma", crop: "Coconut Palm", recommendation: "Fungicide Spray", inspection: "4 days ago" },
+    { name: "Swamy East Plantation", score: 79, status: "Moderate", color: "bg-lime-500 border-lime-200 shadow-lime-500/10", farmer: "Swaminathan Gowda", crop: "Oil Palm", recommendation: "K-Supplement", inspection: "3 days ago" },
+    { name: "Hassan Cocoa Plot", score: 38, status: "Critical", color: "bg-rose-500 border-rose-300 shadow-rose-500/10 animate-pulse", farmer: "Rajesh Kumar", crop: "Cocoa", recommendation: "Emergency Drip", inspection: "Today" },
+    { name: "Devamma Palm Zone 2", score: 88, status: "Healthy", color: "bg-emerald-600 border-emerald-300 shadow-emerald-500/10", farmer: "M. Devamma", crop: "Coconut Palm", recommendation: "Routine Check", inspection: "5 days ago" }
+  ];
+
+  // 10. AI Insights List
+  const aiInsights = [
+    { text: "AI detected increasing nitrogen deficiency in 3 farms.", score: "94% Conf", time: "10m ago", icon: <AlertTriangle className="w-4.5 h-4.5 text-amber-500" />, severity: "Warning" },
+    { text: "Yield expected to improve by 18.2% this harvesting cycle.", score: "96% Conf", time: "2h ago", icon: <TrendingUp className="w-4.5 h-4.5 text-primary" />, severity: "Optimal" },
+    { text: "Monsoon precipitation will decrease active irrigation output needs next week.", score: "89% Conf", time: "4h ago", icon: <Droplets className="w-4.5 h-4.5 text-blue-500" />, severity: "Info" },
+    { text: "No biological pests or fungal leaf infections detected in Sentinel-2 scan.", score: "98% Conf", time: "1d ago", icon: <CheckCircle className="w-4.5 h-4.5 text-primary" />, severity: "Optimal" },
+    { text: "Average farm health index increased by 8.4% across Dakshina district.", score: "95% Conf", time: "2d ago", icon: <Sparkles className="w-4.5 h-4.5 text-primary" />, severity: "Optimal" }
+  ];
+
+  // 11. Reports List Table
+  const reportsList = [
+    { name: "Soil Chemistry Analysis Report", farmer: "Swaminathan Gowda", date: "Jul 25, 2026", status: "Completed", color: "bg-emerald-50 text-primary border-emerald-150" },
+    { name: "Quarterly Yield Prediction Forecast", farmer: "K. Ramachandra Rao", date: "Jul 22, 2026", status: "Completed", color: "bg-emerald-50 text-primary border-emerald-150" },
+    { name: "NPK Custom Fertilizer Advisor", farmer: "M. Devamma", date: "Jul 20, 2026", status: "Processing", color: "bg-amber-50 text-amber-600 border-amber-150 animate-pulse" },
+    { name: "Water Schedule Optimization Grid", farmer: "Rajesh Kumar", date: "Jul 18, 2026", status: "Pending", color: "bg-gray-50 text-gray-500 border-gray-150" }
+  ];
+
+  const handleExport = () => {
+    setIsExporting(true);
+    setTimeout(() => {
+      setIsExporting(false);
+      alert("Executive AgriTech report generated & downloaded.");
+    }, 1500);
   };
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
       className="space-y-6 text-left"
     >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200/50 pb-5">
+      {/* ================= 1. ANALYTICS OVERVIEW ================= */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200/50 pb-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Agricultural Analytics & Trends</h1>
-          <p className="text-sm text-gray-500 mt-1">Aggregated fertilizer usage, crop yields, and historic recommendation logs</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2.5">
+            <BarChart3 className="w-8 h-8 text-primary" />
+            AI Farm Analytics
+          </h1>
+          <p className="text-sm font-semibold text-gray-500 mt-2">
+            Monitor agricultural performance, AI recommendations, and operational insights across all managed farms.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col items-end text-xs font-mono font-bold text-gray-400">
+            <span className="flex items-center gap-1 text-primary">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-md" />
+              Operational Core online
+            </span>
+            <span className="text-[10px] text-gray-450 mt-1">Last Updated: {lastUpdated}</span>
+          </div>
+
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md transition-all text-xs cursor-pointer border-0"
+          >
+            {isExporting ? <RefreshCwSpinner /> : <Download className="w-4 h-4" />}
+            Export Report
+          </button>
         </div>
       </div>
 
-      {/* Analytics Charts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* ================= 2. ANALYTICS KPI CARDS ================= */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {kpiCards.map((card, i) => (
+          <div 
+            key={i} 
+            className="bg-white border border-gray-150 p-4 rounded-2xl shadow-xs text-left flex flex-col justify-between min-h-[130px] hover:-translate-y-0.5 hover:shadow-md transition-all"
+          >
+            <div className="flex justify-between items-start">
+              <span className={`p-2 rounded-xl text-primary ${card.bg}`}>{card.icon}</span>
+              <span className="text-[9px] font-bold text-emerald-650 bg-emerald-50/50 border border-emerald-100 px-1.5 py-0.5 rounded-md">{card.trend}</span>
+            </div>
+            
+            <div className="mt-4">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
+              <span className="text-xl font-black text-gray-950 block mt-0.5">
+                <AnimatedCounter value={card.val} suffix={card.suffix} decimals={card.val % 1 !== 0 ? 1 : 0} />
+              </span>
+            </div>
+
+            {/* Tiny mini-sparkline */}
+            <div className="w-full h-3 mt-2">
+              <svg className="w-full h-full" viewBox="0 0 100 12">
+                <path
+                  d={`M 0 10 L 20 ${10 - card.spark[0]/15} L 40 ${10 - card.spark[1]/15} L 60 ${10 - card.spark[2]/15} L 80 ${10 - card.spark[3]/15} L 100 ${10 - card.spark[5]/15}`}
+                  fill="none"
+                  stroke="#2E7D32"
+                  strokeWidth="1.5"
+                />
+              </svg>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ================= CHARTS SECTION ROW 1 ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Chart 1: Soil Health Trends (Line Area Chart) */}
-        <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        {/* Line Chart: Farmer registration growth (7/12 width) */}
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
           <div>
             <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <TrendingUp className="w-4.5 h-4.5 text-primary" />
-              Soil Health Index Trends
+              <Users className="w-4.5 h-4.5 text-primary" />
+              Farmer Registration Growth
             </h3>
             
             <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
-              <svg className="w-full h-full" viewBox="0 0 380 160">
-                <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2E7D32" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#2E7D32" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
+              <svg className="w-full h-full" viewBox="0 0 350 140">
+                <path d={farmerGrowthPath} fill="none" stroke="#2E7D32" strokeWidth="2.5" />
                 
-                {/* Area Background */}
-                <path d={areaPath} fill="url(#areaGrad)" />
-                
-                {/* Line */}
-                <path d={linePath} fill="none" stroke="#2E7D32" strokeWidth="2.5" />
-                
-                {/* Horizontal grid lines */}
-                <line x1="20" y1="150" x2="360" y2="150" stroke="#e2e8f0" strokeWidth="1" />
-                <line x1="20" y1="100" x2="360" y2="100" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
-                <line x1="20" y1="50" x2="360" y2="50" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
-
-                {/* Hover line indicator */}
-                {hoveredLinePoint !== null && (
-                  <line 
-                    x1={linePoints[hoveredLinePoint].x} 
-                    y1="20" 
-                    x2={linePoints[hoveredLinePoint].x} 
-                    y2="150" 
-                    stroke="rgba(46, 125, 50, 0.4)" 
-                    strokeWidth="1.5" 
-                    strokeDasharray="2 2"
-                  />
-                )}
-
-                {/* Data Nodes */}
-                {linePoints.map((pt, i) => (
+                {/* Points */}
+                {farmerGrowth.map((pt, i) => (
                   <circle
                     key={i}
                     cx={pt.x}
                     cy={pt.y}
-                    r={hoveredLinePoint === i ? 6 : 4}
-                    fill={hoveredLinePoint === i ? "#2E7D32" : "#FFF"}
+                    r={hoveredFarmerPoint === i ? 6 : 4}
+                    fill="#FFF"
                     stroke="#2E7D32"
-                    strokeWidth="2.5"
-                    className="cursor-pointer transition-all duration-150"
-                    onMouseEnter={() => setHoveredLinePoint(i)}
-                    onMouseLeave={() => setHoveredLinePoint(null)}
+                    strokeWidth="2"
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredFarmerPoint(i)}
+                    onMouseLeave={() => setHoveredFarmerPoint(null)}
                   />
                 ))}
 
-                {/* Labels */}
-                {linePoints.map((pt, i) => (
-                  <text key={i} x={pt.x} y="158" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                {/* X Axis labels */}
+                {farmerGrowth.map((pt, i) => (
+                  <text key={i} x={pt.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
                     {pt.month}
                   </text>
                 ))}
@@ -152,118 +291,24 @@ export const AnalyticsScreen: React.FC = () => {
 
               {/* Tooltip Overlay */}
               <AnimatePresence>
-                {hoveredLinePoint !== null && (
+                {hoveredFarmerPoint !== null && (
                   <motion.div 
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 5 }}
                     className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
                   >
-                    <span className="block font-bold text-emerald-400">Avg Soil Index</span>
-                    <span className="block mt-0.5">{linePoints[hoveredLinePoint].month}: {linePoints[hoveredLinePoint].val}% Health</span>
+                    <span className="block font-bold text-emerald-400">Total Registered</span>
+                    <span className="block mt-0.5">{farmerGrowth[hoveredFarmerPoint].month}: {farmerGrowth[hoveredFarmerPoint].count} Farmers</span>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
+        </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-450 uppercase">
-            <span>Soil Recovery Rate</span>
-            <span className="text-emerald-700 flex items-center gap-1 font-extrabold">
-              <Sparkles className="w-3.5 h-3.5 fill-emerald-50" />
-              +22% Gain (6m)
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Chart 2: Fertilizer Usage (Bar Chart) */}
-        <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <BarChart3 className="w-4.5 h-4.5 text-primary" />
-              Fertilizer Volume Applied (NPK)
-            </h3>
-            
-            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
-              <svg className="w-full h-full" viewBox="0 0 350 160">
-                {/* Horizontal scale lines */}
-                <line x1="20" y1="140" x2="330" y2="140" stroke="#e2e8f0" strokeWidth="1" />
-                <line x1="20" y1="90" x2="330" y2="90" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
-                <line x1="20" y1="40" x2="330" y2="40" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
-
-                {/* Bars */}
-                {bars.map((bar, i) => {
-                  const isHovered = hoveredBar === i;
-                  return (
-                    <g key={i} className="cursor-pointer">
-                      {/* Glow effect */}
-                      {isHovered && (
-                        <rect
-                          x={bar.x - 2}
-                          y={140 - bar.height - 2}
-                          width="34"
-                          height={bar.height + 4}
-                          fill={bar.glow}
-                          rx="8"
-                          className="transition-all"
-                        />
-                      )}
-                      
-                      {/* Gradient Bar */}
-                      <defs>
-                        <linearGradient id={`barGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={bar.color.split(" ")[0].replace("from-", "")} />
-                          <stop offset="100%" stopColor={bar.color.split(" ")[1].replace("to-", "")} />
-                        </linearGradient>
-                      </defs>
-                      <rect
-                        x={bar.x}
-                        y={140 - bar.height}
-                        width="30"
-                        height={bar.height}
-                        fill={`url(#barGrad-${i})`}
-                        rx="6"
-                        onMouseEnter={() => setHoveredBar(i)}
-                        onMouseLeave={() => setHoveredBar(null)}
-                        className="transition-all duration-300"
-                      />
-                    </g>
-                  );
-                })}
-
-                {/* Labels */}
-                {bars.map((bar, i) => (
-                  <text key={i} x={bar.x + 15} y="153" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
-                    {bar.chemical.split(" ")[0]}
-                  </text>
-                ))}
-              </svg>
-
-              {/* Tooltip Overlay */}
-              <AnimatePresence>
-                {hoveredBar !== null && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
-                  >
-                    <span className="block font-bold text-emerald-400">{bars[hoveredBar].chemical}</span>
-                    <span className="block mt-0.5">Applied: {bars[hoveredBar].weight} kg</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold text-gray-450 uppercase">
-            <span>Soil Carbon target</span>
-            <span className="text-gray-650 font-bold">1,600 kg Total</span>
-          </div>
-        </motion.div>
-
-        {/* Chart 3: Crop Distribution (Doughnut Chart) */}
-        <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        {/* Pie Chart: Crop Distribution (5/12 width) */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
           <div>
             <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
               <PieChart className="w-4.5 h-4.5 text-primary" />
@@ -274,10 +319,8 @@ export const AnalyticsScreen: React.FC = () => {
               <svg className="w-40 h-40 transform -rotate-90">
                 <circle cx="80" cy="80" r="54" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
                 
-                {pieSlices.map((slice, i) => {
-                  const isHovered = hoveredPieSlice === slice.name;
-                  const strokeWidthValue = isHovered ? 16 : 12;
-
+                {cropSlices.map((slice, i) => {
+                  const isHovered = hoveredPieIndex === i;
                   return (
                     <circle
                       key={i}
@@ -286,97 +329,388 @@ export const AnalyticsScreen: React.FC = () => {
                       r="54"
                       fill="transparent"
                       stroke={slice.color}
-                      strokeWidth={strokeWidthValue}
+                      strokeWidth={isHovered ? 16 : 12}
                       strokeDasharray={slice.dashArray}
                       strokeDashoffset={slice.dashOffset}
-                      className="transition-all duration-300 cursor-pointer"
-                      onMouseEnter={() => setHoveredPieSlice(slice.name)}
-                      onMouseLeave={() => setHoveredPieSlice(null)}
+                      className="transition-all duration-350 cursor-pointer"
+                      onMouseEnter={() => setHoveredPieIndex(i)}
+                      onMouseLeave={() => setHoveredPieIndex(null)}
                     />
                   );
                 })}
               </svg>
 
-              {/* Central text overlay */}
               <div className="absolute text-center">
-                <span className="text-[9px] font-mono text-slate-400 block uppercase leading-none">
-                  {hoveredPieSlice ? "SELECTED CROP" : "TOTAL MAPPED"}
+                <span className="text-[9px] font-mono text-slate-400 block uppercase">
+                  {hoveredPieIndex !== null ? "SELECTED CROP" : "TOTAL AREA"}
                 </span>
-                <span className="text-sm font-black text-gray-800 block mt-1 leading-none">
-                  {hoveredPieSlice 
-                    ? `${hoveredPieSlice} (${pieSlices.find(s => s.name === hoveredPieSlice)?.percentage}%)`
-                    : "33.5 Acres"
-                  }
+                <span className="text-xs font-black text-gray-800 block mt-1">
+                  {hoveredPieIndex !== null 
+                    ? `${cropSlices[hoveredPieIndex].name} (${cropSlices[hoveredPieIndex].pct}%)` 
+                    : "39.5 Acres"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Premium Legend Badges */}
-          <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-2 text-[9px] font-bold">
-            {pieSlices.map((slice, i) => (
-              <div key={i} className="flex items-center gap-1 bg-gray-50 border border-gray-200/50 px-2 py-0.5 rounded-md">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: slice.color }} />
-                <span className="text-gray-600">{slice.name} ({slice.percentage}%)</span>
-              </div>
+          <div className="flex flex-wrap gap-2 text-[9px] font-bold mt-2">
+            {cropSlices.map((s, i) => (
+              <span key={i} className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md text-gray-650 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+                {s.name} ({s.pct}%)
+              </span>
             ))}
-          </div>
-        </motion.div>
-
-      </div>
-
-      {/* Row 2: Recommendation History Table */}
-      <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs text-left">
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-linear-to-r from-white to-gray-50/50">
-          <div>
-            <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
-              <Calendar className="w-4.5 h-4.5 text-primary" />
-              NPK Advisory Generation History
-            </h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">Telemetry compilation log of chemical diagnostic reports</p>
           </div>
         </div>
 
-        {/* Table layout */}
+      </div>
+
+      {/* ================= CHARTS SECTION ROW 2 ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Area Chart: AI Recommendation Trends (7/12 width) */}
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
+              <Bot className="w-4.5 h-4.5 text-primary" />
+              AI Recommendation Trends
+            </h3>
+            
+            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+              <svg className="w-full h-full" viewBox="0 0 350 140">
+                <defs>
+                  <linearGradient id="areaGenGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2E7D32" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#2E7D32" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="areaAccGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2E7D32" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#2E7D32" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d={recGenPath} fill="url(#areaGenGrad)" />
+                <path d={recAccPath} fill="url(#areaAccGrad)" stroke="#1B4D22" strokeWidth="2" />
+
+                {recTrends.map((pt, i) => (
+                  <circle
+                    key={i}
+                    cx={pt.x}
+                    cy={140 - pt.acc / 1.5}
+                    r={hoveredRecPoint === i ? 5 : 3.5}
+                    fill="#FFF"
+                    stroke="#1B4D22"
+                    strokeWidth="2"
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredRecPoint(i)}
+                    onMouseLeave={() => setHoveredRecPoint(null)}
+                  />
+                ))}
+
+                {/* X labels */}
+                {recTrends.map((pt, i) => (
+                  <text key={i} x={pt.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                    {pt.month}
+                  </text>
+                ))}
+              </svg>
+
+              {/* Tooltip Overlay */}
+              <AnimatePresence>
+                {hoveredRecPoint !== null && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
+                  >
+                    <span className="block font-bold text-emerald-400">{recTrends[hoveredRecPoint].month} Metrics</span>
+                    <span className="block mt-0.5">Generated: {recTrends[hoveredRecPoint].gen} | Accepted: {recTrends[hoveredRecPoint].acc}</span>
+                    <span className="block text-[9px] text-gray-400">Completed: {recTrends[hoveredRecPoint].comp} | Pending: {recTrends[hoveredRecPoint].pen}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* Multi-Line Chart: Soil Health Trends (5/12 width) */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
+              <Activity className="w-4.5 h-4.5 text-primary" />
+              Soil Health Trends (12 Months)
+            </h3>
+            
+            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+              <svg className="w-full h-full" viewBox="0 0 300 140">
+                {/* Dynamic path lines (N, P, K, pH, Carbon) */}
+                <path d={`M 10 ${140 - soilMetrics.nitrogen[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.nitrogen[i]}`).join(" L ")}`} fill="none" stroke="#F59E0B" strokeWidth="1.5" />
+                <path d={`M 10 ${140 - soilMetrics.phosphorus[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.phosphorus[i]}`).join(" L ")}`} fill="none" stroke="#84CC16" strokeWidth="1.5" />
+                <path d={`M 10 ${140 - soilMetrics.potassium[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.potassium[i]}`).join(" L ")}`} fill="none" stroke="#EF4444" strokeWidth="1.5" />
+
+                {/* X labels */}
+                {soilMonths.map((m, i) => (
+                  <text key={i} x={10 + i * 25} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                    {m}
+                  </text>
+                ))}
+              </svg>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2.5 text-[9px] font-bold mt-2">
+            <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">Nitrogen (N)</span>
+            <span className="text-lime-600 bg-lime-50 px-2 py-0.5 rounded-md">Phosphorus (P)</span>
+            <span className="text-rose-650 bg-rose-50 px-2 py-0.5 rounded-md">Potassium (K)</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ================= CHARTS SECTION ROW 3 ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Bar Chart: Yield Prediction (Jan - Jun) (7/12 width) */}
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
+              <BarChart3 className="w-4.5 h-4.5 text-primary" />
+              Monthly Yield Predictions (Tons/ha)
+            </h3>
+            
+            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+              <svg className="w-full h-full" viewBox="0 0 350 140">
+                {/* Expected vs Actual bars */}
+                {monthlyYield.map((y, i) => {
+                  return (
+                    <g key={i}>
+                      {/* Expected Yield Bar */}
+                      <rect
+                        x={y.x}
+                        y={120 - y.exp * 20}
+                        width="14"
+                        height={y.exp * 20}
+                        fill="#A5D6A7"
+                        className="transition-all"
+                      />
+                      {/* Actual Yield Bar */}
+                      <rect
+                        x={y.x + 16}
+                        y={120 - y.act * 20}
+                        width="14"
+                        height={y.act * 20}
+                        fill="#2E7D32"
+                        className="transition-all"
+                        onMouseEnter={() => setHoveredYieldBar(i)}
+                        onMouseLeave={() => setHoveredYieldBar(null)}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* X Labels */}
+                {monthlyYield.map((y, i) => (
+                  <text key={i} x={y.x + 15} y="133" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                    {y.label}
+                  </text>
+                ))}
+              </svg>
+
+              {/* Tooltip Overlay */}
+              <AnimatePresence>
+                {hoveredYieldBar !== null && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
+                  >
+                    <span className="block font-bold text-emerald-400">{monthlyYield[hoveredYieldBar].label} Yields</span>
+                    <span className="block mt-0.5">Expected: {monthlyYield[hoveredYieldBar].exp} t/ha</span>
+                    <span className="block">Actual: {monthlyYield[hoveredYieldBar].act} t/ha</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* Area Chart: Water Usage Analytics (5/12 width) */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
+              <Droplets className="w-4.5 h-4.5 text-blue-500" />
+              Water Usage Analytics (L/acre)
+            </h3>
+            
+            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+              <svg className="w-full h-full" viewBox="0 0 350 140">
+                <path d={waterConsPath} fill="#EFF6FF" opacity="0.4" />
+                <path d={waterOptPath} fill="#DBEAFE" stroke="#2563EB" strokeWidth="2" />
+                
+                {/* Labels */}
+                {waterUsage.map((w, i) => (
+                  <text key={i} x={w.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                    {w.label}
+                  </text>
+                ))}
+              </svg>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center text-[10px] font-bold text-gray-450 uppercase mt-2 pt-2 border-t border-gray-100">
+            <span>Optimized savings</span>
+            <span className="text-blue-600 font-extrabold">-12.8% Saved</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ================= CHARTS SECTION ROW 4 ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Horizontal Sensor Online Bar Chart (5/12 width) */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
+          <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
+            <Cpu className="w-4.5 h-4.5 text-primary" />
+            Sensor Online Reliability
+          </h3>
+          
+          <div className="space-y-3.5 text-xs text-gray-700 font-semibold">
+            {sensors.map((s, i) => (
+              <div key={i} className="space-y-1">
+                <div className="flex justify-between font-bold">
+                  <span>{s.label}</span>
+                  <span className="text-gray-950">{s.pct}% Online</span>
+                </div>
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${s.pct}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Visual Heatmap Farm Health grid (7/12 width) */}
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
+          <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
+            <LayoutGrid className="w-4.5 h-4.5 text-primary" />
+            Farm Health Heatmap Status
+          </h3>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 pt-2 relative">
+            {heatmapFarms.map((farm, i) => (
+              <div
+                key={i}
+                onMouseEnter={() => setHoveredHeatmapIndex(i)}
+                onMouseLeave={() => setHoveredHeatmapIndex(null)}
+                className={`p-4 border rounded-2xl text-left cursor-pointer transition-all flex flex-col justify-between min-h-[90px] text-white ${farm.color}`}
+              >
+                <span className="block text-[8px] uppercase font-black text-white/75">{farm.status}</span>
+                <div className="mt-4">
+                  <span className="block text-xs font-black leading-tight">{farm.name.split(" ")[0]}</span>
+                  <span className="block text-lg font-black mt-1 leading-none">{farm.score}%</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Detailed hover popover */}
+            <AnimatePresence>
+              {hoveredHeatmapIndex !== null && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute inset-x-0 -bottom-16 bg-slate-950/95 border border-slate-900 text-white rounded-2xl p-4 text-[10px] space-y-1.5 shadow-2xl z-20"
+                >
+                  <p className="font-extrabold text-sm text-emerald-400">{heatmapFarms[hoveredHeatmapIndex].name}</p>
+                  <div className="grid grid-cols-4 gap-2 text-gray-300 font-semibold font-mono">
+                    <div>Farmer: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].farmer}</span></div>
+                    <div>Crop: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].crop}</span></div>
+                    <div>Prescription: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].recommendation}</span></div>
+                    <div className="text-right">Inspection: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].inspection}</span></div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ================= 12. AI INSIGHTS PANEL ================= */}
+      <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+        <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+          <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
+            <Bot className="w-4.5 h-4.5 text-primary" /> AI Agronomy Insights
+          </h4>
+          <span className="text-[10px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+            Real-time recommendations
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {aiInsights.map((insight, idx) => (
+            <div key={idx} className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl space-y-2 flex flex-col justify-between text-xs">
+              <div className="flex justify-between items-start">
+                <span className="p-1.5 bg-white border border-gray-200 rounded-lg">{insight.icon}</span>
+                <span className={`text-[8px] font-black px-2 py-0.5 rounded-md ${
+                  insight.severity === "Warning" 
+                    ? "bg-amber-50 text-amber-600 border border-amber-100" 
+                    : "bg-emerald-50 text-primary border border-emerald-100"
+                }`}>
+                  {insight.severity}
+                </span>
+              </div>
+              
+              <p className="text-[11px] text-gray-800 font-extrabold leading-snug">{insight.text}</p>
+              
+              <div className="flex justify-between text-[9px] text-gray-400 font-bold uppercase pt-2 border-t border-gray-100/50">
+                <span>{insight.score}</span>
+                <span>{insight.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ================= 11. RECENT REPORTS TABLE ================= */}
+      <div className="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs text-left">
+        <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
+              <Calendar className="w-4.5 h-4.5 text-primary" />
+              Generated Analytical Reports
+            </h3>
+            <p className="text-[11px] text-gray-450 mt-0.5">Telemetry reports compiled for cooperatives</p>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-gray-50/75 border-b border-gray-150 text-[10px] font-bold text-gray-450 uppercase tracking-wider">
-                <th className="py-3.5 px-6">Recipe ID</th>
-                <th className="py-3.5 px-6">Generated Date</th>
+                <th className="py-3.5 px-6">Report Title</th>
                 <th className="py-3.5 px-6">Landholder</th>
-                <th className="py-3.5 px-6">Avg Soil Index</th>
-                <th className="py-3.5 px-6">Prescribed Formulation</th>
+                <th className="py-3.5 px-6">Compiled Date</th>
                 <th className="py-3.5 px-6">Status</th>
-                <th className="py-3.5 px-6 text-right">Actions</th>
+                <th className="py-3.5 px-6 text-right pr-6">Download Link</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-gray-700">
-              {history.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="py-4 px-6 font-mono text-[10px] font-bold text-gray-900">{row.id}</td>
+              {reportsList.map((row, idx) => (
+                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="py-4 px-6 font-bold text-gray-950">{row.name}</td>
+                  <td className="py-4 px-6 text-gray-450 font-semibold">{row.farmer}</td>
                   <td className="py-4 px-6 text-gray-450 font-semibold">{row.date}</td>
-                  <td className="py-4 px-6 font-bold text-gray-800">{row.farmer}</td>
-                  <td className="py-4 px-6 font-mono font-bold text-emerald-700">{row.health}</td>
                   <td className="py-4 px-6">
-                    <span className="bg-emerald-50 text-primary border border-emerald-100/50 text-[10px] font-bold px-2.5 py-1 rounded-lg">
-                      {row.prescribed}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      row.status === "Applied" 
-                        ? "bg-emerald-50 text-primary border border-emerald-100/50" 
-                        : "bg-amber-50 text-amber-700 border border-amber-100/50 animate-pulse"
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${row.status === "Applied" ? "bg-primary" : "bg-amber-500"}`} />
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold border ${row.color}`}>
                       {row.status}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-right">
-                    <button className="inline-flex items-center gap-0.5 text-xs font-bold text-primary hover:text-emerald-700 bg-transparent border-0 cursor-pointer">
-                      Download Report
-                      <ArrowUpRight className="w-3.5 h-3.5" />
+                  <td className="py-4 px-6 text-right pr-6">
+                    <button className="text-primary hover:text-emerald-700 bg-transparent border-0 cursor-pointer font-extrabold inline-flex items-center gap-0.5">
+                      Download PDF <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
@@ -384,7 +718,46 @@ export const AnalyticsScreen: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </motion.div>
+      </div>
+
+      {/* ================= 13. EXPORT ACTIONS SECTION ================= */}
+      <div className="flex flex-wrap gap-3 items-center justify-start bg-gray-50 border border-gray-150 p-4 rounded-3xl text-xs font-bold text-gray-800">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider pl-2 pr-4">Global actions:</span>
+        
+        <button
+          onClick={() => alert("Downloading analytical payload...")}
+          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+        >
+          <Download className="w-4 h-4 text-gray-500" /> Export PDF Report
+        </button>
+
+        <button
+          onClick={() => alert("Exported database records to CSV.")}
+          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+        >
+          Export CSV Records
+        </button>
+
+        <button
+          onClick={() => alert("Dashboard share payload copied.")}
+          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+        >
+          <Share2 className="w-4 h-4 text-gray-500" /> Share Dashboard
+        </button>
+
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+        >
+          <Printer className="w-4 h-4 text-gray-500" /> Print Summary
+        </button>
+      </div>
+
     </motion.div>
   );
+};
+
+// Reusable spinner component to satisfy TS compile rules
+const RefreshCwSpinner: React.FC = () => {
+  return <TrendingUp className="w-4 h-4 text-white animate-spin" />;
 };
