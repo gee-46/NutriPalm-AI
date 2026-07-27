@@ -1,62 +1,329 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Cpu, 
-  RefreshCw, 
-  AlertTriangle, 
-  Droplet, 
-  Sun, 
-  Wind, 
-  Sparkles, 
-  Clock, 
-  Activity, 
-  TrendingUp, 
-  Bot, 
-  Zap 
+  Cpu, RefreshCw, Activity, FlaskConical, Download, 
+  ChevronRight, Thermometer, Droplets, Calendar, TrendingUp, Bot, X
 } from "lucide-react";
 
-export const DigitalTwinScreen: React.FC = () => {
-  const [growthStage, setGrowthStage] = useState(3); // 1: Nursery, 2: Immature, 3: Mature, 4: Peak, 5: Senior
-  const [droughtSim, setDroughtSim] = useState(false);
-  const [fertilizerSim, setFertilizerSim] = useState(false);
+interface PlotData {
+  id: string;
+  name: string;
+  farmer: string;
+  area: number;
+  crop: string;
+  stage: string;
+  age: number;
+  ndvi: { Past: number; Current: number; Prediction: number };
+  moisture: { Past: number; Current: number; Prediction: number };
+  soil: string;
+  soilHealth: { Past: number; Current: number; Prediction: number };
+  irrigation: string;
+  elevation: number;
+  status: "Healthy" | "Moderate" | "Needs Attention" | "Critical";
+  statusColor: string;
+  yieldEst: { Past: string; Current: string; Prediction: string };
+  confidence: number;
+  diseaseRisk: { Past: string; Current: string; Prediction: string };
+  diseasePct: { Past: number; Current: number; Prediction: number };
+  whyDisease: string;
+  recommendedAction: string;
+  advisoryReason: string;
+}
+
+interface TelemetryBadge {
+  id: string;
+  label: string;
+  value: string;
+  interpretation: string;
+  x: number;
+  y: number;
+}
+
+interface DigitalTwinScreenProps {
+  onNavigate?: (screen: string) => void;
+  showToast?: (message: string, type?: "success" | "info" | "warning") => void;
+}
+
+export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({ 
+  onNavigate, 
+  showToast 
+}) => {
+  const [activePlotId, setActivePlotId] = useState("plot-1");
+  const [simMode, setSimMode] = useState<"Past" | "Current" | "Prediction">("Current");
   const [isSyncing, setIsSyncing] = useState(false);
-  const [telemetryPulse, setTelemetryPulse] = useState(true);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isExportLoading, setIsExportLoading] = useState(false);
+  const [activeChartTab, setActiveChartTab] = useState<"NDVI" | "Health" | "Moisture" | "Temp">("NDVI");
+  const [activeTimeframe, setActiveTimeframe] = useState<"7d" | "30d" | "90d">("30d");
+  const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
+  
+  // Living updates states
+  const [lastSyncMinutes, setLastSyncMinutes] = useState(2);
+  const [fluctuateMoisture, setFluctuateMoisture] = useState(0);
+  const [fluctuateTemp, setFluctuateTemp] = useState(0);
+  const [isChangingPlot, setIsChangingPlot] = useState(false);
 
-  // Toggle periodic telemetry pulse animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTelemetryPulse(prev => !prev);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const triggerSync = () => {
-    setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 1200);
+  const triggerToast = (msg: string, type: "success" | "info" | "warning" = "success") => {
+    if (showToast) {
+      showToast(msg, type);
+    } else {
+      alert(`${type.toUpperCase()}: ${msg}`);
+    }
   };
 
-  const lifecycleStages = [
-    { num: 1, name: "Nursery", desc: "0-1 yrs" },
-    { num: 2, name: "Immature", desc: "1-3 yrs" },
-    { num: 3, name: "Mature Producing", desc: "3-8 yrs" },
-    { num: 4, name: "Peak Yield", desc: "8-15 yrs" },
-    { num: 5, name: "Senior Palm", desc: "15+ yrs" }
+  // 1. Auto-updating sync timer & telemetry fluctuation
+  useEffect(() => {
+    const timerInterval = setInterval(() => {
+      setLastSyncMinutes(prev => prev + 1);
+    }, 60000); // every minute
+
+    const telemetryInterval = setInterval(() => {
+      setFluctuateMoisture(Math.random() * 1.2 - 0.6);
+      setFluctuateTemp(Math.random() * 0.4 - 0.2);
+    }, 4000); // fluctuate every 4 seconds
+
+    return () => {
+      clearInterval(timerInterval);
+      clearInterval(telemetryInterval);
+    };
+  }, []);
+
+  const handleSync = () => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setIsSyncing(false);
+      setLastSyncMinutes(0);
+      triggerToast("Digital Twin virtual model synchronized with localized sensor grid.", "success");
+    }, 1200);
+  };
+
+  const handlePlotSwitch = (id: string) => {
+    setIsChangingPlot(true);
+    setActivePlotId(id);
+    setTimeout(() => {
+      setIsChangingPlot(false);
+      triggerToast(`Calibrated twin workspace to Plot ${id.toUpperCase()}`, "info");
+    }, 500);
+  };
+
+  const handleSimModeSwitch = (mode: "Past" | "Current" | "Prediction") => {
+    setIsChangingPlot(true);
+    setSimMode(mode);
+    setTimeout(() => {
+      setIsChangingPlot(false);
+      triggerToast(`Simulating ${mode.toUpperCase()} timeline telemetry...`, "info");
+    }, 450);
+  };
+
+  // Plot database records
+  const plotDatabase: Record<string, PlotData> = {
+    "plot-1": {
+      id: "plot-1",
+      name: "Swamy North Plot (Plot 2A)",
+      farmer: "Swaminathan Gowda",
+      area: 12.5,
+      crop: "Oil Palm",
+      stage: "Fruit Development",
+      age: 6,
+      ndvi: { Past: 0.74, Current: 0.82, Prediction: 0.88 },
+      moisture: { Past: 45, Current: 42, Prediction: 36 },
+      soil: "Loamy (Optimal)",
+      soilHealth: { Past: 84, Current: 88, Prediction: 92 },
+      irrigation: "Precision Drip (94%)",
+      elevation: 152,
+      status: "Healthy",
+      statusColor: "bg-emerald-500",
+      yieldEst: { Past: "14.2 Tons", Current: "18.6 Tons", Prediction: "21.5 Tons" },
+      confidence: 96,
+      diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
+      diseasePct: { Past: 2, Current: 4, Prediction: 3 },
+      whyDisease: "Foliar canopy vigor limits pathogen spore reproduction.",
+      recommendedAction: "Apply Phosphorus Enrichment & Optimize Micro-Drip Timing",
+      advisoryReason: "Soil Nitrogen and Potassium complexes are highly saturated; phosphorus optimizes fruit bunch sizes."
+    },
+    "plot-2": {
+      id: "plot-2",
+      name: "Kothagudem South Field",
+      farmer: "K. Ramachandra Rao",
+      area: 8.2,
+      crop: "Oil Palm",
+      stage: "Flowering",
+      age: 8,
+      ndvi: { Past: 0.70, Current: 0.74, Prediction: 0.79 },
+      moisture: { Past: 40, Current: 38, Prediction: 34 },
+      soil: "Red Clayey",
+      soilHealth: { Past: 68, Current: 72, Prediction: 76 },
+      irrigation: "Precision Drip",
+      elevation: 145,
+      status: "Moderate",
+      statusColor: "bg-lime-500",
+      yieldEst: { Past: "11.0 Tons", Current: "13.0 Tons", Prediction: "15.2 Tons" },
+      confidence: 94,
+      diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
+      diseasePct: { Past: 4, Current: 5, Prediction: 4 },
+      whyDisease: "Clay texture holds humidity steady around trunk bases.",
+      recommendedAction: "Local Nitrate supplement to sustain vegetative greening",
+      advisoryReason: "Pre-empt nitrogen leeching before the wet monsoon cycle begins."
+    },
+    "plot-3": {
+      id: "plot-3",
+      name: "Devamma Palm Zone 1",
+      farmer: "M. Devamma",
+      area: 5.0,
+      crop: "Coconut Palm",
+      stage: "Flowering",
+      age: 4,
+      ndvi: { Past: 0.62, Current: 0.68, Prediction: 0.73 },
+      moisture: { Past: 48, Current: 46, Prediction: 40 },
+      soil: "Sandy Clay",
+      soilHealth: { Past: 52, Current: 55, Prediction: 60 },
+      irrigation: "Drip Irrigation",
+      elevation: 160,
+      status: "Needs Attention",
+      statusColor: "bg-orange-500",
+      yieldEst: { Past: "5.5 Tons", Current: "6.5 Tons", Prediction: "7.8 Tons" },
+      confidence: 89,
+      diseaseRisk: { Past: "Moderate", Current: "Attention", Prediction: "Moderate" },
+      diseasePct: { Past: 12, Current: 18, Prediction: 15 },
+      whyDisease: "Fungal leaf spots detected in satellite spectrum profiles.",
+      recommendedAction: "Schedule copper-based fungicide spray",
+      advisoryReason: "NDVI reduction correlates directly to early-stage bud rot symptoms."
+    },
+    "plot-4": {
+      id: "plot-4",
+      name: "Swamy East Plantation",
+      farmer: "Swaminathan Gowda",
+      area: 7.8,
+      crop: "Oil Palm",
+      stage: "Fruiting",
+      age: 5,
+      ndvi: { Past: 0.75, Current: 0.79, Prediction: 0.84 },
+      moisture: { Past: 42, Current: 40, Prediction: 35 },
+      soil: "Loamy (Optimal)",
+      soilHealth: { Past: 76, Current: 79, Prediction: 84 },
+      irrigation: "Precision Drip",
+      elevation: 152,
+      status: "Healthy",
+      statusColor: "bg-emerald-500",
+      yieldEst: { Past: "8.5 Tons", Current: "10.2 Tons", Prediction: "12.0 Tons" },
+      confidence: 93,
+      diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
+      diseasePct: { Past: 3, Current: 4, Prediction: 3 },
+      whyDisease: "Optimal spacing maximizes daylight capture and airflow.",
+      recommendedAction: "Routine potassium top-up during cell division",
+      advisoryReason: "Maintains optimal moisture uptake metrics across leaves."
+    },
+    "plot-5": {
+      id: "plot-5",
+      name: "Hassan Cocoa Plot",
+      farmer: "Rajesh Kumar",
+      area: 6.0,
+      crop: "Cocoa",
+      stage: "Vegetative",
+      age: 3,
+      ndvi: { Past: 0.58, Current: 0.55, Prediction: 0.62 },
+      moisture: { Past: 32, Current: 28, Prediction: 30 },
+      soil: "Sandy Loam",
+      soilHealth: { Past: 42, Current: 38, Prediction: 45 },
+      irrigation: "Manual Drip",
+      elevation: 138,
+      status: "Critical",
+      statusColor: "bg-rose-500",
+      yieldEst: { Past: "1.8 Tons", Current: "2.1 Tons", Prediction: "2.6 Tons" },
+      confidence: 91,
+      diseaseRisk: { Past: "Attention", Current: "Critical", Prediction: "Attention" },
+      diseasePct: { Past: 22, Current: 38, Prediction: 25 },
+      whyDisease: "Critical water stress weakens sapling vascular immunity.",
+      recommendedAction: "Execute emergency moisture recovery drip",
+      advisoryReason: "Water deficit triggers leaf drop, reducing chlorophyll conversion efficiency."
+    }
+  };
+
+  const activePlot = plotDatabase[activePlotId] || plotDatabase["plot-1"];
+
+  // Derived properties based on simulation mode
+  const activeNDVI = activePlot.ndvi[simMode];
+  const activeMoisture = Math.round(activePlot.moisture[simMode] + fluctuateMoisture);
+  const activeSoilHealth = activePlot.soilHealth[simMode];
+  const activeYield = activePlot.yieldEst[simMode];
+  const activeDiseasePct = activePlot.diseasePct[simMode];
+  const activeDiseaseRisk = activePlot.diseaseRisk[simMode];
+
+  const telemetryBadges: TelemetryBadge[] = [
+    { id: "temp", label: "Temperature", value: `${(31.4 + fluctuateTemp).toFixed(1)}°C`, interpretation: "Vegetative cellular respiration optimal.", x: 25, y: 35 },
+    { id: "humidity", label: "Humidity", value: "64%", interpretation: "Transpiration rate within calibrated threshold.", x: 75, y: 40 },
+    { id: "moisture", label: "Moisture", value: `${activeMoisture}%`, interpretation: "Volumetric Water Content simulated.", x: 15, y: 65 },
+    { id: "ndvi", label: "Canopy NDVI", value: activeNDVI.toFixed(2), interpretation: "High foliar density and chlorophyll absorption.", x: 80, y: 60 },
+    { id: "health", label: "Foliar Health", value: activePlot.status, interpretation: "98% index against historical canopy twin.", x: 50, y: 20 },
+    { id: "wind", label: "Wind Velocity", value: "11 km/h", interpretation: "Low risk of fungal spore migration.", x: 45, y: 75 }
   ];
 
-  // Dynamic calculations based on simulation state
-  const moisture = droughtSim ? 22 : 44;
-  const temp = droughtSim ? "34.8°C" : "31.4°C";
-  const humidity = droughtSim ? "52%" : "64%";
-  
+  const telemetryCards = [
+    {
+      label: "Soil Moisture",
+      value: `${activeMoisture}% VWC`,
+      trend: "stable",
+      trendText: "Stable",
+      icon: <Droplets className="w-5 h-5 text-blue-500" />,
+      status: activeMoisture >= 35 ? "Optimal" : "Attention",
+      sparkline: [40, 41, 40.5, 42, activeMoisture, activeMoisture - 1, activeMoisture]
+    },
+    {
+      label: "Temperature",
+      value: `${(31.4 + fluctuateTemp).toFixed(1)}°C`,
+      trend: "up",
+      trendText: "+0.8°C",
+      icon: <Thermometer className="w-5 h-5 text-amber-500" />,
+      status: "Optimal",
+      sparkline: [29.5, 30.1, 30.5, 31.0, 31.2, 31.1, 31.4]
+    },
+    {
+      label: "Humidity",
+      value: "64.2%",
+      trend: "down",
+      trendText: "-2.4%",
+      icon: <Activity className="w-5 h-5 text-emerald-500" />,
+      status: "Optimal",
+      sparkline: [67, 66.5, 65.2, 64.8, 64.0, 64.5, 64.2]
+    }
+  ];
 
+  // Soil Nutrient horizontal values
+  const soilNutrients = [
+    { label: "pH Score", val: "6.2", pct: 85, color: "bg-emerald-500", text: "Optimal (Slightly Acidic)" },
+    { label: "Nitrogen (N)", val: "72 ppm", pct: 72, color: "bg-emerald-500", text: "Optimal Concentration" },
+    { label: "Phosphorus (P)", val: "48 ppm", pct: 48, color: "bg-amber-500", text: "Deficient - Recommended Boost" },
+    { label: "Potassium (K)", val: "85 ppm", pct: 85, color: "bg-emerald-500", text: "Optimal Content" },
+    { label: "Organic Carbon", val: "1.4%", pct: 78, color: "bg-emerald-500", text: "Excellent Microbial Base" },
+    { label: "EC (Electrical Conductivity)", val: "0.28 dS/m", pct: 52, color: "bg-emerald-500", text: "Optimal Salinity" }
+  ];
 
-  let ndvi = 0.81;
-  if (droughtSim) ndvi -= 0.12;
-  if (fertilizerSim) ndvi += 0.05;
-  if (ndvi > 1) ndvi = 1.0;
+  // Custom Chart path generators based on selection
+  const getChartData = () => {
+    if (activeChartTab === "NDVI") {
+      return { path: `M 20 ${140 - activeNDVI * 100} L 100 ${120 - activeNDVI * 90} L 200 ${130 - activeNDVI * 95} L 300 ${110 - activeNDVI * 105} L 380 ${100 - activeNDVI * 100}`, val: activeNDVI.toFixed(2) };
+    }
+    if (activeChartTab === "Health") {
+      return { path: `M 20 ${180 - activeSoilHealth * 1.5} L 100 ${170 - activeSoilHealth * 1.5} L 200 ${165 - activeSoilHealth * 1.5} L 300 ${172 - activeSoilHealth * 1.5} L 380 ${150 - activeSoilHealth * 1.5}`, val: `${activeSoilHealth}%` };
+    }
+    if (activeChartTab === "Moisture") {
+      return { path: `M 20 ${180 - activeMoisture * 2.5} L 100 ${170 - activeMoisture * 2.5} L 200 ${175 - activeMoisture * 2.5} L 300 ${160 - activeMoisture * 2.5} L 380 ${165 - activeMoisture * 2.5}`, val: `${activeMoisture}%` };
+    }
+    // Temp
+    return { path: "M 20 80 L 100 95 L 200 90 L 300 85 L 380 75", val: `${(31.4 + fluctuateTemp).toFixed(1)}°C` };
+  };
 
-  const healthScore = Math.round((ndvi * 100) + (moisture * 0.15));
-  const healthLabel = healthScore >= 85 ? "Optimal" : healthScore >= 70 ? "Stable" : "Critical Stress";
+  const chartData = getChartData();
+
+  const handleExportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsExportLoading(true);
+    setTimeout(() => {
+      setIsExportLoading(false);
+      setIsExportOpen(false);
+      triggerToast("Diagnostics report exported successfully.", "success");
+    }, 1500);
+  };
 
   return (
     <motion.div
@@ -65,384 +332,685 @@ export const DigitalTwinScreen: React.FC = () => {
       exit={{ opacity: 0, y: -15 }}
       className="space-y-6 text-left"
     >
-      {/* Top Console Command Header */}
+      
+      {/* ================= PAGE HEADER ================= */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200/50 pb-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2.5">
-            <Cpu className="w-6 h-6 text-primary" />
-            Biophysical Digital Twin (Plot 2A)
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2">
+            <Cpu className="w-8 h-8 text-primary" />
+            Digital Twin Intelligence
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Live telemetry sync models & environment sandbox diagnostics</p>
+          <p className="text-sm font-semibold text-gray-500 mt-2">
+            Real-time AI-powered virtual representation of farm conditions, crop health, environmental telemetry, and predictive insights.
+          </p>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-mono font-bold border ${
-            isSyncing 
-              ? "bg-amber-50 text-amber-600 border-amber-100" 
-              : "bg-emerald-50 text-primary border-emerald-100/50"
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${isSyncing ? "bg-amber-500 animate-ping" : "bg-primary"}`} />
-            {isSyncing ? "CALIBRATING TELEMETRY..." : "TWIN LIVE SYNCED"}
-          </span>
+
+        {/* Top-Right Action Bars */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col items-end text-xs font-mono font-bold text-gray-400">
+            <span className="flex items-center gap-1 text-primary">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-md shadow-emerald-500/50" />
+              AI Engine Status: Online
+            </span>
+            <span className="text-[10px] text-gray-450 mt-1">Last Synced: {lastSyncMinutes} mins ago</span>
+          </div>
+
           <button
-            onClick={triggerSync}
+            onClick={handleSync}
             disabled={isSyncing}
-            className="p-2.5 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-900 border border-gray-250 rounded-xl transition-all cursor-pointer shadow-xs"
+            className="inline-flex items-center justify-center p-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
+            title="Refresh twin data"
           >
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-4 h-4 text-gray-500 ${isSyncing ? "animate-spin" : ""}`} />
+          </button>
+
+          <button
+            onClick={() => onNavigate && onNavigate("Recommendations")}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
+          >
+            <FlaskConical className="w-4 h-4" />
+            Generate AI Recommendation
+          </button>
+
+          <button
+            onClick={() => setIsExportOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all text-xs cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-gray-500" />
+            Export Report
           </button>
         </div>
       </div>
 
-      {/* Flagship Digital Twin Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ================= 2. TIME SIMULATION CONTROL & 5. MINI FARM SWITCHER ================= */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-gray-150 p-4 rounded-3xl shadow-xs">
         
-        {/* Column 1 & 2: Animated HUD Visual & Stepper */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Main Visual Twin Chamber */}
-          <div className="bg-slate-950 rounded-3xl border border-slate-900 p-6 shadow-xl relative flex flex-col justify-between overflow-hidden min-h-[440px]">
-            {/* Top Info overlays */}
-            <div className="flex justify-between items-start z-10">
-              <div>
-                <p className="text-[10px] font-bold text-emerald-400 font-mono flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                  REAL-TIME SIMULATION
-                </p>
-                <h3 className="text-white font-extrabold text-lg mt-1.5">Vegetation Canopy Model</h3>
+        {/* Plot Selector Blocks */}
+        <div className="space-y-1.5 w-full md:w-auto">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Crop Twin Mappers</p>
+          <div className="flex flex-wrap gap-2.5">
+            {Object.keys(plotDatabase).map((key) => {
+              const item = plotDatabase[key];
+              const isSelected = activePlotId === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => handlePlotSwitch(key)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5 ${
+                    isSelected 
+                      ? "bg-slate-950 text-white border-slate-950 shadow-md" 
+                      : "bg-white text-gray-650 border-gray-250 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.statusColor}`} />
+                  Plot {key.replace("plot-", "").toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Time simulation segmented tab control */}
+        <div className="space-y-1.5 w-full md:w-auto text-left md:text-right shrink-0">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Digital Twin Timeline Mode</p>
+          <div className="inline-flex bg-gray-50 border border-gray-200 rounded-2xl p-0.5">
+            {(["Past", "Current", "Prediction"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => handleSimModeSwitch(mode)}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  simMode === mode 
+                    ? "bg-primary text-white shadow-xs" 
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ================= LAYOUT GRID ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
+        
+        {/* Shimmer loading overlay when switching plot/modes */}
+        <AnimatePresence>
+          {isChangingPlot && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-white/70 backdrop-blur-xs z-30 pointer-events-auto rounded-3xl flex items-center justify-center"
+            >
+              <div className="bg-white border border-gray-150 p-5 rounded-2xl shadow-xl flex items-center gap-3">
+                <RefreshCw className="w-5 h-5 text-primary animate-spin" />
+                <span className="text-xs font-black text-gray-800">Calibrating biophysical simulation model...</span>
               </div>
-              <div className="text-right">
-                <span className="text-[9px] font-mono text-slate-500 block uppercase">NDVI REFLECTANCE</span>
-                <span className="text-white font-black text-sm">{ndvi.toFixed(2)} Index</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ================= LEFT COLUMN ================= */}
+        <div className="lg:col-span-7 space-y-6">
+          
+          {/* 1. DIGITAL CROP MODEL */}
+          <div className="bg-slate-950 rounded-[32px] border border-slate-900 p-6 shadow-xl relative min-h-[460px] flex flex-col justify-between overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px]" />
+            <div className="absolute -top-12 -left-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex justify-between items-start z-10 relative">
+              <div className="space-y-1">
+                <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  Biophysical Twin Layer ({activePlot.name})
+                </span>
+                <h3 className="text-white font-extrabold text-lg">Vegetation Canopy Chamber</h3>
+              </div>
+              <div className="text-right font-mono">
+                <span className="text-[9px] text-slate-500 block uppercase">NDVI Reflectance</span>
+                <span className="text-white font-black text-sm">{chartData.val}</span>
               </div>
             </div>
 
-            {/* Isometric Plant Model Visual HUD */}
-            <div className="my-6 flex justify-center items-center relative h-64">
-              
-              {/* Radar Scanner Sweep */}
+            <div className="my-10 flex justify-center items-center relative h-64">
               <motion.div
                 animate={{ top: ["10%", "90%", "10%"] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="absolute left-10 right-10 h-[1.5px] bg-emerald-400/30 shadow-lg shadow-emerald-400/50 z-10 pointer-events-none"
+                transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
+                className="absolute left-10 right-10 h-[1.5px] bg-emerald-400/20 shadow-lg shadow-emerald-400/50 z-10 pointer-events-none"
               />
 
-              {/* Grid backdrop */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:25px_25px] opacity-40" />
-
               <svg className="w-full h-full max-w-xs relative z-10" viewBox="0 0 200 200">
-                {/* Horizontal Scan lines */}
-                <line x1="10" y1="60" x2="190" y2="60" stroke="rgba(16, 185, 129, 0.08)" strokeDasharray="4 4" />
-                <line x1="10" y1="130" x2="190" y2="130" stroke="rgba(16, 185, 129, 0.08)" strokeDasharray="4 4" />
+                <line x1="10" y1="50" x2="190" y2="50" stroke="rgba(16, 185, 129, 0.05)" strokeDasharray="3 3" />
+                <line x1="10" y1="140" x2="190" y2="140" stroke="rgba(16, 185, 129, 0.05)" strokeDasharray="3 3" />
 
-                {/* Telemetry Dotted HUD Lines from plant to text */}
-                <motion.g animate={{ opacity: telemetryPulse ? 0.7 : 0.4 }} transition={{ duration: 1 }}>
-                  {/* Leaf telemetry callout */}
-                  <line x1="50" y1="110" x2="25" y2="90" stroke="#10b981" strokeWidth="1" strokeDasharray="2 2" />
-                  <circle cx="25" cy="90" r="2" fill="#10b981" />
-                  
-                  {/* Root telemetry callout */}
-                  <line x1="115" y1="170" x2="145" y2="185" stroke="#10b981" strokeWidth="1" strokeDasharray="2 2" />
-                  <circle cx="145" cy="185" r="2" fill="#10b981" />
-                </motion.g>
-
-                {/* Roots */}
-                <path
-                  d={`M 100 150 C 95 165 82 ${162 + growthStage * 6} 82 ${168 + growthStage * 6} 
-                     M 100 150 C 105 165 118 ${162 + growthStage * 6} 118 ${168 + growthStage * 6}`}
-                  stroke={droughtSim ? "#b45309" : "#7c2d12"}
-                  strokeWidth="2.5"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-
-                {/* Trunk */}
-                <rect
-                  x="96"
-                  y={150 - growthStage * 12}
-                  width="8"
-                  height={growthStage * 12}
-                  fill="#5c3a21"
-                  rx="1.5"
-                />
-
-                <g style={{ transformOrigin: `100px ${150 - growthStage * 12}px` }}>
-                  {/* Left leaf */}
-                  <path
-                    d={`M 100 ${150 - growthStage * 12} C 65 ${138 - growthStage * 14} 35 ${128 - growthStage * 9} 25 ${142 - growthStage * 8}`}
-                    fill="none"
-                    stroke={droughtSim ? "#a1a1aa" : "#10b981"}
-                    strokeWidth={2.5 + growthStage * 0.4}
-                    strokeLinecap="round"
-                  />
-                  {/* Right leaf */}
-                  <path
-                    d={`M 100 ${150 - growthStage * 12} C 135 ${138 - growthStage * 14} 165 ${128 - growthStage * 9} 175 ${142 - growthStage * 8}`}
-                    fill="none"
-                    stroke={droughtSim ? "#a1a1aa" : "#10b981"}
-                    strokeWidth={2.5 + growthStage * 0.4}
-                    strokeLinecap="round"
-                  />
-                  {/* Center shoot */}
-                  <path
-                    d={`M 100 ${150 - growthStage * 12} C 95 ${118 - growthStage * 14} 90 ${98 - growthStage * 14} 100 ${78 - growthStage * 14}`}
-                    fill="none"
-                    stroke={droughtSim ? "#d97706" : "#66bb6a"}
-                    strokeWidth={2 + growthStage * 0.3}
-                    strokeLinecap="round"
-                  />
+                <g style={{ transformOrigin: "100px 150px" }}>
+                  <path d="M 100 150 C 95 165 80 170 78 185 M 100 150 C 105 165 120 170 122 185" stroke="#7c2d12" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  <rect x="96" y="105" width="8" height="45" fill="#5c3a21" rx="1.5" />
+                  <path d="M 100 105 C 60 90 35 90 20 115" fill="none" stroke="#2e7d32" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M 100 105 C 140 90 165 90 180 115" fill="none" stroke="#2e7d32" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M 100 105 C 80 75 70 50 85 30" fill="none" stroke="#2e7d32" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 100 105 C 120 75 130 50 115 30" fill="none" stroke="#2e7d32" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 100 105 C 95 65 95 45 100 25" fill="none" stroke="#66bb6a" strokeWidth="2.5" strokeLinecap="round" />
                 </g>
 
-                {/* Satellite Focus Beam */}
-                <polygon
-                  points="65,60 135,60 100,160"
-                  fill="rgba(16, 185, 129, 0.02)"
-                  stroke="rgba(16, 185, 129, 0.05)"
-                  strokeWidth="1"
-                />
+                <polygon points="50,40 150,40 100,160" fill="rgba(16, 185, 129, 0.02)" stroke="rgba(16, 185, 129, 0.04)" strokeWidth="1" />
               </svg>
 
-              {/* Text HUD Overlays on Map */}
-              <div className="absolute top-24 left-4 text-left font-mono text-[9px] text-[#10b981] space-y-0.5 pointer-events-none">
-                <span className="block text-slate-500 font-bold">CANOPY VIGOR</span>
-                <span>Foliar Chlorophyll: 78.4%</span>
-                <span>Stomatal Index: 0.88</span>
-              </div>
+              {telemetryBadges.map((badge) => (
+                <div
+                  key={badge.id}
+                  style={{ top: `${badge.y}%`, left: `${badge.x}%` }}
+                  className="absolute z-20"
+                >
+                  <button
+                    onMouseEnter={() => setHoveredBadge(badge.id)}
+                    onMouseLeave={() => setHoveredBadge(null)}
+                    onClick={() => triggerToast(`${badge.label}: ${badge.value} (${badge.interpretation})`, "info")}
+                    className="w-3.5 h-3.5 rounded-full bg-emerald-400 hover:bg-white border-2 border-slate-950 flex items-center justify-center cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95 transition-all animate-pulse"
+                  />
 
-              <div className="absolute bottom-16 right-4 text-right font-mono text-[9px] text-[#10b981] space-y-0.5 pointer-events-none">
-                <span className="block text-slate-500 font-bold">ROOT TELEMETRY</span>
-                <span>Water Uptake: {moisture - 4}%</span>
-                <span>Soil pH range: 5.8</span>
+                  <AnimatePresence>
+                    {hoveredBadge === badge.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 5 }}
+                        animate={{ opacity: 1, scale: 1, y: -10 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 5 }}
+                        className="absolute bottom-6 left-1/2 -translate-x-1/2 w-44 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-2xl z-30 pointer-events-none text-left"
+                      >
+                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">{badge.label}</p>
+                        <p className="text-sm font-black text-white mt-1 leading-none">{badge.value}</p>
+                        <p className="text-[9px] text-slate-400 leading-normal mt-1">{badge.interpretation}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 bg-slate-900/75 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-slate-400">
+              <div>
+                <span className="block text-[8px] text-slate-500 uppercase">Crop Vigor</span>
+                <span className="text-white font-bold">Foliar Chlorophyll: 78%</span>
+              </div>
+              <div>
+                <span className="block text-[8px] text-slate-500 uppercase">Water Transport</span>
+                <span className="text-white font-bold">Root Tension: Optimal</span>
+              </div>
+              <div>
+                <span className="block text-[8px] text-slate-500 uppercase">Growth Stage</span>
+                <span className="text-white font-bold">{activePlot.stage}</span>
               </div>
             </div>
 
-            {/* Simulated Stage selection HUD */}
-            <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-4 border border-slate-800">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Cycle Stepper Control</span>
-                <span className="text-xs font-bold text-emerald-400">Current Phase: {lifecycleStages.find(s => s.num === growthStage)?.name}</span>
+          </div>
+
+          {/* 3. ENVIRONMENTAL TELEMETRY */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {telemetryCards.map((card) => (
+              <div
+                key={card.label}
+                className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all flex flex-col justify-between min-h-[140px]"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="p-2 bg-gray-50 border border-gray-150 rounded-xl">
+                    {card.icon}
+                  </div>
+                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                    card.status === "Optimal" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                  }`}>
+                    {card.status}
+                  </span>
+                </div>
+                
+                <div className="mt-4 text-left">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="text-base font-black text-gray-900">{card.value}</span>
+                    <span className="text-[9px] font-bold text-gray-450">{card.trendText}</span>
+                  </div>
+                </div>
+
+                <div className="h-6 w-full mt-3">
+                  <svg className="w-full h-full" viewBox="0 0 100 24">
+                    <path
+                      d={`M 0 ${24 - (card.sparkline[0] % 10) * 2} L 16.6 ${24 - (card.sparkline[1] % 10) * 2} L 33.3 ${24 - (card.sparkline[2] % 10) * 2} L 50 ${24 - (card.sparkline[3] % 10) * 2} L 66.6 ${24 - (card.sparkline[4] % 10) * 2} L 83.3 ${24 - (card.sparkline[5] % 10) * 2} L 100 ${24 - (card.sparkline[6] % 10) * 2}`}
+                      fill="none"
+                      stroke={card.status === "Optimal" ? "#10b981" : "#f59e0b"}
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
               </div>
-              <input
-                type="range"
-                min="1"
-                max="5"
-                value={growthStage}
-                onChange={(e) => setGrowthStage(parseInt(e.target.value))}
-                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-hidden"
-              />
+            ))}
+          </div>
+
+          {/* 5. CROP GROWTH TIMELINE */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-6">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+              <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-1.5">
+                <Calendar className="w-4.5 h-4.5 text-primary" /> Crop Growth Timeline
+              </h4>
+              <div className="text-[10px] font-bold text-gray-500 space-x-3">
+                <span>Days since planting: <strong>{activePlot.age * 365}</strong></span>
+                <span>Expected Harvest: <strong>Oct 2026</strong></span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center relative pt-2">
+              <div className="absolute left-[30px] right-[30px] top-[14px] h-0.5 bg-gray-100 -z-10" />
+              <div className="absolute left-[30px] top-[14px] h-0.5 bg-primary -z-10 w-[74%]" />
+
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full border-2 bg-emerald-50 border-primary text-primary flex items-center justify-center font-bold text-xs">✓</div>
+                <span className="text-[10px] font-bold text-gray-400 mt-2">Seedling</span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full border-2 bg-emerald-50 border-primary text-primary flex items-center justify-center font-bold text-xs">✓</div>
+                <span className="text-[10px] font-bold text-gray-400 mt-2">Vegetative</span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full border-2 bg-emerald-50 border-primary text-primary flex items-center justify-center font-bold text-xs">✓</div>
+                <span className="text-[10px] font-bold text-gray-400 mt-2">Flowering</span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full border-2 bg-primary border-primary text-white flex items-center justify-center font-bold text-xs shadow-md shadow-primary/20 scale-110">4</div>
+                <span className="text-[10px] font-black text-primary mt-2">Fruit Dev</span>
+                <span className="text-[8px] font-mono text-emerald-650 font-bold mt-0.5">82% Completed</span>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full border-2 bg-white border-gray-200 text-gray-300 flex items-center justify-center font-bold text-xs">5</div>
+                <span className="text-[10px] font-bold text-gray-300 mt-2">Harvest</span>
+              </div>
             </div>
           </div>
 
-          {/* Plant Lifecycle Stepper Timeline */}
-          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs relative overflow-hidden">
-            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Crop Lifecycle Stepper</h4>
-            
-            <div className="flex justify-between items-center relative">
-              {/* Connector line */}
-              <div className="absolute left-[30px] right-[30px] top-[14px] h-0.5 bg-gray-100 -z-10" />
-              <div 
-                className="absolute left-[30px] top-[14px] h-0.5 bg-primary -z-10 transition-all duration-500" 
-                style={{ width: `${((growthStage - 1) / 4) * 85}%` }}
-              />
+          {/* 7. NDVI & HEALTH TREND */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-1.5">
+                  <TrendingUp className="w-4.5 h-4.5 text-primary" /> Biophysical Reflectance Trends
+                </h4>
+                <p className="text-[10px] text-gray-450 mt-1">Satellite indexes tracked over time.</p>
+              </div>
 
-              {lifecycleStages.map((stage) => {
-                const isCurrent = stage.num === growthStage;
-                const isCompleted = stage.num < growthStage;
-
-                return (
-                  <div key={stage.num} className="flex flex-col items-center">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center bg-gray-50 border border-gray-150 rounded-xl p-0.5">
+                  {(["NDVI", "Health", "Moisture", "Temp"] as const).map((tab) => (
                     <button
-                      onClick={() => setGrowthStage(stage.num)}
-                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
-                        isCurrent
-                          ? "bg-primary border-primary text-white scale-110 shadow-md shadow-primary/25"
-                          : isCompleted
-                          ? "bg-emerald-50 border-primary text-primary"
-                          : "bg-white border-gray-200 text-gray-400"
+                      key={tab}
+                      onClick={() => setActiveChartTab(tab)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        activeChartTab === tab ? "bg-white text-primary shadow-xs" : "text-gray-500 hover:text-gray-950"
                       }`}
                     >
-                      {stage.num}
+                      {tab}
                     </button>
-                    <span className={`text-[10px] font-bold mt-2 ${isCurrent ? "text-primary" : "text-gray-500"}`}>
-                      {stage.name}
-                    </span>
-                    <span className="text-[8px] text-gray-400 mt-0.5">{stage.desc}</span>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+
+                <div className="flex items-center bg-gray-50 border border-gray-150 rounded-xl p-0.5">
+                  {(["7d", "30d", "90d"] as const).map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => setActiveTimeframe(time)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        activeTimeframe === time ? "bg-white text-primary shadow-xs" : "text-gray-500 hover:text-gray-950"
+                      }`}
+                    >
+                      {time.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="h-56 border border-gray-100 rounded-2xl relative p-4 flex flex-col justify-between overflow-hidden">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
+              
+              <div className="flex justify-between text-[9px] font-mono text-gray-400 relative z-10">
+                <span>0.90 Index</span>
+                <span>Optimal Bounds</span>
+              </div>
+
+              <div className="relative flex-grow flex items-center justify-center my-2">
+                <svg className="w-full h-full overflow-visible" viewBox="0 0 400 180">
+                  <line x1="0" y1="45" x2="400" y2="45" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
+                  <line x1="0" y1="90" x2="400" y2="90" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
+                  <line x1="0" y1="135" x2="400" y2="135" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
+
+                  <motion.path
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.8 }}
+                    d={chartData.path}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              <div className="flex justify-between text-[9px] font-mono text-gray-400 border-t border-gray-100 pt-2 relative z-10">
+                <span>Start Phase</span>
+                <span>Target Mean</span>
+                <span>Active Reading ({chartData.val})</span>
+              </div>
             </div>
           </div>
 
         </div>
 
-        {/* Column 3: Telemetry parameters, sandbox, AI predictions */}
-        <div className="space-y-6">
+        {/* ================= RIGHT COLUMN ================= */}
+        <div className="lg:col-span-5 space-y-6">
           
-          {/* Health Score Card */}
-          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Telemetry Vitality</span>
-              <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                healthLabel === "Optimal" ? "bg-emerald-50 text-primary border border-emerald-100" :
-                healthLabel === "Stable" ? "bg-lime-50 text-lime-700 border border-lime-100" :
-                "bg-rose-50 text-rose-700 border border-rose-100 animate-pulse"
-              }`}>
-                {healthLabel}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Radial Score Gauge */}
-              <div className="relative w-20 h-20 flex items-center justify-center">
+          {/* 2. DIGITAL TWIN HEALTH SCORE */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Twin Health Indices</span>
+            
+            <div className="flex items-center gap-6">
+              <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
                 <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="40" cy="40" r="34" stroke="#F1F5F0" strokeWidth="6" fill="transparent" />
-                  <circle cx="40" cy="40" r="34" stroke={droughtSim ? "#EF4444" : "#2E7D32"} strokeWidth="6" fill="transparent"
-                    strokeDasharray={2 * Math.PI * 34}
-                    strokeDashoffset={2 * Math.PI * 34 * (1 - healthScore / 100)}
-                    className="transition-all duration-700"
+                  <circle cx="56" cy="56" r="48" stroke="#F1F5F0" strokeWidth="8" fill="transparent" />
+                  <circle cx="56" cy="56" r="48" stroke="#2E7D32" strokeWidth="8" fill="transparent"
+                    strokeDasharray={2 * Math.PI * 48}
+                    strokeDashoffset={2 * Math.PI * 48 * (1 - 0.87)}
                   />
                 </svg>
-                <span className="absolute text-sm font-black text-gray-900">{healthScore}%</span>
+                <div className="absolute text-center">
+                  <span className="block text-2xl font-black text-gray-950">87%</span>
+                  <span className="text-[9px] font-black text-emerald-650 uppercase">Healthy</span>
+                </div>
               </div>
-              <div className="text-xs">
-                <h4 className="font-extrabold text-gray-800">Biophysical Health Index</h4>
-                <p className="text-[11px] text-gray-400 mt-1 leading-normal">
-                  Synthesized from leaf area ratios, chlorophyll reflectance index and root tension.
+
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-sm text-gray-900 leading-tight">Overall Twin Health</h4>
+                <p className="text-[10px] text-gray-400 leading-normal mt-1">
+                  Virtual biophysical score calibrated across moisture, chlorophyll indices, and diagnostic arrays.
                 </p>
               </div>
             </div>
 
-            {droughtSim && (
-              <div className="mt-4 flex gap-2.5 items-start bg-rose-50 border border-rose-100 rounded-2xl p-4 text-[10px] text-rose-800">
-                <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold">Drought Stress Detected</p>
-                  <p className="text-rose-700/80 mt-1 leading-normal">
-                    Low root moisture tension reduces potassium solubilization. Foliar spray recommended.
-                  </p>
+            <div className="space-y-3 pt-2 border-t border-gray-100">
+              <div className="space-y-1 text-xs font-semibold">
+                <div className="flex justify-between font-bold">
+                  <span>Soil Quality</span>
+                  <span className="text-primary">{activeSoilHealth}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${activeSoilHealth}%` }} />
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Microclimate Telemetry dials */}
-          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
-            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Environment Status</h4>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-150 text-left flex flex-col justify-between">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl w-max">
-                  <Droplet className="w-4 h-4 fill-blue-50" />
+              <div className="space-y-1 text-xs font-semibold">
+                <div className="flex justify-between font-bold">
+                  <span>Crop Health</span>
+                  <span className="text-primary">{Math.round(activeNDVI * 100)}%</span>
                 </div>
-                <div className="mt-4">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase">Soil Moisture</span>
-                  <p className="text-base font-black text-gray-800 mt-0.5">{moisture}% VWC</p>
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${activeNDVI * 100}%` }} />
                 </div>
               </div>
-
-              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-150 text-left flex flex-col justify-between">
-                <div className="p-2 bg-amber-50 text-amber-500 rounded-xl w-max">
-                  <Sun className="w-4 h-4" />
+              <div className="space-y-1 text-xs font-semibold">
+                <div className="flex justify-between font-bold">
+                  <span>Water Status</span>
+                  <span className="text-primary">{activeMoisture}%</span>
                 </div>
-                <div className="mt-4">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase">Temperature</span>
-                  <p className="text-base font-black text-gray-800 mt-0.5">{temp}</p>
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${activeMoisture}%` }} />
                 </div>
               </div>
             </div>
-
-            <div className="flex justify-between items-center text-xs py-1 border-t border-gray-100 pt-3">
-              <span className="text-gray-450 font-semibold flex items-center gap-1">
-                <Wind className="w-3.5 h-3.5 text-slate-400" /> Relative Humidity
-              </span>
-              <span className="font-bold text-gray-800">{humidity}</span>
-            </div>
           </div>
 
-          {/* AI Prediction Panel */}
-          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left relative overflow-hidden">
+          {/* 3. DIGITAL TWIN CONFIDENCE (AI Validation card) */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs text-left space-y-3.5">
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+              Twin Validation Metrics
+            </h4>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">AI Confidence</span>
+                <span className="text-xs font-black text-primary">{activePlot.confidence}%</span>
+              </div>
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">Model Accuracy</span>
+                <span className="text-xs font-black text-primary">98%</span>
+              </div>
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">Reliability</span>
+                <span className="text-xs font-black text-indigo-650 bg-indigo-50 border border-indigo-100 px-1 rounded-md">HIGH</span>
+              </div>
+            </div>
+            <p className="text-[9.5px] text-gray-450 leading-relaxed">
+              Predictions are generated using historical soil conditions, weather patterns, crop growth models, and simulated telemetry.
+            </p>
+          </div>
+
+          {/* 6. AI PREDICTION PANEL (WITH EXPLANATION) */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left relative overflow-hidden space-y-5">
             <span className="absolute top-6 right-6">
-              <Bot className="w-4 h-4 text-indigo-500 animate-bounce" />
+              <Bot className="w-5 h-5 text-indigo-500 animate-bounce" />
             </span>
-            <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 mb-4">
-              AI Yield Predictions
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+              AI Forecast Models
             </h4>
 
-            <div className="space-y-3.5 text-xs text-gray-700">
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-semibold flex items-center gap-1">
-                  <TrendingUp className="w-3.5 h-3.5 text-primary" /> Leaf Area Projection
-                </span>
-                <span className="font-bold text-emerald-600">+14% in 60d</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Expected Yield</span>
+                <p className="text-lg font-black text-gray-950">{activeYield}</p>
+                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activePlot.confidence}% Conf.</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-semibold flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-indigo-500" /> Absorption Ratio
-                </span>
-                <span className="font-bold text-gray-900">87.5% (Optimal)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400 font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Est Peak Bunch Weight
-                </span>
-                <span className="font-bold text-primary">24.2 kg / bunch</span>
+              
+              <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Harvest Ready</span>
+                <p className="text-lg font-black text-gray-950">72%</p>
+                <div className="w-full h-1 bg-gray-250 rounded-full overflow-hidden mt-2">
+                  <div className="h-full bg-primary" style={{ width: "72%" }} />
+                </div>
               </div>
             </div>
 
-            {/* Recommendation Preview link */}
-            <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center text-[10px] font-bold bg-emerald-50/50 p-3 rounded-xl border border-emerald-100/50">
-              <div className="text-left">
-                <span className="text-primary font-bold uppercase tracking-wider block text-[8px]">NPK Mix Advisories</span>
-                <span className="text-gray-750 font-semibold block mt-0.5">Mix-B (K-High) recommended</span>
+            {/* AI Explanation / Why */}
+            <div className="space-y-3.5 text-xs text-gray-700 font-semibold pt-2 border-t border-gray-100">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Disease Probability</span>
+                <span className="text-emerald-600 font-black">{activeDiseasePct}% ({activeDiseaseRisk})</span>
               </div>
-              <span className="text-primary hover:text-emerald-700 flex items-center gap-0.5 cursor-pointer">
-                Prescription <Clock className="w-3 h-3" />
-              </span>
+              
+              <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
+                <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
+                <ul className="list-disc pl-3.5 space-y-1 leading-normal">
+                  <li>{activePlot.whyDisease}</li>
+                  <li>Stable ambient humidity index ({64}%)</li>
+                  <li>NDVI greenness ratio meets chlorophyll expectations</li>
+                </ul>
+              </div>
             </div>
           </div>
 
-          {/* Sandbox controls toggles */}
-          <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xs text-left space-y-4">
-            <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5" /> Telemetry Sandbox Toggles
+          {/* 4. SOIL HEALTH ANALYSIS */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+              Soil Chemical Matrix
             </h4>
             
-            <div className="flex justify-between items-center py-0.5">
-              <div>
-                <p className="text-xs font-bold">Simulate Severe Drought</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Drop soil VWC to 22%</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDroughtSim(!droughtSim)}
-                className={`w-10 h-6 rounded-full p-1 transition-all cursor-pointer border-0 ${
-                  droughtSim ? "bg-rose-500 flex justify-end" : "bg-slate-800 flex justify-start"
-                }`}
-              >
-                <span className="w-4 h-4 bg-white rounded-full block shadow-xs" />
-              </button>
+            <div className="space-y-3 text-xs">
+              {soilNutrients.map((nut) => (
+                <div key={nut.label} className="space-y-1.5">
+                  <div className="flex justify-between font-bold text-gray-700">
+                    <span>{nut.label}</span>
+                    <span className="text-gray-900">{nut.val}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${nut.color}`} style={{ width: `${nut.pct}%` }} />
+                  </div>
+                  <p className="text-[9px] text-gray-450 leading-none">{nut.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 9. AI RECOMMENDATION */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
+                <FlaskConical className="w-4.5 h-4.5 text-primary" /> AI Agronomy Advisory
+              </h4>
+              <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                {activePlot.confidence}% Confidence
+              </span>
             </div>
 
-            <div className="flex justify-between items-center py-0.5">
-              <div>
-                <p className="text-xs font-bold">Custom NPK Fertilizer Boost</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Enrich soil chemical concentration</p>
+            <div className="space-y-3 text-xs text-gray-700 font-semibold">
+              <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
+                <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
+                <p className="text-gray-900 font-black leading-snug">
+                  {activePlot.recommendedAction}
+                </p>
               </div>
+              <p className="text-[10px] text-gray-450 leading-relaxed">
+                {activePlot.advisoryReason}
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
               <button
-                type="button"
-                onClick={() => setFertilizerSim(!fertilizerSim)}
-                className={`w-10 h-6 rounded-full p-1 transition-all cursor-pointer border-0 ${
-                  fertilizerSim ? "bg-emerald-500 flex justify-end" : "bg-slate-800 flex justify-start"
-                }`}
+                onClick={() => onNavigate && onNavigate("Recommendations")}
+                className="flex-1 bg-primary hover:bg-[#235F26] text-white font-extrabold py-2.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 border-0 cursor-pointer"
               >
-                <span className="w-4 h-4 bg-white rounded-full block shadow-xs" />
+                View Advisory
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
+              <button
+                onClick={() => triggerToast("Compiling PDF fertilizer advisory report...", "info")}
+                className="px-3.5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-250 rounded-xl text-xs font-bold text-gray-800 cursor-pointer"
+              >
+                Download PDF
+              </button>
+            </div>
+          </div>
+
+          {/* 4. SENSOR HEALTH PANEL */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+              Sensor Operational Status
+            </h4>
+            
+            <div className="grid grid-cols-1 gap-3.5 text-xs font-semibold text-gray-700">
+              <div className="flex justify-between items-center">
+                <span>Sensors Connected</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 18 / 18</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Weather Feed</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Connected</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Satellite Feed</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Active (Sentinel-2)</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Drone Sync</span>
+                <span className="inline-flex items-center gap-1.5 text-indigo-650"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Standby</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>AI Engine</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Running</span>
+              </div>
             </div>
           </div>
 
         </div>
 
       </div>
+
+      {/* ================= 9. EXPORT REPORT MODAL ================= */}
+      <AnimatePresence>
+        {isExportOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black pointer-events-auto"
+              onClick={() => setIsExportOpen(false)}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-[32px] border-2 border-gray-200 shadow-2xl p-6 md:p-8 max-w-md w-full relative z-10 text-left"
+            >
+              <button
+                onClick={() => setIsExportOpen(false)}
+                className="absolute top-6 right-6 p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors border-0 cursor-pointer bg-transparent"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <h3 className="text-lg font-black text-gray-900 mb-2">Export Twin Diagnostics</h3>
+              <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                Compile virtual crop models and spatial sensor telemetry into shareable reports.
+              </p>
+
+              {isExportLoading ? (
+                <div className="text-center py-8 space-y-4">
+                  <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
+                  <p className="text-xs font-bold text-gray-600">Compiling database payloads & plots maps...</p>
+                </div>
+              ) : (
+                <form onSubmit={handleExportSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Select Report Format</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="border border-gray-250 p-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-gray-50">
+                        <input type="radio" name="format" defaultChecked />
+                        <span className="text-xs font-bold text-gray-800">Export PDF</span>
+                      </label>
+                      <label className="border border-gray-250 p-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-gray-50">
+                        <input type="radio" name="format" />
+                        <span className="text-xs font-bold text-gray-800">Export CSV</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Analytical Scope</label>
+                    <div className="space-y-2.5">
+                      <label className="flex items-center gap-2.5 text-xs font-semibold text-gray-700 cursor-pointer">
+                        <input type="checkbox" defaultChecked />
+                        <span>Generate Executive Summary</span>
+                      </label>
+                      <label className="flex items-center gap-2.5 text-xs font-semibold text-gray-700 cursor-pointer">
+                        <input type="checkbox" defaultChecked />
+                        <span>Generate Agronomy Recommendation Report</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer mt-4"
+                  >
+                    Compile & Download
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </motion.div>
   );
 };
