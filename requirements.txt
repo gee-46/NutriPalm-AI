@@ -1,0 +1,30 @@
+# ==============================================================================
+# NutriPalm AI - Installation and System Requirements Guide
+# ==============================================================================
+# To get started, run the following setup commands in your terminal:
+#
+#   1. Install dependencies:
+#      npm install
+#
+#   2. Start the local development server:
+#      npm run dev
+#
+#   3. Access the dashboard:
+#      http://localhost:5173/
+# ==============================================================================
+
+# Core Prerequisites
+Node.js >= 18
+npm >= 9
+
+# Major Technologies & Framework Versions
+React == 19.2.7
+React DOM == 19.2.7
+TypeScript == 6.0.2
+Vite == 8.1.1
+
+# Design & Animation Systems
+Tailwind CSS == 4.3.3
+@tailwindcss/vite == 4.3.3
+Framer Motion == 12.42.2
+Lucide React == 1.26.0
