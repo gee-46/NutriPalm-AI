@@ -71,56 +71,61 @@ A unified digital platform where every farm plot has a Digital Twin — combinin
 
 ## ✨ Features
 
+NutriPalm AI is equipped with a high-fidelity suite of interactive agronomist screens, custom data visualizations, and telemetry simulators:
+
 <table>
 <tr>
-<td width="33%" valign="top">
+<td width="50%" valign="top">
 
-### 🌾 Farmer Management
-- Farmer registration & profiles
-- Digital farmer records
-- Farm profile management
-
-</td>
-<td width="33%" valign="top">
-
-### 🗺️ Plot Management
-- Farm boundary visualization
-- GPS location support
-- Digital plot creation
+### 👨‍🌾 Farmer CRM Registry
+- **Search & Filters**: Match landholders by name/ID, and filter by crop type, district, acreage, and active status.
+- **Dynamic Table**: Interactive records showing avatars, soil indexes, last inspections, and status badges.
+- **Profile Detail Drawer**: Slide-out panel detailing contacts, twin parameters, and NPK historical advisories.
+- **Wizard Modal**: Multi-step popup modal guiding users through farmer info, plots specs, and success validation.
 
 </td>
-<td width="33%" valign="top">
+<td width="50%" valign="top">
 
-### 🌱 Digital Twin
-- Virtual farm representation
-- Crop & soil metadata
-- Live farm state modeling
+### 🛰️ Farm Plot GIS Management
+- **Interactive SVG Map**: 5 distinct plots color-coded by crop vigor index.
+- **GIS Satellite Toolbar**: Interactive layers for satellite maps, terrain, boundaries, NDVI index, and zooming.
+- **Environmental Snapshot**: Solar radiation, UV index, temperatures, and wind metrics.
 
 </td>
 </tr>
 <tr>
-<td width="33%" valign="top">
+<td width="50%" valign="top">
 
-### 📄 Soil Intelligence
-- Soil report upload
-- Nutrient visualization
-- Soil health indicators
-
-</td>
-<td width="33%" valign="top">
-
-### 🤖 AI Recommendation Engine
-- Fertilizer recommendations
-- Nutrient deficiency analysis
-- Smart agricultural insights
+### 🌴 Flagship Digital Twin Intelligence
+- **Biophysical palm model**: Interactive oil palm crop with hover hotspots for Temperature, Moisture, NDVI, and Foliar health.
+- **Simulation Switcher**: Toggles mock telemetry calculations between **Past**, **Current**, and **Prediction** modes.
+- **NDVI Trend Chart**: SVG line chart tracking vegetation levels with 7d/30d/90d filters.
 
 </td>
-<td width="33%" valign="top">
+<td width="50%" valign="top">
 
-### 📊 Analytics Dashboard
-- Farm statistics
-- Recommendation history
-- Interactive visual charts
+### 🧪 Soil Report AI OCR Diagnostic
+- **Drag-and-Drop Chamber**: Mock document dropzone with a pre-loaded sample report option.
+- **Holographic OCR Scanner**: Scanning green laser line overlay simulating text extraction.
+- **Live Diagnostics Console**: Scrolling terminal logs tracking raw coordinates and chemical extraction counts.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 💡 AI Crop Recommendation Engine
+- **Dosage Plan**: Rings/foliar scheduling detailing quantities, application methods, and times.
+- **ROI Valuation**: Capital costs ($225), revenue gains ($540), and estimated **140% ROI** with a 28-day break-even period.
+- **Timeline Roadmap**: Implementation calendar outlining actions from Day 1 to Day 45.
+
+</td>
+<td width="50%" valign="top">
+
+### 📈 AI Farm Analytics Dashboard
+- **Six KPI Sparklines**: Count-ups for Farmers, Plots, Prescriptions, Health, Yields, and Active IoT Nodes.
+- **Crop Doughnut Chart**: Slice segments highlighting oil palm, rice, sugarcane, and cocoa area splits.
+- **Farm Health Heatmap**: Color-coded blocks mapping farm health. Hovering reveals landholder and crop type details.
 
 </td>
 </tr>
@@ -209,16 +214,19 @@ NutriPalm AI follows a modern, startup-grade design system inspired by products 
 ## 📂 Project Structure
 
 ```
-src/
-├── components/     # Reusable UI building blocks
-├── pages/          # Route-level views
-├── layouts/        # Page and section layouts
-├── assets/         # Images, icons, static media
-├── hooks/          # Custom React hooks
-├── utils/          # Helper functions & utilities
-├── animations/     # Framer Motion animation configs
-├── constants/      # App-wide constants
-└── styles/         # Global and Tailwind styles
+nutripalm-ai/
+├── public/              # Static public assets & logos
+├── src/                 # Application source
+│   ├── assets/          # Project specific icons & graphics
+│   ├── components/      # Reusable front-end UI structures
+│   │   └── prototype/   # High-fidelity console screen modules
+│   ├── App.tsx          # Main route state routing shell
+│   ├── index.css        # Centralized Geist Design System styling
+│   └── main.tsx         # Project react entrypoint
+├── docs/                # Built compilation walkthrough logs
+├── package.json         # Retained production dependencies lists
+├── requirements.txt     # System requirements & prerequisites documentation
+└── README.md            # Incubation proposal & specifications
 ```
 
 <br/>
@@ -287,9 +295,9 @@ npm run dev
 
 ## 📌 Current Status
 
-🚧 **Phase 1 Prototype in Development**
+✅ **Phase 1 Incubation Prototype Complete & Finalized**
 
-This repository currently showcases the user experience and product demonstration layer. Backend functionality, AI services, and third-party integrations will be introduced in future development phases.
+This repository currently hosts the fully polished, high-fidelity AgriTech SaaS console showing all active visual simulation controls, OCR scanner terminals, Digital Twin overlays, and multi-step wizards, verified for production compiler runs.
 
 <br/>
 
