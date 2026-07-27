@@ -27,6 +27,7 @@ import { SoilReportScreen } from "./prototype/SoilReportScreen";
 import { RecommendationScreen } from "./prototype/RecommendationScreen";
 import { AnalyticsScreen } from "./prototype/AnalyticsScreen";
 import { SettingsScreen } from "./prototype/SettingsScreen";
+import { NotFoundScreen } from "./prototype/NotFoundScreen";
 import { 
   DashboardSkeleton, 
   FarmerTableSkeleton, 
@@ -145,47 +146,75 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     }, 3000);
   };
 
-  // Shared state: pre-populated list of farmers
+  // Shared state: pre-populated list of farmers with rich properties
   const [farmers, setFarmers] = useState<Farmer[]>([
     {
       id: "F-01",
       name: "Swaminathan Gowda",
       village: "Rangampeta",
+      district: "Dakshina Kannada",
       contact: "+91 94401 23456",
+      email: "swamy.g@gmail.com",
       crop: "Oil Palm",
       area: 12.5,
       joinDate: "June 2024",
-      yield: "14.2 tons/ac"
+      yield: "14.2 tons/ac",
+      soilHealth: 88,
+      lastInspection: "2 hours ago",
+      status: "Active",
+      digitalTwin: "Online",
+      lastRecommendation: "NPK Mix-B"
     },
     {
       id: "F-02",
       name: "K. Ramachandra Rao",
       village: "Kothagudem",
+      district: "Bhadradri Kothagudem",
       contact: "+91 98480 98765",
+      email: "ramachandra.k@gmail.com",
       crop: "Oil Palm",
       area: 8.2,
       joinDate: "Sept 2024",
-      yield: "13.0 tons/ac"
+      yield: "13.0 tons/ac",
+      soilHealth: 72,
+      lastInspection: "5 hours ago",
+      status: "Monitoring",
+      digitalTwin: "Synced",
+      lastRecommendation: "Potash supplement"
     },
     {
       id: "F-03",
       name: "M. Devamma",
       village: "Chittoor",
+      district: "Chittoor",
       contact: "+91 99123 45678",
+      email: "devamma.m@gmail.com",
       crop: "Coconut Palm",
       area: 5.0,
       joinDate: "Jan 2025",
-      yield: "6.5 tons/ac"
+      yield: "6.5 tons/ac",
+      soilHealth: 55,
+      lastInspection: "1 day ago",
+      status: "Attention",
+      digitalTwin: "Warning",
+      lastRecommendation: "Slow-Release NPK-A"
     },
     {
       id: "F-04",
       name: "Rajesh Kumar",
       village: "Hassan",
+      district: "Hassan",
       contact: "+91 94900 11223",
+      email: "rajesh.k@gmail.com",
       crop: "Cocoa",
       area: 7.8,
       joinDate: "March 2025",
-      yield: "2.1 tons/ac"
+      yield: "2.1 tons/ac",
+      soilHealth: 38,
+      lastInspection: "2 days ago",
+      status: "Inactive",
+      digitalTwin: "Offline",
+      lastRecommendation: "Emergency NPK dose"
     }
   ]);
 
@@ -266,8 +295,9 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         return (
           <FarmerScreen
             farmers={farmers}
-            onAddFarmerClick={() => changeScreen("Add Farmer")}
-            onViewProfileClick={() => changeScreen("Profile")}
+            setFarmers={setFarmers}
+            onNavigate={changeScreen}
+            showToast={showToast}
           />
         );
       case "Add Farmer":
@@ -282,15 +312,23 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           <FarmPlotScreen 
             onPlotCreated={() => showToast("New GIS boundary registered for Plot 3B.", "success")}
             onSync={() => showToast("Satellite GPS coordinates synchronized.", "info")}
+            onNavigate={changeScreen}
+            showToast={showToast}
           />
         );
       case "Digital Twin":
-        return <DigitalTwinScreen />;
+        return (
+          <DigitalTwinScreen 
+            onNavigate={changeScreen}
+            showToast={showToast}
+          />
+        );
       case "Soil Reports":
         return (
           <SoilReportScreen
             onRecommendationClick={() => changeScreen("Recommendations")}
             onUploadSuccess={handleSoilReportUploaded}
+            showToast={showToast}
           />
         );
       case "Recommendations":
@@ -316,7 +354,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           />
         );
       default:
-        return <DashboardScreen stats={stats} onNavigate={changeScreen} />;
+        return <NotFoundScreen onBack={() => changeScreen("Dashboard")} />;
     }
   };
 
