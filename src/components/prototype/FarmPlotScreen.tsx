@@ -1,43 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, RefreshCw, MapPin, Layers, Sparkles, Activity, 
   Plus, Download, X, CheckCircle2, ChevronRight, Wind, Sun, 
   Thermometer, Droplets, FileText, Cpu, FlaskConical
 } from "lucide-react";
+import { usePlots, type Plot, getStatusColor, getStatusDotColor } from "../../data/plots";
+import LeafletMapPicker, { type BoundaryData } from "./LeafletMapPicker";
+import { reverseGeocode, getElevation, parseGeoJSONFile, type GeoJSONPolygon } from "../../lib/geo";
 
-interface PlotDetail {
-  id: string;
-  name: string;
-  farmer: string;
-  area: number;
-  crop: string;
-  stage: string;
-  age: number;
-  ndvi: number;
-  moisture: number;
-  soil: string;
-  soilHealth: number;
-  lastInspection: string;
-  irrigation: string;
-  elevation: number; // in meters
-  coordinates: string[];
-  svgPath: string;
-  fillGradient: string;
-  strokeColor: string;
-  glowColor: string;
-  status: "Healthy" | "Moderate" | "Needs Attention" | "Critical";
-  statusColor: string;
-  temp: string;
-  humidity: string;
-  rainProb: string;
-  windSpeed: string;
-  solarRad: string;
-  uvIndex: string;
-}
 
 // Premium Animated Counter Component
-const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: number }> = ({ 
+export const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: number }> = ({ 
   value, 
   suffix = "", 
   decimals = 0 
@@ -108,178 +82,22 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     irrigation: "Precision Drip"
   });
 
-  const plots: PlotDetail[] = [
-    {
-      id: "plot-1",
-      name: "Swamy North Plot (Plot 2A)",
-      farmer: "Swaminathan Gowda",
-      area: 12.5,
-      crop: "Oil Palm",
-      stage: "Flowering",
-      age: 6,
-      ndvi: 0.82,
-      moisture: 42,
-      soil: "Loamy (Optimal)",
-      soilHealth: 88,
-      lastInspection: "2 hours ago",
-      irrigation: "Precision Drip (94%)",
-      elevation: 152,
-      status: "Healthy",
-      statusColor: "text-emerald-600 bg-emerald-50 border border-emerald-100",
-      temp: "32°C",
-      humidity: "62%",
-      rainProb: "15%",
-      windSpeed: "11 km/h",
-      solarRad: "340 W/m²",
-      uvIndex: "2.4",
-      coordinates: [
-        "17.3881° N, 78.4892° E",
-        "17.3895° N, 78.4910° E",
-        "17.3872° N, 78.4925° E",
-        "17.3860° N, 78.4900° E"
-      ],
-      svgPath: "M 80 40 L 220 30 L 260 110 L 130 120 Z",
-      fillGradient: "url(#healthyGrad)",
-      strokeColor: "#10b981",
-      glowColor: "rgba(16, 185, 129, 0.4)"
-    },
-    {
-      id: "plot-2",
-      name: "Kothagudem South Field",
-      farmer: "K. Ramachandra Rao",
-      area: 8.2,
-      crop: "Oil Palm",
-      stage: "Flowering",
-      age: 8,
-      ndvi: 0.74,
-      moisture: 38,
-      soil: "Red Clayey",
-      soilHealth: 72,
-      lastInspection: "5 hours ago",
-      irrigation: "Precision Drip",
-      elevation: 145,
-      status: "Moderate",
-      statusColor: "text-amber-600 bg-amber-50 border border-amber-100",
-      temp: "31°C",
-      humidity: "64%",
-      rainProb: "10%",
-      windSpeed: "12 km/h",
-      solarRad: "330 W/m²",
-      uvIndex: "2.1",
-      coordinates: [
-        "17.3898° N, 78.4912° E",
-        "17.3920° N, 78.4930° E",
-        "17.3905° N, 78.4950° E",
-        "17.3885° N, 78.4928° E"
-      ],
-      svgPath: "M 235 28 L 360 20 L 380 100 L 270 105 Z",
-      fillGradient: "url(#stableGrad)",
-      strokeColor: "#84cc16",
-      glowColor: "rgba(132, 204, 22, 0.3)"
-    },
-    {
-      id: "plot-3",
-      name: "Devamma Palm Zone 1",
-      farmer: "M. Devamma",
-      area: 5.0,
-      crop: "Coconut Palm",
-      stage: "Flowering",
-      age: 4,
-      ndvi: 0.68,
-      moisture: 46,
-      soil: "Sandy Clay",
-      soilHealth: 55,
-      lastInspection: "1 day ago",
-      irrigation: "Drip Irrigation",
-      elevation: 160,
-      status: "Needs Attention",
-      statusColor: "text-orange-600 bg-orange-50 border border-orange-100",
-      temp: "33°C",
-      humidity: "60%",
-      rainProb: "18%",
-      windSpeed: "9 km/h",
-      solarRad: "350 W/m²",
-      uvIndex: "2.8",
-      coordinates: [
-        "17.3855° N, 78.4902° E",
-        "17.3868° N, 78.4924° E",
-        "17.3848° N, 78.4935° E",
-        "17.3838° N, 78.4915° E"
-      ],
-      svgPath: "M 140 125 L 255 118 L 285 185 L 160 190 Z",
-      fillGradient: "url(#deficientGrad)",
-      strokeColor: "#f59e0b",
-      glowColor: "rgba(245, 158, 11, 0.3)"
-    },
-    {
-      id: "plot-4",
-      name: "Swamy East Plantation",
-      farmer: "Swaminathan Gowda",
-      area: 7.8,
-      crop: "Oil Palm",
-      stage: "Fruiting",
-      age: 5,
-      ndvi: 0.79,
-      moisture: 40,
-      soil: "Loamy (Optimal)",
-      soilHealth: 79,
-      lastInspection: "1 day ago",
-      irrigation: "Precision Drip",
-      elevation: 152,
-      status: "Healthy",
-      statusColor: "text-emerald-600 bg-emerald-50 border border-emerald-100",
-      temp: "32°C",
-      humidity: "62%",
-      rainProb: "15%",
-      windSpeed: "11 km/h",
-      solarRad: "340 W/m²",
-      uvIndex: "2.4",
-      coordinates: [
-        "17.3870° N, 78.4927° E",
-        "17.3883° N, 78.4948° E",
-        "17.3860° N, 78.4960° E",
-        "17.3850° N, 78.4938° E"
-      ],
-      svgPath: "M 278 112 L 390 105 L 430 180 L 290 175 Z",
-      fillGradient: "url(#stableGrad)",
-      strokeColor: "#84cc16",
-      glowColor: "rgba(132, 204, 22, 0.3)"
-    },
-    {
-      id: "plot-5",
-      name: "Hassan Cocoa Plot",
-      farmer: "Rajesh Kumar",
-      area: 6.0,
-      crop: "Cocoa",
-      stage: "Vegetative",
-      age: 3,
-      ndvi: 0.55,
-      moisture: 28,
-      soil: "Sandy Loam",
-      soilHealth: 38,
-      lastInspection: "2 days ago",
-      irrigation: "Manual Drip",
-      elevation: 138,
-      status: "Critical",
-      statusColor: "text-rose-650 bg-rose-50 border border-rose-100",
-      temp: "30°C",
-      humidity: "66%",
-      rainProb: "22%",
-      windSpeed: "14 km/h",
-      solarRad: "310 W/m²",
-      uvIndex: "1.9",
-      coordinates: [
-        "17.3912° N, 78.4948° E",
-        "17.3930° N, 78.4965° E",
-        "17.3915° N, 78.4985° E",
-        "17.3895° N, 78.4962° E"
-      ],
-      svgPath: "M 380 20 L 470 15 L 490 85 L 395 95 Z",
-      fillGradient: "url(#criticalGrad)",
-      strokeColor: "#e11d48",
-      glowColor: "rgba(225, 29, 72, 0.4)"
-    }
-  ];
+  // Phase 2 wizard state — real boundary + geocoding
+  const [wizardBoundary, setWizardBoundary] = useState<BoundaryData | null>(null);
+  const [wizardAreaUnit, setWizardAreaUnit] = useState<"acres" | "hectares">("acres");
+  const [isGeocodingStep3, setIsGeocodingStep3] = useState(false);
+  const [step3Data, setStep3Data] = useState<{
+    areaAcres: number;
+    village: string;
+    district: string;
+    elevation: number;
+    geocodeOk: boolean;
+  } | null>(null);
+  const [importedGeoJSON, setImportedGeoJSON] = useState<GeoJSONPolygon | undefined>(undefined);
+  const geoJSONFileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Shared store ─────────────────────────────────────────────────────────
+  const { plots, addPlot: storAddPlot } = usePlots();
 
   const selectedPlot = plots.find((p) => p.id === selectedPlotId) || plots[0];
 
@@ -308,15 +126,117 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     }, 800);
   };
 
-  const handleAddPlotSubmit = (e: React.FormEvent) => {
+  const handleAddPlotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPlotData.name || !newPlotData.area) {
-      triggerToast("Validation Failed: Please fill Plot Name and Area.", "warning");
+    if (!newPlotData.name) {
+      triggerToast("Validation Failed: Please fill Plot Name.", "warning");
       return;
     }
-    triggerToast(`Plot "${newPlotData.name}" boundary created successfully.`, "success");
+    if (!wizardBoundary && !newPlotData.area) {
+      triggerToast("Validation Failed: Please draw a boundary or enter an area.", "warning");
+      return;
+    }
+
+    const areaAcres = wizardBoundary
+      ? wizardBoundary.areaAcres
+      : parseFloat(newPlotData.area as string) || 0;
+
+    // Kick off geocoding + elevation while going to step 3
+    setAddStep(3);
+    setIsGeocodingStep3(true);
+
+    let village = "";
+    let district = "";
+    let elevation = 0;
+    let geocodeOk = true;
+
+    if (wizardBoundary?.centroid) {
+      const { lat, lng } = wizardBoundary.centroid;
+      try {
+        const [geoResult, elevResult] = await Promise.allSettled([
+          reverseGeocode(lat, lng),
+          getElevation(lat, lng),
+        ]);
+        if (geoResult.status === "fulfilled") {
+          village = geoResult.value.village;
+          district = geoResult.value.district;
+        } else {
+          geocodeOk = false;
+        }
+        if (elevResult.status === "fulfilled") {
+          elevation = elevResult.value;
+        }
+      } catch {
+        geocodeOk = false;
+      }
+    }
+
+    if (!geocodeOk) {
+      triggerToast("Location data unavailable — plot saved with blank fields, editable later.", "info");
+    }
+
+    setStep3Data({ areaAcres, village, district, elevation, geocodeOk });
+    setIsGeocodingStep3(false);
+
+    // Persist to shared store
+    const status: Plot["status"] = "Healthy";
+    const coordStrings = wizardBoundary
+      ? (wizardBoundary.geoJSON.coordinates[0] as number[][]).map(
+          ([lng, lat]) => `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? "E" : "W"}`
+        )
+      : [newPlotData.coordinates];
+
+    storAddPlot({
+      name: newPlotData.name,
+      farmer: newPlotData.farmer,
+      crop: newPlotData.crop,
+      stage: "Seedling",
+      age: 0,
+      area: areaAcres,
+      elevation,
+      village: village || undefined,
+      district: district || undefined,
+      coordinates: coordStrings,
+      geoJSON: wizardBoundary?.geoJSON,
+      soil: newPlotData.soilType,
+      irrigation: newPlotData.irrigation,
+      status,
+      statusColor: getStatusColor(status),
+      statusDotColor: getStatusDotColor(status),
+      svgPath: "",
+      fillGradient: "url(#healthyGrad)",
+      strokeColor: "#10b981",
+      glowColor: "rgba(16, 185, 129, 0.4)",
+      boundaryMapped: !!wizardBoundary,
+      soilReportAttached: false,
+    });
+
     if (onPlotCreated) onPlotCreated();
-    setAddStep(3); // success step
+  };
+
+  // GeoJSON file import handler
+  const handleGeoJSONImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const result = parseGeoJSONFile(ev.target?.result as string);
+        setImportedGeoJSON(result.geoJSON);
+        if (result.name && !newPlotData.name) {
+          setNewPlotData(prev => ({ ...prev, name: result.name! }));
+        }
+        // Open wizard at step 2 with the imported boundary
+        setAddStep(2);
+        setIsAddModalOpen(true);
+        triggerToast("GeoJSON boundary loaded — review in the map before confirming.", "success");
+      } catch (err) {
+        triggerToast(`Invalid GeoJSON: ${(err as Error).message}`, "warning");
+      }
+    };
+    reader.readAsText(file);
+    // reset so same file can be re-imported
+    e.target.value = "";
   };
 
   return (
@@ -343,6 +263,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <button
             onClick={() => {
               setAddStep(1);
+              setWizardBoundary(null);
+              setImportedGeoJSON(undefined);
+              setStep3Data(null);
               setNewPlotData({
                 name: "",
                 farmer: "Swaminathan Gowda",
@@ -360,8 +283,16 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             Add Plot
           </button>
           
+          {/* Hidden GeoJSON file input */}
+          <input
+            ref={geoJSONFileInputRef}
+            type="file"
+            accept=".geojson,.json"
+            onChange={handleGeoJSONImport}
+            className="hidden"
+          />
           <button
-            onClick={() => triggerToast("Importing Shapefile boundary coordinates...", "info")}
+            onClick={() => geoJSONFileInputRef.current?.click()}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all text-xs cursor-pointer"
           >
             <Download className="w-4 h-4 text-gray-500" />
@@ -894,13 +825,13 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               <div className="space-y-1.5 pt-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-400">Soil Health Score</span>
-                  <span className="text-primary font-bold">{selectedPlot.soilHealth}%</span>
+                  <span className="text-primary font-bold">{selectedPlot.soilHealth.Current}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div 
                     className="h-full bg-primary" 
                     initial={{ width: 0 }}
-                    animate={{ width: `${selectedPlot.soilHealth}%` }}
+                    animate={{ width: `${selectedPlot.soilHealth.Current}%` }}
                     transition={{ duration: 0.8 }}
                   />
                 </div>
@@ -961,7 +892,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             <div className="space-y-2.5">
               <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">AI Boundary Observations</h4>
               <div className="space-y-2 text-xs text-gray-700">
-                {selectedPlot.soilHealth < 60 && (
+                {selectedPlot.soilHealth.Current < 60 && (
                   <div className="p-2.5 bg-red-50/50 border border-red-100 rounded-xl flex gap-2 items-start">
                     <span className="text-red-500 mt-0.5">⚠️</span>
                     <div className="space-y-0.5">
@@ -1087,17 +1018,63 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               {addStep === 3 ? (
                 <div className="text-center py-6 space-y-5">
                   <div className="w-16 h-16 bg-emerald-50 text-primary rounded-full flex items-center justify-center mx-auto shadow-xs border border-emerald-100/50">
-                    <CheckCircle2 className="w-9 h-9" />
+                    {isGeocodingStep3 ? (
+                      <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                    ) : (
+                      <CheckCircle2 className="w-9 h-9" />
+                    )}
                   </div>
                   <div className="space-y-1.5 max-w-sm mx-auto">
                     <h3 className="text-lg font-black text-gray-900">GIS Boundary Registered Successfully</h3>
-                    <p className="text-xs text-gray-500">
-                      The polygon coordinates are mapped on Sentinel-2 overlays. Calibration twin simulations will launch.
-                    </p>
+                    {isGeocodingStep3 ? (
+                      <p className="text-xs text-gray-500">Fetching location data and elevation&hellip;</p>
+                    ) : step3Data ? (
+                      <div className="text-left space-y-2 mt-3">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Computed Area</p>
+                            <p className="font-black text-gray-900 mt-0.5">
+                              {step3Data.areaAcres.toFixed(2)} ac
+                              {" "}
+                              <span className="text-gray-400 font-semibold text-[9px]">
+                                ({(step3Data.areaAcres * 0.404686).toFixed(2)} ha)
+                              </span>
+                            </p>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Elevation</p>
+                            <p className="font-black text-gray-900 mt-0.5">
+                              {step3Data.elevation ? `${step3Data.elevation} m MSL` : "–"}
+                            </p>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Village</p>
+                            <p className="font-black text-gray-900 mt-0.5">{step3Data.village || "–"}</p>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">District</p>
+                            <p className="font-black text-gray-900 mt-0.5">{step3Data.district || "–"}</p>
+                          </div>
+                        </div>
+                        {!step3Data.geocodeOk && (
+                          <p className="text-[10px] text-amber-600 font-semibold">
+                            ⚠️ Location data unavailable — editable after creation.
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          Boundary mapped. Digital Twin telemetry will populate after the first satellite scan cycle.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500">
+                        Plot saved. Digital Twin telemetry will populate after the first satellite scan cycle.
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={() => setIsAddModalOpen(false)}
-                    className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
+                    disabled={isGeocodingStep3}
+                    className="w-full bg-primary hover:bg-[#235F26] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
                   >
                     Done
                   </button>
@@ -1168,25 +1145,48 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                     </div>
                   )}
 
-                  {/* Step 2: Location specs */}
+                  {/* Step 2: Location specs — real map picker */}
                   {addStep === 2 && (
                     <div className="space-y-4">
                       <div className="space-y-1 bg-gray-50 p-3 rounded-2xl border border-gray-150 mb-2">
-                        <h4 className="text-xs font-extrabold text-gray-800">Location Specs</h4>
-                        <p className="text-[11px] text-gray-450">Please set location coordinates and types.</p>
+                        <h4 className="text-xs font-extrabold text-gray-800">Draw Boundary on Map</h4>
+                        <p className="text-[11px] text-gray-450">Use the polygon tool to trace your plot boundary, or use your GPS location to center the map.</p>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">GNSS Coordinate Anchor *</label>
-                        <input
-                          required
-                          type="text"
-                          value={newPlotData.coordinates}
-                          onChange={(e) => setNewPlotData(prev => ({ ...prev, coordinates: e.target.value }))}
-                          placeholder="e.g. 17.3912° N, 78.4948° E"
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 text-xs focus:ring-2 focus:ring-primary/10 focus:border-primary font-semibold"
-                        />
+                      {/* Area unit toggle */}
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Area Unit</label>
+                        <div className="inline-flex bg-gray-50 border border-gray-200 rounded-xl p-0.5">
+                          {(["acres", "hectares"] as const).map((u) => (
+                            <button
+                              key={u}
+                              type="button"
+                              onClick={() => setWizardAreaUnit(u)}
+                              className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                wizardAreaUnit === u ? "bg-white text-primary shadow-xs" : "text-gray-500"
+                              }`}
+                            >
+                              {u}
+                            </button>
+                          ))}
+                        </div>
                       </div>
+
+                      {/* Real Leaflet map */}
+                      <LeafletMapPicker
+                        onBoundaryChange={(data) => {
+                          setWizardBoundary(data);
+                          if (data) {
+                            const areaDisplay = wizardAreaUnit === "hectares"
+                              ? `${(data.areaAcres * 0.404686).toFixed(2)}`
+                              : `${data.areaAcres.toFixed(2)}`;
+                            setNewPlotData(prev => ({ ...prev, area: areaDisplay }));
+                          }
+                        }}
+                        initialGeoJSON={importedGeoJSON}
+                        areaUnit={wizardAreaUnit}
+                        showToast={showToast}
+                      />
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -1241,10 +1241,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          if (newPlotData.name && newPlotData.area) {
+                          if (newPlotData.name) {
                             setAddStep(2);
                           } else {
-                            triggerToast("Validation Failed: Please fill Name and Area.", "warning");
+                            triggerToast("Validation Failed: Please fill Plot Name.", "warning");
                           }
                         }}
                         className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm"
@@ -1255,7 +1255,12 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                     ) : (
                       <button
                         type="submit"
-                        className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm animate-pulse"
+                        disabled={!wizardBoundary}
+                        className={`px-5 py-2.5 font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 shadow-sm transition-all ${
+                          !wizardBoundary
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-primary hover:bg-[#235F26] text-white cursor-pointer animate-pulse"
+                        }`}
                       >
                         Create Plot
                       </button>
