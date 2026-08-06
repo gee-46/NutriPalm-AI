@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Sun, Bell, Globe, Building, Check, Save } from "lucide-react";
+import { supabase } from "../../lib/supabaseClient";
 
 interface SettingsScreenProps {
   activeSection?: string;
@@ -17,8 +18,123 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
     role: "Lead Agronomist",
     email: "ramana@samruddhi.org",
     phone: "+91 94401 98765",
+    district: "",
+    state: "",
+    village: "",
+    preferred_language: "English",
     hub: "Chittoor Regional Hub"
   });
+
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFields, setEditFields] = useState({
+    fullName: "",
+    phoneNumber: "",
+    userRole: "Agronomist",
+    state: "",
+    district: "",
+    village: "",
+    preferredLanguage: "English"
+  });
+
+  // Fetch live profile details on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) return;
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching live profile:", error);
+          setProfile(prev => ({
+            ...prev,
+            email: user.email || prev.email,
+          }));
+        } else if (data) {
+          setProfile({
+            name: data.full_name || "",
+            role: data.user_role || "Agronomist",
+            email: data.email || user.email || "",
+            phone: data.phone_number || "",
+            district: data.district || "",
+            state: data.state || "",
+            village: data.village || "",
+            preferred_language: data.preferred_language || "English",
+            hub: data.organization_name || "Chittoor Regional Hub"
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const openEditModal = () => {
+    setEditFields({
+      fullName: profile.name,
+      phoneNumber: profile.phone,
+      userRole: profile.role,
+      state: profile.state,
+      district: profile.district,
+      village: profile.village,
+      preferredLanguage: profile.preferred_language
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("No authenticated session found.");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: editFields.fullName,
+          phone_number: editFields.phoneNumber,
+          user_role: editFields.userRole,
+          district: editFields.district,
+          state: editFields.state,
+          village: editFields.village,
+          preferred_language: editFields.preferredLanguage,
+          updated_at: new Date()
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Sync state
+      setProfile(prev => ({
+        ...prev,
+        name: editFields.fullName,
+        role: editFields.userRole,
+        phone: editFields.phoneNumber,
+        district: editFields.district,
+        state: editFields.state,
+        village: editFields.village,
+        preferred_language: editFields.preferredLanguage
+      }));
+
+      setIsEditModalOpen(false);
+      setIsSaved(true);
+      if (onSaveSuccess) onSaveSuccess();
+      setTimeout(() => setIsSaved(false), 2000);
+    } catch (err: any) {
+      console.error("Failed updating profile:", err);
+      alert(err.message || "An error occurred while updating the profile.");
+    }
+  };
 
   // Toggles
   const [notifications, setNotifications] = useState({
@@ -103,66 +219,61 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">Profile Information</h3>
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <h3 className="font-extrabold text-gray-900 text-sm">Profile Details</h3>
+                    <button
+                      type="button"
+                      onClick={openEditModal}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-lg transition-all text-xs cursor-pointer border-0"
+                    >
+                      Edit Profile
+                    </button>
+                  </div>
                   
-                  {/* Avatar Picker */}
-                  <div className="flex items-center gap-4 py-2">
-                    <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-primary text-primary flex items-center justify-center font-extrabold text-lg shadow-xs">
-                      LR
+                  {isLoadingProfile ? (
+                    <div className="space-y-3 py-4">
+                      <div className="h-4 bg-gray-100 rounded-md shimmer w-3/4" />
+                      <div className="h-4 bg-gray-100 rounded-md shimmer w-1/2" />
+                      <div className="h-4 bg-gray-100 rounded-md shimmer w-5/6" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-800">Profile Photograph</p>
-                      <p className="text-[10px] text-gray-400">JPG, PNG or WEBP. Max 2MB.</p>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-4 py-2">
+                        <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-primary text-primary flex items-center justify-center font-extrabold text-lg shadow-xs">
+                          {profile.name ? profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() : "LR"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-800">{profile.name || "Unnamed User"}</p>
+                          <p className="text-xs text-gray-400 font-semibold">{profile.role || "Agronomist"}</p>
+                        </div>
+                      </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Full Name</label>
-                      <input
-                        type="text"
-                        value={profile.name}
-                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Professional Role</label>
-                      <input
-                        type="text"
-                        value={profile.role}
-                        onChange={(e) => setProfile({ ...profile, role: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Primary Contact Email</label>
-                      <input
-                        type="email"
-                        value={profile.email}
-                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Contact Number</label>
-                      <input
-                        type="tel"
-                        value={profile.phone}
-                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">Assigned Regional Hub</label>
-                    <input
-                      type="text"
-                      value={profile.hub}
-                      onChange={(e) => setProfile({ ...profile, hub: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
-                    />
-                  </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 pt-2">
+                        <div className="border-b border-gray-100 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Email Address</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.email || "N/A"}</span>
+                        </div>
+                        <div className="border-b border-gray-100 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Contact Number</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.phone || "Not Configured"}</span>
+                        </div>
+                        <div className="border-b border-gray-100 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">State & District</span>
+                          <span className="text-xs font-semibold text-gray-800">
+                            {profile.state || profile.district ? `${profile.state || ""}, ${profile.district || ""}` : "Not Configured"}
+                          </span>
+                        </div>
+                        <div className="border-b border-gray-100 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Village Name</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.village || "Not Configured"}</span>
+                        </div>
+                        <div className="border-b border-gray-100 pb-2 col-span-1 sm:col-span-2">
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Preferred Language</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.preferred_language || "English"}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               )}
 
@@ -342,25 +453,156 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
             </AnimatePresence>
 
             {/* Bottom Actions */}
-            <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-primary hover:bg-[#235F26] text-white font-bold rounded-xl active:scale-95 shadow-md shadow-primary/10 transition-all text-xs cursor-pointer border-0"
-              >
-                {isSaved ? (
-                  <>
-                    <Check className="w-4 h-4 animate-bounce" /> Changes Saved!
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" /> Save Configuration
-                  </>
-                )}
-              </button>
-            </div>
+            {activeTab !== "Profile" && (
+              <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-primary hover:bg-[#235F26] text-white font-bold rounded-xl active:scale-95 shadow-md shadow-primary/10 transition-all text-xs cursor-pointer border-0"
+                >
+                  {isSaved ? (
+                    <>
+                      <Check className="w-4 h-4 animate-bounce" /> Changes Saved!
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" /> Save Configuration
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl border border-gray-150 shadow-2xl p-6 md:p-8 max-w-lg w-full text-left space-y-5 overflow-y-auto max-h-[90vh]"
+            >
+              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                <h3 className="font-extrabold text-gray-900 text-base">Edit Profile Information</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1 text-gray-400 hover:text-gray-655 cursor-pointer border-0 bg-transparent text-sm leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFields.fullName}
+                      onChange={(e) => setEditFields({ ...editFields, fullName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600">Professional Role</label>
+                    <select
+                      value={editFields.userRole}
+                      onChange={(e) => setEditFields({ ...editFields, userRole: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs focus:border-primary focus:outline-hidden transition-all cursor-pointer font-semibold"
+                    >
+                      <option value="Agronomist">Agronomist</option>
+                      <option value="Farmer">Farmer</option>
+                      <option value="Extension Worker">Extension Worker</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600">Contact Number</label>
+                    <input
+                      type="tel"
+                      value={editFields.phoneNumber}
+                      onChange={(e) => setEditFields({ ...editFields, phoneNumber: e.target.value })}
+                      placeholder="e.g. +91 98480 12345"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600">Preferred Language</label>
+                    <select
+                      value={editFields.preferredLanguage}
+                      onChange={(e) => setEditFields({ ...editFields, preferredLanguage: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs focus:border-primary focus:outline-hidden transition-all cursor-pointer font-semibold"
+                    >
+                      <option value="English">English</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Kannada">Kannada</option>
+                      <option value="Telugu">Telugu</option>
+                      <option value="Bahasa">Bahasa</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600">State</label>
+                    <input
+                      type="text"
+                      value={editFields.state}
+                      onChange={(e) => setEditFields({ ...editFields, state: e.target.value })}
+                      placeholder="Andhra Pradesh"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600">District</label>
+                    <input
+                      type="text"
+                      value={editFields.district}
+                      onChange={(e) => setEditFields({ ...editFields, district: e.target.value })}
+                      placeholder="Chittoor"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-600">Village</label>
+                  <input
+                    type="text"
+                    value={editFields.village}
+                    onChange={(e) => setEditFields({ ...editFields, village: e.target.value })}
+                    placeholder="Rangampeta"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4.5 py-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 text-xs font-bold transition-all cursor-pointer bg-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-primary hover:bg-[#235F26] text-white text-xs font-bold transition-all cursor-pointer border-0 shadow-md shadow-primary/10 flex items-center gap-1.5"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
