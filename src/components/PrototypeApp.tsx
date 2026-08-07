@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../lib/supabaseClient";
 import {
   LayoutDashboard,
   Users,
@@ -90,6 +91,11 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isScreenLoading, setIsScreenLoading] = useState(false);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onBackToLanding();
+  };
+
   const changeScreen = (screenName: string) => {
     setIsScreenLoading(true);
     setCurrentScreen(screenName);
@@ -135,6 +141,74 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     { id: 2, text: "AI advisor completed Mix-B analysis.", read: false }
   ]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    const getSessionAndProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setCurrentUser(session.user);
+          const { data } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+          if (data) {
+            setUserProfile(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user session/profile", err);
+      }
+    };
+
+    getSessionAndProfile();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+      if (session?.user) {
+        setCurrentUser(session.user);
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        if (data) {
+          setUserProfile(data);
+        }
+      } else {
+        setCurrentUser(null);
+        setUserProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentScreen]);
+
+  const avatarUrl =
+    currentUser?.user_metadata?.avatar_url ||
+    currentUser?.user_metadata?.picture ||
+    userProfile?.profile_photo_url;
+
+  const getInitials = () => {
+    if (userProfile?.full_name) {
+      return userProfile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+    }
+    const name = currentUser?.user_metadata?.full_name || currentUser?.email || "LR";
+    return name[0].toUpperCase();
+  };
+
+  const displayName = userProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || "Dr. L. Ramana";
+  const displayRole = userProfile?.user_role || "Agronomist";
 
   // Reusable Toast Notification System
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: "success" | "info" | "warning" }>>([]);
@@ -425,13 +499,13 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
         {/* Sidebar Footer (Collapse Toggle + Back to Landing) */}
         <div className="p-3 border-t border-gray-150 space-y-2">
-          {/* Back button */}
+          {/* Sign Out button */}
           <button
-            onClick={onBackToLanding}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-all border-0 cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
-            {!isSidebarCollapsed && <span>Landing Page</span>}
+            {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
           
           {/* Collapse toggle */}
@@ -521,12 +595,20 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
               onClick={() => changeScreen("Profile")}
               className="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-gray-50 rounded-xl transition-all"
             >
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
-                LR
-              </div>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={currentUser?.email || "avatar"}
+                  className="w-8 h-8 rounded-full object-cover border border-primary/20 shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-emerald-50 text-primary flex items-center justify-center font-bold text-xs border border-primary/20 shrink-0">
+                  {getInitials()}
+                </div>
+              )}
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-[10px] font-bold text-gray-800 leading-tight">Dr. L. Ramana</span>
-                <span className="text-[8px] text-gray-400 font-semibold uppercase tracking-wider">Lead Agronomist</span>
+                <span className="text-[10px] font-bold text-gray-800 leading-tight">{displayName}</span>
+                <span className="text-[8px] text-gray-400 font-semibold uppercase tracking-wider">{displayRole}</span>
               </div>
             </div>
           </div>
