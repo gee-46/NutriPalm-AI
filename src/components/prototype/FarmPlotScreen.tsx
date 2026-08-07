@@ -8,6 +8,7 @@ import {
 import { usePlots, type Plot, getStatusColor, getStatusDotColor } from "../../data/plots";
 import LeafletMapPicker, { type BoundaryData } from "./LeafletMapPicker";
 import { reverseGeocode, getElevation, parseGeoJSONFile, type GeoJSONPolygon } from "../../lib/geo";
+import { boundaryToSvgPath, coordinateToSvgPoint, generatePlaceholderSvgPath } from "../../lib/svgPath";
 
 
 // Premium Animated Counter Component
@@ -17,22 +18,26 @@ export const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimal
   decimals = 0 
 }) => {
   const [count, setCount] = useState(0);
+  const startValueRef = useRef(0);
 
   useEffect(() => {
-    const duration = 1000;
+    const duration = 1200;
     const startTime = performance.now();
+    const startValue = startValueRef.current;
+    const diff = value - startValue;
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const currentValue = easeProgress * value;
+      const currentValue = startValue + (easeProgress * diff);
       setCount(currentValue);
 
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
         setCount(value);
+        startValueRef.current = value;
       }
     };
 
@@ -203,7 +208,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       status,
       statusColor: getStatusColor(status),
       statusDotColor: getStatusDotColor(status),
-      svgPath: "",
+      svgPath: wizardBoundary?.geoJSON ? boundaryToSvgPath(wizardBoundary.geoJSON) : generatePlaceholderSvgPath(areaAcres),
       fillGradient: "url(#healthyGrad)",
       strokeColor: "#10b981",
       glowColor: "rgba(16, 185, 129, 0.4)",
@@ -561,22 +566,26 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         
                         <text
                           x={
-                            plot.id === "plot-1" ? 165 :
-                            plot.id === "plot-2" ? 305 :
-                            plot.id === "plot-3" ? 215 : 
-                            plot.id === "plot-4" ? 355 : 435
+                            plot.boundaryMapped && plot.geoJSON
+                              ? coordinateToSvgPoint(plot.geoJSON).x
+                              : (plot.id === "plot-1" ? 165 :
+                                 plot.id === "plot-2" ? 305 :
+                                 plot.id === "plot-3" ? 215 : 
+                                 plot.id === "plot-4" ? 355 : 435)
                           }
                           y={
-                            plot.id === "plot-1" ? 75 :
-                            plot.id === "plot-2" ? 65 :
-                            plot.id === "plot-3" ? 158 : 
-                            plot.id === "plot-4" ? 145 : 62
+                            plot.boundaryMapped && plot.geoJSON
+                              ? coordinateToSvgPoint(plot.geoJSON).y
+                              : (plot.id === "plot-1" ? 75 :
+                                 plot.id === "plot-2" ? 65 :
+                                 plot.id === "plot-3" ? 158 : 
+                                 plot.id === "plot-4" ? 145 : 62)
                           }
                           fill={isSelected ? "#FFF" : "#cbd5e1"}
                           fontSize="9"
                           fontWeight="bold"
                           textAnchor="middle"
-                          className="pointer-events-none select-none font-mono"
+                          className="pointer-events-none select-none font-mono drop-shadow-md"
                         >
                           {plot.crop} ({plot.area} ac)
                         </text>
@@ -1118,15 +1127,14 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Calculated Acreage *</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Estimated Acreage (optional — recalculated from boundary)</label>
                           <input
-                            required
                             type="number"
-                            step="0.1"
+                            step="0.01"
                             value={newPlotData.area}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, area: e.target.value }))}
                             placeholder="e.g. 12.5"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 text-xs focus:ring-2 focus:ring-primary/10 focus:border-primary font-semibold"
+                            className="w-full bg-gray-50 border border-gray-250 text-gray-900 text-xs rounded-xl focus:ring-primary focus:border-primary block p-3 transition-colors shadow-xs"
                           />
                         </div>
                         <div className="space-y-1.5">

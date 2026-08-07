@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Cpu, RefreshCw, Activity, FlaskConical, Download, 
-  ChevronRight, Thermometer, Droplets, Calendar, TrendingUp, Bot, X
-} from "lucide-react";
+import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, Wind, CheckCircle2, ChevronRight, Bot, Cpu, RefreshCw, Download, X, Calendar } from "lucide-react";
 import { usePlots, type Plot } from "../../data/plots";
+import { boundaryToSvgPath } from "../../lib/svgPath";
+import { AnimatedCounter } from "./FarmPlotScreen";
 
 // PlotData type is now the shared Plot type from src/data/plots.ts
 type PlotData = Plot;
@@ -97,11 +96,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   // ── Shared store ─────────────────────────────────────────────────────────
   const { plots } = usePlots();
 
-  // Build a record keyed by plot.id for backward-compatible access
-  const plotDatabase: Record<string, PlotData> = {};
-  plots.forEach((p) => { plotDatabase[p.id] = p; });
-
-  const activePlot = plotDatabase[activePlotId] || plotDatabase["plot-1"];
+  const activePlot = plots.find((p) => p.id === activePlotId) || plots[0];
 
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
   const activeNDVI = activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0;
@@ -200,7 +195,28 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2">
             <Cpu className="w-8 h-8 text-primary" />
-            Digital Twin Intelligence
+            <div className="flex flex-wrap gap-2 pt-1 md:pt-0">
+              {plots.map((plot) => (
+                <button
+                  key={plot.id}
+                  onClick={() => {
+                    setIsChangingPlot(true);
+                    setTimeout(() => {
+                      setActivePlotId(plot.id);
+                      setIsChangingPlot(false);
+                    }, 450);
+                  }}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer flex items-center gap-2 ${
+                    activePlotId === plot.id
+                      ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-primary/50 hover:bg-emerald-50/30"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${plot.statusDotColor}`} />
+                  {plot.name}
+                </button>
+              ))}
+            </div>            Digital Twin Intelligence
           </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
             Real-time AI-powered virtual representation of farm conditions, crop health, environmental telemetry, and predictive insights.
@@ -251,13 +267,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         <div className="space-y-1.5 w-full md:w-auto">
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Crop Twin Mappers</p>
           <div className="flex flex-wrap gap-2.5">
-            {Object.keys(plotDatabase).map((key) => {
-              const item = plotDatabase[key];
-              const isSelected = activePlotId === key;
+            {plots.map((item) => {
+              const isSelected = activePlotId === item.id;
               return (
                 <button
-                  key={key}
-                  onClick={() => handlePlotSwitch(key)}
+                  key={item.id}
+                  onClick={() => handlePlotSwitch(item.id)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5 ${
                     isSelected 
                       ? "bg-slate-950 text-white border-slate-950 shadow-md" 
@@ -265,7 +280,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   }`}
                 >
                   <span className={`w-2.5 h-2.5 rounded-full ${item.statusDotColor}`} />
-                  Plot {key.replace("plot-", "").toUpperCase()}
+                  {item.name || `Plot ${item.id.replace("plot-", "").toUpperCase()}`}
                 </button>
               );
             })}
@@ -363,12 +378,26 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="absolute -top-12 -left-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex justify-between items-start z-10 relative">
-              <div className="space-y-1">
-                <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  Biophysical Twin Layer ({activePlot.name})
-                </span>
-                <h3 className="text-white font-extrabold text-lg">Vegetation Canopy Chamber</h3>
+              <div className="flex gap-4">
+                {activePlot.boundaryMapped && activePlot.geoJSON && (
+                  <div className="w-12 h-12 bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1">
+                    <svg viewBox="0 0 100 100" className="w-full h-full opacity-80">
+                      <path 
+                        d={boundaryToSvgPath(activePlot.geoJSON, { width: 100, height: 100 }, 10)} 
+                        fill="rgba(16, 185, 129, 0.2)" 
+                        stroke="#10b981" 
+                        strokeWidth="2" 
+                      />
+                    </svg>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    Biophysical Twin Layer ({activePlot.name})
+                  </span>
+                  <h3 className="text-white font-extrabold text-lg">Vegetation Canopy Chamber</h3>
+                </div>
               </div>
               <div className="text-right font-mono">
                 <span className="text-[9px] text-slate-500 block uppercase">NDVI Reflectance</span>
@@ -645,28 +674,28 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>Soil Quality</span>
-                  <span className="text-primary">{activeSoilHealth}%</span>
+                  <span className="text-primary"><AnimatedCounter value={activeSoilHealth} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${activeSoilHealth}%` }} />
+                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeSoilHealth}%` }} />
                 </div>
               </div>
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>Crop Health</span>
-                  <span className="text-primary">{Math.round(activeNDVI * 100)}%</span>
+                  <span className="text-primary"><AnimatedCounter value={Math.round(activeNDVI * 100)} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${activeNDVI * 100}%` }} />
+                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeNDVI * 100}%` }} />
                 </div>
               </div>
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>Water Status</span>
-                  <span className="text-primary">{activeMoisture}%</span>
+                  <span className="text-primary"><AnimatedCounter value={activeMoisture} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${activeMoisture}%` }} />
+                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeMoisture}%` }} />
                 </div>
               </div>
             </div>
@@ -725,17 +754,39 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="space-y-3.5 text-xs text-gray-700 font-semibold pt-2 border-t border-gray-100">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Disease Probability</span>
-                <span className="text-emerald-600 font-black">{activeDiseasePct}% ({activeDiseaseRisk})</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-black"><AnimatedCounter value={activeDiseasePct} />% ({activeDiseaseRisk})</span>
+                  <div className="relative w-7 h-7">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" className="stroke-gray-100" strokeWidth="4" />
+                      <circle 
+                        cx="18" cy="18" r="15" fill="none" 
+                        className={activeDiseasePct > 60 ? "stroke-rose-500" : activeDiseasePct > 30 ? "stroke-amber-500" : "stroke-emerald-500"} 
+                        strokeWidth="4" 
+                        strokeDasharray="94.2" 
+                        strokeDashoffset={94.2 - (94.2 * activeDiseasePct) / 100}
+                        strokeLinecap="round"
+                        style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
+                      />
+                    </svg>
+                  </div>
+                </div>
               </div>
               
-              <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
-                <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
-                <ul className="list-disc pl-3.5 space-y-1 leading-normal">
-                  <li>{activePlot.whyDisease}</li>
-                  <li>Stable ambient humidity index ({64}%)</li>
-                  <li>NDVI greenness ratio meets chlorophyll expectations</li>
-                </ul>
-              </div>
+              {!activePlot.whyDisease ? (
+                <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl text-[10px] text-gray-450 font-semibold">
+                  Insufficient telemetry data to generate disease probability.
+                </div>
+              ) : (
+                <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
+                  <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
+                  <ul className="list-disc pl-3.5 space-y-1 leading-normal">
+                    <li>{activePlot.whyDisease}</li>
+                    <li>Stable ambient humidity index (64%)</li>
+                    <li>NDVI greenness ratio meets chlorophyll expectations</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
@@ -768,20 +819,28 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <FlaskConical className="w-4.5 h-4.5 text-primary" /> AI Agronomy Advisory
               </h4>
               <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                {activePlot.confidence}% Confidence
+                {activePlot.confidence ?? "—"}% Confidence
               </span>
             </div>
 
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
-              <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
-                <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
-                <p className="text-gray-900 font-black leading-snug">
-                  {activePlot.recommendedAction}
-                </p>
-              </div>
-              <p className="text-[10px] text-gray-450 leading-relaxed">
-                {activePlot.advisoryReason}
-              </p>
+              {!activePlot.recommendedAction ? (
+                <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
+                  <p className="text-gray-900 font-black leading-snug">No AI analysis yet — attach a soil report to generate a recommendation.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
+                    <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
+                    <p className="text-gray-900 font-black leading-snug">
+                      {activePlot.recommendedAction}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-gray-450 leading-relaxed">
+                    {activePlot.advisoryReason}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="flex gap-2 pt-2">

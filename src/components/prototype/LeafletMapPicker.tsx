@@ -130,6 +130,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
       // Initialize Geoman options but DO NOT add default controls
       // Style drawn layers to match the existing map card's visual language
       map.pm.setGlobalOptions({
+        allowSelfIntersection: false,
         templineStyle: { color: "#10b981", weight: 2, dashArray: "4 4" },
         hintlineStyle: { color: "#10b981", weight: 1.5, dashArray: "4 4" },
         pathOptions: {
@@ -324,7 +325,9 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         let msg = "Location access denied.";
         if (err.code === err.TIMEOUT) msg = "Location request timed out.";
         if (err.code === err.POSITION_UNAVAILABLE) msg = "Location unavailable.";
-        setGpsError(msg + " Using default region. Draw boundary manually.");
+        msg += " Pan/search the map manually to find your plot.";
+        setGpsError(msg);
+        triggerToast(msg, "warning");
         // Already centered on default — no action needed
       },
       { timeout: 8000, enableHighAccuracy: true }
@@ -408,7 +411,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         {/* Leaflet map div */}
         <div
           ref={mapContainerRef}
-          className="w-full"
+          className="w-full touch-none"
           style={{ height: "320px" }}
         />
 
