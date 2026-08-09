@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader } from './components/Loader'
 import { Navbar } from './components/Navbar'
@@ -14,15 +14,53 @@ import { Contact } from './components/Contact'
 import { Footer } from './components/Footer'
 import { PrototypeApp } from './components/PrototypeApp'
 import { PrototypeAuth } from './components/PrototypeAuth'
+import { supabase } from './lib/supabaseClient'
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [transitionState, setTransitionState] = useState<"idle" | "fading-out" | "auth" | "dashboard">("idle")
+  const [, setSession] = useState<any>(null)
+
+  useEffect(() => {
+    // Check active session on startup
+    supabase.auth.getSession().then((res: any) => {
+      const session = res.data?.session
+      setSession(session)
+      if (session) {
+        setTransitionState("dashboard")
+      }
+    })
+
+    // Listen to changes in auth state (e.g. login, logout, password recovery)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, newSession: any) => {
+      setSession(newSession)
+      if (newSession) {
+        if (event === "PASSWORD_RECOVERY") {
+          setTransitionState("auth")
+        } else {
+          setTransitionState("dashboard")
+        }
+      } else {
+        setTransitionState("idle")
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const handleExplore = () => {
     setTransitionState("fading-out");
     setTimeout(() => {
-      setTransitionState("auth");
+      supabase.auth.getSession().then((res: any) => {
+        const session = res.data?.session;
+        if (session) {
+          setTransitionState("dashboard");
+        } else {
+          setTransitionState("auth");
+        }
+      });
     }, 850);
   };
 

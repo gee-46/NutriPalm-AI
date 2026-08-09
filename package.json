@@ -1,4 +1,4 @@
-{
+gi{
   "name": "nutripalm-ai",
   "private": true,
   "version": "0.0.0",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@geoman-io/leaflet-geoman-free": "^2.20.0",
+    "@supabase/supabase-js": "^2.112.2",
     "@tailwindcss/vite": "^4.3.3",
     "@turf/area": "^7.4.0",
     "@turf/centroid": "^7.4.0",
