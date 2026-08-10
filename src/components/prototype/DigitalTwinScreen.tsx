@@ -1,34 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Cpu, RefreshCw, Activity, FlaskConical, Download, 
-  ChevronRight, Thermometer, Droplets, Calendar, TrendingUp, Bot, X
-} from "lucide-react";
+import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, Wind, CheckCircle2, ChevronRight, Bot, Cpu, RefreshCw, Download, X, Calendar } from "lucide-react";
+import { usePlots, type Plot } from "../../data/plots";
+import { boundaryToSvgPath } from "../../lib/svgPath";
+import { AnimatedCounter } from "./FarmPlotScreen";
 
-interface PlotData {
-  id: string;
-  name: string;
-  farmer: string;
-  area: number;
-  crop: string;
-  stage: string;
-  age: number;
-  ndvi: { Past: number; Current: number; Prediction: number };
-  moisture: { Past: number; Current: number; Prediction: number };
-  soil: string;
-  soilHealth: { Past: number; Current: number; Prediction: number };
-  irrigation: string;
-  elevation: number;
-  status: "Healthy" | "Moderate" | "Needs Attention" | "Critical";
-  statusColor: string;
-  yieldEst: { Past: string; Current: string; Prediction: string };
-  confidence: number;
-  diseaseRisk: { Past: string; Current: string; Prediction: string };
-  diseasePct: { Past: number; Current: number; Prediction: number };
-  whyDisease: string;
-  recommendedAction: string;
-  advisoryReason: string;
-}
+// PlotData type is now the shared Plot type from src/data/plots.ts
+type PlotData = Plot;
 
 interface TelemetryBadge {
   id: string;
@@ -115,139 +93,18 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     }, 450);
   };
 
-  // Plot database records
-  const plotDatabase: Record<string, PlotData> = {
-    "plot-1": {
-      id: "plot-1",
-      name: "Swamy North Plot (Plot 2A)",
-      farmer: "Swaminathan Gowda",
-      area: 12.5,
-      crop: "Oil Palm",
-      stage: "Fruit Development",
-      age: 6,
-      ndvi: { Past: 0.74, Current: 0.82, Prediction: 0.88 },
-      moisture: { Past: 45, Current: 42, Prediction: 36 },
-      soil: "Loamy (Optimal)",
-      soilHealth: { Past: 84, Current: 88, Prediction: 92 },
-      irrigation: "Precision Drip (94%)",
-      elevation: 152,
-      status: "Healthy",
-      statusColor: "bg-emerald-500",
-      yieldEst: { Past: "14.2 Tons", Current: "18.6 Tons", Prediction: "21.5 Tons" },
-      confidence: 96,
-      diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
-      diseasePct: { Past: 2, Current: 4, Prediction: 3 },
-      whyDisease: "Foliar canopy vigor limits pathogen spore reproduction.",
-      recommendedAction: "Apply Phosphorus Enrichment & Optimize Micro-Drip Timing",
-      advisoryReason: "Soil Nitrogen and Potassium complexes are highly saturated; phosphorus optimizes fruit bunch sizes."
-    },
-    "plot-2": {
-      id: "plot-2",
-      name: "Kothagudem South Field",
-      farmer: "K. Ramachandra Rao",
-      area: 8.2,
-      crop: "Oil Palm",
-      stage: "Flowering",
-      age: 8,
-      ndvi: { Past: 0.70, Current: 0.74, Prediction: 0.79 },
-      moisture: { Past: 40, Current: 38, Prediction: 34 },
-      soil: "Red Clayey",
-      soilHealth: { Past: 68, Current: 72, Prediction: 76 },
-      irrigation: "Precision Drip",
-      elevation: 145,
-      status: "Moderate",
-      statusColor: "bg-lime-500",
-      yieldEst: { Past: "11.0 Tons", Current: "13.0 Tons", Prediction: "15.2 Tons" },
-      confidence: 94,
-      diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
-      diseasePct: { Past: 4, Current: 5, Prediction: 4 },
-      whyDisease: "Clay texture holds humidity steady around trunk bases.",
-      recommendedAction: "Local Nitrate supplement to sustain vegetative greening",
-      advisoryReason: "Pre-empt nitrogen leeching before the wet monsoon cycle begins."
-    },
-    "plot-3": {
-      id: "plot-3",
-      name: "Devamma Palm Zone 1",
-      farmer: "M. Devamma",
-      area: 5.0,
-      crop: "Coconut Palm",
-      stage: "Flowering",
-      age: 4,
-      ndvi: { Past: 0.62, Current: 0.68, Prediction: 0.73 },
-      moisture: { Past: 48, Current: 46, Prediction: 40 },
-      soil: "Sandy Clay",
-      soilHealth: { Past: 52, Current: 55, Prediction: 60 },
-      irrigation: "Drip Irrigation",
-      elevation: 160,
-      status: "Needs Attention",
-      statusColor: "bg-orange-500",
-      yieldEst: { Past: "5.5 Tons", Current: "6.5 Tons", Prediction: "7.8 Tons" },
-      confidence: 89,
-      diseaseRisk: { Past: "Moderate", Current: "Attention", Prediction: "Moderate" },
-      diseasePct: { Past: 12, Current: 18, Prediction: 15 },
-      whyDisease: "Fungal leaf spots detected in satellite spectrum profiles.",
-      recommendedAction: "Schedule copper-based fungicide spray",
-      advisoryReason: "NDVI reduction correlates directly to early-stage bud rot symptoms."
-    },
-    "plot-4": {
-      id: "plot-4",
-      name: "Swamy East Plantation",
-      farmer: "Swaminathan Gowda",
-      area: 7.8,
-      crop: "Oil Palm",
-      stage: "Fruiting",
-      age: 5,
-      ndvi: { Past: 0.75, Current: 0.79, Prediction: 0.84 },
-      moisture: { Past: 42, Current: 40, Prediction: 35 },
-      soil: "Loamy (Optimal)",
-      soilHealth: { Past: 76, Current: 79, Prediction: 84 },
-      irrigation: "Precision Drip",
-      elevation: 152,
-      status: "Healthy",
-      statusColor: "bg-emerald-500",
-      yieldEst: { Past: "8.5 Tons", Current: "10.2 Tons", Prediction: "12.0 Tons" },
-      confidence: 93,
-      diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
-      diseasePct: { Past: 3, Current: 4, Prediction: 3 },
-      whyDisease: "Optimal spacing maximizes daylight capture and airflow.",
-      recommendedAction: "Routine potassium top-up during cell division",
-      advisoryReason: "Maintains optimal moisture uptake metrics across leaves."
-    },
-    "plot-5": {
-      id: "plot-5",
-      name: "Hassan Cocoa Plot",
-      farmer: "Rajesh Kumar",
-      area: 6.0,
-      crop: "Cocoa",
-      stage: "Vegetative",
-      age: 3,
-      ndvi: { Past: 0.58, Current: 0.55, Prediction: 0.62 },
-      moisture: { Past: 32, Current: 28, Prediction: 30 },
-      soil: "Sandy Loam",
-      soilHealth: { Past: 42, Current: 38, Prediction: 45 },
-      irrigation: "Manual Drip",
-      elevation: 138,
-      status: "Critical",
-      statusColor: "bg-rose-500",
-      yieldEst: { Past: "1.8 Tons", Current: "2.1 Tons", Prediction: "2.6 Tons" },
-      confidence: 91,
-      diseaseRisk: { Past: "Attention", Current: "Critical", Prediction: "Attention" },
-      diseasePct: { Past: 22, Current: 38, Prediction: 25 },
-      whyDisease: "Critical water stress weakens sapling vascular immunity.",
-      recommendedAction: "Execute emergency moisture recovery drip",
-      advisoryReason: "Water deficit triggers leaf drop, reducing chlorophyll conversion efficiency."
-    }
-  };
+  // ── Shared store ─────────────────────────────────────────────────────────
+  const { plots } = usePlots();
 
-  const activePlot = plotDatabase[activePlotId] || plotDatabase["plot-1"];
+  const activePlot = plots.find((p) => p.id === activePlotId) || plots[0];
 
-  // Derived properties based on simulation mode
-  const activeNDVI = activePlot.ndvi[simMode];
-  const activeMoisture = Math.round(activePlot.moisture[simMode] + fluctuateMoisture);
-  const activeSoilHealth = activePlot.soilHealth[simMode];
-  const activeYield = activePlot.yieldEst[simMode];
-  const activeDiseasePct = activePlot.diseasePct[simMode];
-  const activeDiseaseRisk = activePlot.diseaseRisk[simMode];
+  // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
+  const activeNDVI = activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0;
+  const activeMoisture = activePlot?.moistureTimeline ? Math.round(activePlot.moistureTimeline[simMode] + fluctuateMoisture) : 0;
+  const activeSoilHealth = activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0;
+  const activeYield = activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A";
+  const activeDiseasePct = activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0;
+  const activeDiseaseRisk = activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending";
 
   const telemetryBadges: TelemetryBadge[] = [
     { id: "temp", label: "Temperature", value: `${(31.4 + fluctuateTemp).toFixed(1)}°C`, interpretation: "Vegetative cellular respiration optimal.", x: 25, y: 35 },
@@ -301,7 +158,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   // Custom Chart path generators based on selection
   const getChartData = () => {
     if (activeChartTab === "NDVI") {
-      return { path: `M 20 ${140 - activeNDVI * 100} L 100 ${120 - activeNDVI * 90} L 200 ${130 - activeNDVI * 95} L 300 ${110 - activeNDVI * 105} L 380 ${100 - activeNDVI * 100}`, val: activeNDVI.toFixed(2) };
+      return { path: `M 20 ${140 - activeNDVI * 100} L 100 ${120 - activeNDVI * 90} L 200 ${130 - activeNDVI * 95} L 300 ${110 - activeNDVI * 105} L 380 ${100 - activeNDVI * 100}`, val: activeNDVI ? activeNDVI.toFixed(2) : "0.00" };
     }
     if (activeChartTab === "Health") {
       return { path: `M 20 ${180 - activeSoilHealth * 1.5} L 100 ${170 - activeSoilHealth * 1.5} L 200 ${165 - activeSoilHealth * 1.5} L 300 ${172 - activeSoilHealth * 1.5} L 380 ${150 - activeSoilHealth * 1.5}`, val: `${activeSoilHealth}%` };
@@ -338,7 +195,28 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2">
             <Cpu className="w-8 h-8 text-primary" />
-            Digital Twin Intelligence
+            <div className="flex flex-wrap gap-2 pt-1 md:pt-0">
+              {plots.map((plot) => (
+                <button
+                  key={plot.id}
+                  onClick={() => {
+                    setIsChangingPlot(true);
+                    setTimeout(() => {
+                      setActivePlotId(plot.id);
+                      setIsChangingPlot(false);
+                    }, 450);
+                  }}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer flex items-center gap-2 ${
+                    activePlotId === plot.id
+                      ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-primary/50 hover:bg-emerald-50/30"
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${plot.statusDotColor}`} />
+                  {plot.name}
+                </button>
+              ))}
+            </div>            Digital Twin Intelligence
           </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
             Real-time AI-powered virtual representation of farm conditions, crop health, environmental telemetry, and predictive insights.
@@ -389,21 +267,20 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         <div className="space-y-1.5 w-full md:w-auto">
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Crop Twin Mappers</p>
           <div className="flex flex-wrap gap-2.5">
-            {Object.keys(plotDatabase).map((key) => {
-              const item = plotDatabase[key];
-              const isSelected = activePlotId === key;
+            {plots.map((item) => {
+              const isSelected = activePlotId === item.id;
               return (
                 <button
-                  key={key}
-                  onClick={() => handlePlotSwitch(key)}
+                  key={item.id}
+                  onClick={() => handlePlotSwitch(item.id)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5 ${
                     isSelected 
                       ? "bg-slate-950 text-white border-slate-950 shadow-md" 
                       : "bg-white text-gray-650 border-gray-250 hover:bg-gray-50"
                   }`}
                 >
-                  <span className={`w-2.5 h-2.5 rounded-full ${item.statusColor}`} />
-                  Plot {key.replace("plot-", "").toUpperCase()}
+                  <span className={`w-2.5 h-2.5 rounded-full ${item.statusDotColor}`} />
+                  {item.name || `Plot ${item.id.replace("plot-", "").toUpperCase()}`}
                 </button>
               );
             })}
@@ -431,6 +308,46 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         </div>
 
       </div>
+
+      {/* ================= Phase 3: Active Plot Status Indicators ================= */}
+      {activePlot && (
+        <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-wider">
+          <span className="text-gray-400">Plot Status:</span>
+          {activePlot.boundaryMapped ? (
+            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+              ✓ Boundary Mapped
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 border border-gray-200">
+              Boundary Pending
+            </span>
+          )}
+          {activePlot.soilReportAttached ? (
+            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+              ✓ Soil Report Attached
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 border border-gray-200">
+              Awaiting Soil Report
+            </span>
+          )}
+          {activePlot.area && (
+            <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 border border-slate-200">
+              📐 {activePlot.area.toFixed(2)} ac
+            </span>
+          )}
+          {activePlot.elevation !== undefined && activePlot.elevation > 0 && (
+            <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 border border-slate-200">
+              ⛰️ {activePlot.elevation}m MSL
+            </span>
+          )}
+          {activePlot.village && (
+            <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
+              📍 {activePlot.village}{activePlot.district ? `, ${activePlot.district}` : ""}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ================= LAYOUT GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
@@ -461,12 +378,26 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="absolute -top-12 -left-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex justify-between items-start z-10 relative">
-              <div className="space-y-1">
-                <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  Biophysical Twin Layer ({activePlot.name})
-                </span>
-                <h3 className="text-white font-extrabold text-lg">Vegetation Canopy Chamber</h3>
+              <div className="flex gap-4">
+                {activePlot.boundaryMapped && activePlot.geoJSON && (
+                  <div className="w-12 h-12 bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1">
+                    <svg viewBox="0 0 100 100" className="w-full h-full opacity-80">
+                      <path 
+                        d={boundaryToSvgPath(activePlot.geoJSON, { width: 100, height: 100 }, 10)} 
+                        fill="rgba(16, 185, 129, 0.2)" 
+                        stroke="#10b981" 
+                        strokeWidth="2" 
+                      />
+                    </svg>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    Biophysical Twin Layer ({activePlot.name})
+                  </span>
+                  <h3 className="text-white font-extrabold text-lg">Vegetation Canopy Chamber</h3>
+                </div>
               </div>
               <div className="text-right font-mono">
                 <span className="text-[9px] text-slate-500 block uppercase">NDVI Reflectance</span>
@@ -743,28 +674,28 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>Soil Quality</span>
-                  <span className="text-primary">{activeSoilHealth}%</span>
+                  <span className="text-primary"><AnimatedCounter value={activeSoilHealth} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${activeSoilHealth}%` }} />
+                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeSoilHealth}%` }} />
                 </div>
               </div>
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>Crop Health</span>
-                  <span className="text-primary">{Math.round(activeNDVI * 100)}%</span>
+                  <span className="text-primary"><AnimatedCounter value={Math.round(activeNDVI * 100)} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${activeNDVI * 100}%` }} />
+                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeNDVI * 100}%` }} />
                 </div>
               </div>
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>Water Status</span>
-                  <span className="text-primary">{activeMoisture}%</span>
+                  <span className="text-primary"><AnimatedCounter value={activeMoisture} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${activeMoisture}%` }} />
+                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeMoisture}%` }} />
                 </div>
               </div>
             </div>
@@ -823,17 +754,39 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="space-y-3.5 text-xs text-gray-700 font-semibold pt-2 border-t border-gray-100">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Disease Probability</span>
-                <span className="text-emerald-600 font-black">{activeDiseasePct}% ({activeDiseaseRisk})</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-black"><AnimatedCounter value={activeDiseasePct} />% ({activeDiseaseRisk})</span>
+                  <div className="relative w-7 h-7">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" className="stroke-gray-100" strokeWidth="4" />
+                      <circle 
+                        cx="18" cy="18" r="15" fill="none" 
+                        className={activeDiseasePct > 60 ? "stroke-rose-500" : activeDiseasePct > 30 ? "stroke-amber-500" : "stroke-emerald-500"} 
+                        strokeWidth="4" 
+                        strokeDasharray="94.2" 
+                        strokeDashoffset={94.2 - (94.2 * activeDiseasePct) / 100}
+                        strokeLinecap="round"
+                        style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
+                      />
+                    </svg>
+                  </div>
+                </div>
               </div>
               
-              <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
-                <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
-                <ul className="list-disc pl-3.5 space-y-1 leading-normal">
-                  <li>{activePlot.whyDisease}</li>
-                  <li>Stable ambient humidity index ({64}%)</li>
-                  <li>NDVI greenness ratio meets chlorophyll expectations</li>
-                </ul>
-              </div>
+              {!activePlot.whyDisease ? (
+                <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl text-[10px] text-gray-450 font-semibold">
+                  Insufficient telemetry data to generate disease probability.
+                </div>
+              ) : (
+                <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
+                  <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
+                  <ul className="list-disc pl-3.5 space-y-1 leading-normal">
+                    <li>{activePlot.whyDisease}</li>
+                    <li>Stable ambient humidity index (64%)</li>
+                    <li>NDVI greenness ratio meets chlorophyll expectations</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
 
@@ -866,20 +819,28 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <FlaskConical className="w-4.5 h-4.5 text-primary" /> AI Agronomy Advisory
               </h4>
               <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                {activePlot.confidence}% Confidence
+                {activePlot.confidence ?? "—"}% Confidence
               </span>
             </div>
 
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
-              <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
-                <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
-                <p className="text-gray-900 font-black leading-snug">
-                  {activePlot.recommendedAction}
-                </p>
-              </div>
-              <p className="text-[10px] text-gray-450 leading-relaxed">
-                {activePlot.advisoryReason}
-              </p>
+              {!activePlot.recommendedAction ? (
+                <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
+                  <p className="text-gray-900 font-black leading-snug">No AI analysis yet — attach a soil report to generate a recommendation.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
+                    <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
+                    <p className="text-gray-900 font-black leading-snug">
+                      {activePlot.recommendedAction}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-gray-450 leading-relaxed">
+                    {activePlot.advisoryReason}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="flex gap-2 pt-2">
