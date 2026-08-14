@@ -3,46 +3,95 @@ Application configuration.
 
 All secrets and environment-specific values MUST come from environment
 variables. Nothing sensitive is hardcoded here.
+
+Production safety:
+- Mock/fallback behavior must never be allowed outside development.
+- Production and staging always require strict_no_mock_data=True.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
+
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Runtime configuration loaded from environment variables / .env file."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+    )
 
     # --- Supabase ---
-    # SUPABASE_URL: the project URL, e.g. https://xxxx.supabase.co
-    # SUPABASE_SERVICE_ROLE_KEY: server-side ONLY. Never send this to the
-    #   frontend / browser. Used by this backend to perform privileged reads
-    #   (e.g. resolving plot/soil-report data) while still enforcing
-    #   ownership checks in application code and RLS in the database.
-    # SUPABASE_JWT_SECRET: used to verify the Supabase Auth JWT sent by the
-    #   authenticated frontend so we know which user is calling the API.
     supabase_url: str = ""
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""
     supabase_jwks_url: str = ""
 
     # --- App ---
-    environment: str = "development"  # development | staging | production
+    environment: str = "development"
     api_v1_prefix: str = "/api"
     cors_allow_origins: str = "http://localhost:5173"
 
     # --- Feature flags ---
-    # When true, repositories fall back to raising NotConfiguredError instead
-    # of silently returning fake data if Supabase is not configured. This
-    # must always be true outside of local dev.
     strict_no_mock_data: bool = True
 
+    @field_validator("environment")
+    @classmethod
+    def validate_environment(cls, value: str) -> str:
+        """Normalize and validate the deployment environment."""
+        normalized = value.strip().lower()
+
+        allowed = {
+            "development",
+            "staging",
+            "production",
+        }
+
+        if normalized not in allowed:
+            raise ValueError(
+                "environment must be one of: "
+                "development, staging, production"
+            )
+
+        return normalized
+
+    @field_validator("strict_no_mock_data")
+    @classmethod
+    def enforce_production_strict_mode(
+        cls,
+        value: bool,
+        info: ValidationInfo,
+    ) -> bool:
+        """
+        Prevent staging/production deployments from disabling strict mode.
+
+        This ensures production code cannot silently fall back to mock or
+        unconfigured-data behavior even if the environment variable is
+        accidentally set to false.
+        """
+        environment = info.data.get("environment", "development")
+
+        if environment in {"staging", "production"} and not value:
+            raise ValueError(
+                "strict_no_mock_data must be True in staging and production."
+            )
+
+        return value
+
     def cors_origins_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
+        """Return configured CORS origins as a cleaned list."""
+        return [
+            origin.strip()
+            for origin in self.cors_allow_origins.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return the cached application settings."""
     return Settings()
