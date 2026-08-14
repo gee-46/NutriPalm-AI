@@ -90,8 +90,10 @@ def create_recommendation(
         ) from exc
 
     if soil.owner_id != current_user.user_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Soil report not found.")
-
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Soil report not found.",
+    )
     if soil.plot_id != plot.plot_id:
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
