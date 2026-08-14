@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""
+    supabase_jwks_url: str = ""
 
     # --- App ---
     environment: str = "development"  # development | staging | production
