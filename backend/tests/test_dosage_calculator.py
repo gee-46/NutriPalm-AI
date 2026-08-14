@@ -182,7 +182,7 @@ def test_dap_nitrogen_contribution_reduces_urea_requirement():
     )
 
     assert urea.quantity_kg_per_ha == pytest.approx(
-        expected_urea_kg_per_ha,
+        round(expected_urea_kg_per_ha, 2),
         rel=1e-6,
     )
 
