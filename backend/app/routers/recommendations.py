@@ -73,6 +73,7 @@ def create_recommendation(
         get_recommendation_repository
     ),
 ) -> RecommendationResponse:
+
     # ---------------------------------------------------------
     # Fetch plot
     # ---------------------------------------------------------
@@ -109,11 +110,11 @@ def create_recommendation(
         soil = soil_repo.get_soil_report(
             request.soil_report_id
         )
-    except SoilReportNotFound as exc:
+    except SoilReportNotFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Soil report not found.",
-        ) from exc
+        )
     except RepositoryNotConfigured as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -156,12 +157,12 @@ def create_recommendation(
         )
     except UnsupportedCrop as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from exc
     except ValidationFailed as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from exc
 
@@ -202,6 +203,7 @@ def list_recommendations(
         get_recommendation_repository
     ),
 ) -> list[RecommendationRecordOut]:
+
     try:
         rows = rec_repo.list_for_owner(
             current_user.user_id
@@ -229,14 +231,15 @@ def get_recommendation(
         get_recommendation_repository
     ),
 ) -> RecommendationRecordOut:
+
     try:
         row = rec_repo.get_for_owner(
             recommendation_id,
             current_user.user_id,
         )
     except (RecommendationNotFound, NotAuthorized) as exc:
-        # Deliberately use one fixed response for both cases so a caller
-        # cannot determine whether another user's recommendation exists.
+        # Use one fixed response for both missing and unauthorized
+        # recommendations so ownership cannot be probed.
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Recommendation not found.",
