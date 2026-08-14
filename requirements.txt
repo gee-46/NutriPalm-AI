@@ -28,3 +28,4 @@ Tailwind CSS == 4.3.3
 @tailwindcss/vite == 4.3.3
 Framer Motion == 12.42.2
 Lucide React == 1.26.0
+postgrest>=0.16,<1
