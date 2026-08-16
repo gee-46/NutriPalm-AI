@@ -15,6 +15,7 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: num
   const [count, setCount] = useState(0);
 
   useEffect(() => {
+    let animationFrameId: number;
     const duration = 1000;
     const startTime = performance.now();
 
@@ -26,13 +27,18 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: num
       setCount(currentValue);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(animate);
       } else {
         setCount(value);
       }
     };
 
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, [value]);
 
   return (
@@ -43,9 +49,66 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: num
   );
 };
 
+// Helper for generating smooth Bezier paths for sparklines
+const getSparklinePath = (points: number[], width: number, height: number) => {
+  if (points.length < 2) return "";
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min === 0 ? 1 : max - min;
+  
+  const coords = points.map((val, idx) => {
+    const x = (idx / (points.length - 1)) * width;
+    const y = height - 2 - ((val - min) / range) * (height - 4);
+    return { x, y };
+  });
+
+  let path = `M ${coords[0].x} ${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const cp1x = coords[i].x + (coords[i+1].x - coords[i].x) / 3;
+    const cp1y = coords[i].y;
+    const cp2x = coords[i].x + 2 * (coords[i+1].x - coords[i].x) / 3;
+    const cp2y = coords[i+1].y;
+    path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${coords[i+1].x} ${coords[i+1].y}`;
+  }
+  return path;
+};
+
+// Helper to generate deterministic heatmap data
+const generateHeatmapPlots = () => {
+  const farmers = ["Swaminathan Gowda", "K. Ramachandra Rao", "M. Devamma", "Rajesh Kumar", "Anil Mehta", "Siddharth Sen", "Priya Nair"];
+  const crops = ["Oil Palm", "Rice", "Sugarcane", "Cocoa / Banana"];
+  const villages = ["Kothagudem", "Chittoor", "Hassan", "Dakshina", "Mandya"];
+  
+  const plots = [];
+  let seed = 12345; // Fixed seed for reproducible data
+  const random = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+
+  for (let i = 1; i <= 45; i++) {
+    const score = Math.floor(random() * 50) + 50; // 50 to 100%
+    const farmer = farmers[Math.floor(random() * farmers.length)];
+    const crop = crops[Math.floor(random() * crops.length)];
+    const village = villages[Math.floor(random() * villages.length)];
+    plots.push({
+      id: `PL-${i.toString().padStart(3, '0')}`,
+      farmer,
+      crop,
+      village,
+      score
+    });
+  }
+  return plots;
+};
+
+const heatmapPlots = generateHeatmapPlots();
+
 export const AnalyticsScreen: React.FC = () => {
   const [lastUpdated] = useState("Just Now");
   const [isExporting, setIsExporting] = useState(false);
+  const [cropFilter, setCropFilter] = useState("All Crops");
+  const [dateFilter, setDateFilter] = useState("Last 30 Days");
 
   // Hover states for custom SVG graphs
   const [hoveredFarmerPoint, setHoveredFarmerPoint] = useState<number | null>(null);
@@ -59,19 +122,33 @@ export const AnalyticsScreen: React.FC = () => {
     { label: "Registered Farmers", val: 142, trend: "+12%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Users className="w-5 h-5" />, spark: [30, 42, 58, 80, 110, 142] },
     { label: "Active Farm Plots", val: 39, trend: "+8%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <LayoutGrid className="w-5 h-5" />, spark: [12, 18, 22, 28, 35, 39] },
     { label: "AI Recommendations", val: 185, trend: "+24%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Bot className="w-5 h-5" />, spark: [40, 75, 110, 130, 160, 185] },
-    { label: "Average Soil Health", val: 84, suffix: "%", trend: "+4%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Activity className="w-5 h-5" />, spark: [78, 80, 81, 83, 82, 84] },
-    { label: "Yield Improvement", val: 18.2, suffix: "%", trend: "+14%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <TrendingUp className="w-5 h-5" />, spark: [10, 12, 14, 15, 17, 18.2] },
+    { label: "Average Soil Health", val: 84, suffix: "%", trend: "+4%", color: "text-emerald-650", bg: "bg-emerald-50", icon: <Activity className="w-5 h-5" />, spark: [78, 80, 81, 83, 82, 84] },
+    { label: "Yield Improvement", val: 18.2, suffix: "%", trend: "+14%", color: "text-emerald-605", bg: "bg-emerald-50", icon: <TrendingUp className="w-5 h-5" />, spark: [10, 12, 14, 15, 17, 18.2] },
     { label: "Active IoT Sensors", val: 118, trend: "Online", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Cpu className="w-5 h-5" />, spark: [90, 102, 108, 112, 116, 118] }
   ];
 
-  // 2. Crop Distribution Pie Chart Data
+  // 2. Crop Distribution Doughnut Chart Data
   const cropSlices = [
-    { name: "Oil Palm", pct: 65, color: "#1B4D22", dashArray: "339.2", dashOffset: "0" },
-    { name: "Rice", pct: 15, color: "#2E7D32", dashArray: "339.2", dashOffset: "-220.5" },
-    { name: "Sugarcane", pct: 10, color: "#4CAF50", dashArray: "339.2", dashOffset: "-271.4" },
-    { name: "Banana", pct: 6, color: "#81C784", dashArray: "339.2", dashOffset: "-305.3" },
-    { name: "Vegetables", pct: 4, color: "#C8E6C9", dashArray: "339.2", dashOffset: "-325.6" }
+    { name: "Oil Palm", pct: 40, color: "#10b981", acres: 15.8 },
+    { name: "Rice", pct: 25, color: "#3b82f6", acres: 9.9 },
+    { name: "Sugarcane", pct: 20, color: "#f59e0b", acres: 7.9 },
+    { name: "Cocoa / Banana", pct: 15, color: "#8b5cf6", acres: 5.9 }
   ];
+
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius; // ~339.292
+
+  let accumulatedPercent = 0;
+  const preparedSlices = cropSlices.map((slice) => {
+    const strokeDasharray = `${(slice.pct / 100) * circumference} ${circumference}`;
+    const strokeDashoffset = -((accumulatedPercent / 100) * circumference);
+    accumulatedPercent += slice.pct;
+    return {
+      ...slice,
+      dashArray: strokeDasharray,
+      dashOffset: strokeDashoffset.toString()
+    };
+  });
 
   // 3. Farmer Registration Growth Line Data
   const farmerGrowth = [
@@ -142,15 +219,7 @@ export const AnalyticsScreen: React.FC = () => {
     { label: "Wind Velocity", pct: 95, color: "bg-emerald-500" }
   ];
 
-  // 9. Heatmap Farm Blocks
-  const heatmapFarms = [
-    { name: "Swamy North Plot (2A)", score: 92, status: "Healthy", color: "bg-emerald-600 border-emerald-300 shadow-emerald-500/10", farmer: "Swaminathan Gowda", crop: "Oil Palm", recommendation: "N-Top Up", inspection: "2 days ago" },
-    { name: "Kothagudem South", score: 72, status: "Moderate", color: "bg-lime-500 border-lime-200 shadow-lime-500/10", farmer: "K. Ramachandra Rao", crop: "Oil Palm", recommendation: "Nitrate Supp", inspection: "Yesterday" },
-    { name: "Devamma Palm Zone 1", score: 55, status: "Warning", color: "bg-orange-500 border-orange-200 shadow-orange-500/10", farmer: "M. Devamma", crop: "Coconut Palm", recommendation: "Fungicide Spray", inspection: "4 days ago" },
-    { name: "Swamy East Plantation", score: 79, status: "Moderate", color: "bg-lime-500 border-lime-200 shadow-lime-500/10", farmer: "Swaminathan Gowda", crop: "Oil Palm", recommendation: "K-Supplement", inspection: "3 days ago" },
-    { name: "Hassan Cocoa Plot", score: 38, status: "Critical", color: "bg-rose-500 border-rose-300 shadow-rose-500/10 animate-pulse", farmer: "Rajesh Kumar", crop: "Cocoa", recommendation: "Emergency Drip", inspection: "Today" },
-    { name: "Devamma Palm Zone 2", score: 88, status: "Healthy", color: "bg-emerald-600 border-emerald-300 shadow-emerald-500/10", farmer: "M. Devamma", crop: "Coconut Palm", recommendation: "Routine Check", inspection: "5 days ago" }
-  ];
+
 
   // 10. AI Insights List
   const aiInsights = [
@@ -205,10 +274,36 @@ export const AnalyticsScreen: React.FC = () => {
             <span className="text-[10px] text-gray-450 mt-1">Last Updated: {lastUpdated}</span>
           </div>
 
+          {/* Quick Filters */}
+          <div className="flex items-center gap-2">
+            <select
+              value={cropFilter}
+              onChange={(e) => setCropFilter(e.target.value)}
+              className="px-3 py-2 text-xs font-extrabold text-gray-650 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all"
+            >
+              <option value="All Crops">Crop: All</option>
+              <option value="Oil Palm">Oil Palm</option>
+              <option value="Rice">Rice</option>
+              <option value="Sugarcane">Sugarcane</option>
+              <option value="Cocoa / Banana">Cocoa / Banana</option>
+            </select>
+
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 text-xs font-extrabold text-gray-650 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all"
+            >
+              <option value="Last 30 Days">Last 30 Days</option>
+              <option value="This Season">This Season</option>
+              <option value="Last 6 Months">Last 6 Months</option>
+              <option value="This Year">This Year</option>
+            </select>
+          </div>
+
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md transition-all text-xs cursor-pointer border-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl shadow-md transition-all text-xs cursor-pointer border-0"
           >
             {isExporting ? <RefreshCwSpinner /> : <Download className="w-4 h-4" />}
             Export Report
@@ -218,36 +313,49 @@ export const AnalyticsScreen: React.FC = () => {
 
       {/* ================= 2. ANALYTICS KPI CARDS ================= */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {kpiCards.map((card, i) => (
-          <div 
-            key={i} 
-            className="bg-white border border-gray-150 p-4 rounded-2xl shadow-xs text-left flex flex-col justify-between min-h-[130px] hover:-translate-y-0.5 hover:shadow-md transition-all"
-          >
-            <div className="flex justify-between items-start">
-              <span className={`p-2 rounded-xl text-primary ${card.bg}`}>{card.icon}</span>
-              <span className="text-[9px] font-bold text-emerald-650 bg-emerald-50/50 border border-emerald-100 px-1.5 py-0.5 rounded-md">{card.trend}</span>
-            </div>
-            
-            <div className="mt-4">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
-              <span className="text-xl font-black text-gray-950 block mt-0.5">
-                <AnimatedCounter value={card.val} suffix={card.suffix} decimals={card.val % 1 !== 0 ? 1 : 0} />
-              </span>
-            </div>
+        {kpiCards.map((card, i) => {
+          const isPos = !card.trend.includes("-");
+          return (
+            <div 
+              key={i} 
+              className="bg-white border border-gray-150 p-4 rounded-2xl shadow-xs text-left flex flex-col justify-between min-h-[130px] hover:-translate-y-0.5 hover:shadow-md transition-all"
+            >
+              <div className="flex justify-between items-start">
+                <span className={`p-2 rounded-xl text-primary ${card.bg}`}>{card.icon}</span>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${
+                  card.trend === "Online"
+                    ? "text-emerald-700 bg-emerald-100/50 border-emerald-200"
+                    : isPos
+                    ? "text-emerald-600 bg-emerald-50/50 border-emerald-100"
+                    : "text-rose-600 bg-rose-50/50 border-rose-100"
+                }`}>
+                  {card.trend}
+                </span>
+              </div>
+              
+              <div className="mt-4">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
+                <span className="text-xl font-black text-gray-950 block mt-0.5">
+                  <AnimatedCounter value={card.val} suffix={card.suffix} decimals={card.val % 1 !== 0 ? 1 : 0} />
+                </span>
+              </div>
 
-            {/* Tiny mini-sparkline */}
-            <div className="w-full h-3 mt-2">
-              <svg className="w-full h-full" viewBox="0 0 100 12">
-                <path
-                  d={`M 0 10 L 20 ${10 - card.spark[0]/15} L 40 ${10 - card.spark[1]/15} L 60 ${10 - card.spark[2]/15} L 80 ${10 - card.spark[3]/15} L 100 ${10 - card.spark[5]/15}`}
-                  fill="none"
-                  stroke="#2E7D32"
-                  strokeWidth="1.5"
-                />
-              </svg>
+              {/* Tiny mini-sparkline */}
+              <div className="w-full h-3 mt-2">
+                <svg className="w-full h-full" viewBox="0 0 100 12">
+                  <path
+                    d={getSparklinePath(card.spark, 100, 12)}
+                    fill="none"
+                    stroke={card.trend === "Online" || isPos ? "#16a34a" : "#e11d48"}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ================= CHARTS SECTION ROW 1 ================= */}
@@ -316,10 +424,10 @@ export const AnalyticsScreen: React.FC = () => {
             </h3>
             
             <div className="h-44 relative flex items-center justify-center bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
-              <svg className="w-40 h-40 transform -rotate-90">
+              <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 160 160">
                 <circle cx="80" cy="80" r="54" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
                 
-                {cropSlices.map((slice, i) => {
+                {preparedSlices.map((slice, i) => {
                   const isHovered = hoveredPieIndex === i;
                   return (
                     <circle
@@ -332,7 +440,7 @@ export const AnalyticsScreen: React.FC = () => {
                       strokeWidth={isHovered ? 16 : 12}
                       strokeDasharray={slice.dashArray}
                       strokeDashoffset={slice.dashOffset}
-                      className="transition-all duration-350 cursor-pointer"
+                      className="transition-all duration-300 cursor-pointer"
                       onMouseEnter={() => setHoveredPieIndex(i)}
                       onMouseLeave={() => setHoveredPieIndex(null)}
                     />
@@ -340,25 +448,54 @@ export const AnalyticsScreen: React.FC = () => {
                 })}
               </svg>
 
-              <div className="absolute text-center">
-                <span className="text-[9px] font-mono text-slate-400 block uppercase">
-                  {hoveredPieIndex !== null ? "SELECTED CROP" : "TOTAL AREA"}
-                </span>
-                <span className="text-xs font-black text-gray-800 block mt-1">
-                  {hoveredPieIndex !== null 
-                    ? `${cropSlices[hoveredPieIndex].name} (${cropSlices[hoveredPieIndex].pct}%)` 
-                    : "39.5 Acres"}
-                </span>
+              <div className="absolute text-center flex flex-col items-center justify-center pointer-events-none">
+                {hoveredPieIndex !== null ? (
+                  <>
+                    <span 
+                      className="text-[10px] font-extrabold uppercase tracking-wider block font-bold"
+                      style={{ color: preparedSlices[hoveredPieIndex].color }}
+                    >
+                      {preparedSlices[hoveredPieIndex].name}
+                    </span>
+                    <span className="text-sm font-black text-gray-900 block mt-1">
+                      {preparedSlices[hoveredPieIndex].acres} Acres
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-500 block">
+                      ({preparedSlices[hoveredPieIndex].pct}%)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[10px] font-mono text-slate-400 block uppercase font-bold tracking-wider">
+                      TOTAL AREA
+                    </span>
+                    <span className="text-base font-black text-gray-900 block mt-1">
+                      39.5 Acres
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-[9px] font-bold mt-2">
-            {cropSlices.map((s, i) => (
-              <span key={i} className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md text-gray-650 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
-                {s.name} ({s.pct}%)
-              </span>
+          <div className="grid grid-cols-2 gap-2 text-[10px] font-bold mt-4">
+            {preparedSlices.map((s, i) => (
+              <div 
+                key={i} 
+                className={`bg-slate-50 border p-2 rounded-xl text-gray-700 flex items-center gap-2 cursor-pointer transition-all duration-200 ${
+                  hoveredPieIndex === i 
+                    ? "border-emerald-500 scale-102 bg-emerald-50/20 shadow-xs" 
+                    : "border-gray-200/60"
+                }`}
+                onMouseEnter={() => setHoveredPieIndex(i)}
+                onMouseLeave={() => setHoveredPieIndex(null)}
+              >
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                <div className="flex flex-col text-left">
+                  <span className="text-gray-900 font-extrabold leading-tight">{s.name}</span>
+                  <span className="text-[9px] text-gray-500 font-medium mt-0.5">{s.acres} Ac ({s.pct}%)</span>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -592,47 +729,112 @@ export const AnalyticsScreen: React.FC = () => {
         </div>
 
         {/* Visual Heatmap Farm Health grid (7/12 width) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
-          <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
-            <LayoutGrid className="w-4.5 h-4.5 text-primary" />
-            Farm Health Heatmap Status
-          </h3>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 pt-2 relative">
-            {heatmapFarms.map((farm, i) => (
-              <div
-                key={i}
-                onMouseEnter={() => setHoveredHeatmapIndex(i)}
-                onMouseLeave={() => setHoveredHeatmapIndex(null)}
-                className={`p-4 border rounded-2xl text-left cursor-pointer transition-all flex flex-col justify-between min-h-[90px] text-white ${farm.color}`}
-              >
-                <span className="block text-[8px] uppercase font-black text-white/75">{farm.status}</span>
-                <div className="mt-4">
-                  <span className="block text-xs font-black leading-tight">{farm.name.split(" ")[0]}</span>
-                  <span className="block text-lg font-black mt-1 leading-none">{farm.score}%</span>
+        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left flex flex-col justify-between min-h-[360px]">
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3 mb-4">
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
+                  <LayoutGrid className="w-4.5 h-4.5 text-primary" />
+                  Farm Health Heatmap Status
+                </h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-0.5">
+                  Real-time health status of 45 plots
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold text-gray-500">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500" /> 80%+</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-450 bg-amber-400" /> 60-79%</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-500" /> &lt;60%</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-9 xl:grid-cols-11 gap-2 relative">
+              {heatmapPlots.map((plot, i) => {
+                const isHovered = hoveredHeatmapIndex === i;
+                const isDimmed = cropFilter !== "All Crops" && plot.crop !== cropFilter;
+                
+                let bgColor = "bg-rose-500 hover:bg-rose-600";
+                if (plot.score >= 80) {
+                  bgColor = "bg-emerald-500 hover:bg-emerald-600";
+                } else if (plot.score >= 60) {
+                  bgColor = "bg-amber-400 hover:bg-amber-500";
+                }
+                
+                return (
+                  <div
+                    key={plot.id}
+                    onMouseEnter={() => setHoveredHeatmapIndex(i)}
+                    onMouseLeave={() => setHoveredHeatmapIndex(null)}
+                    className={`relative aspect-square rounded-xl cursor-pointer ${bgColor} ${
+                      isDimmed ? "opacity-20 scale-90" : "opacity-100"
+                    } transition-all duration-200 transform hover:scale-115 hover:shadow-lg flex items-center justify-center text-white font-mono font-bold text-[9px] select-none hover:z-25`}
+                  >
+                    {plot.id.replace("PL-", "")}
+                    
+                    {/* Floating Tooltip */}
+                    <AnimatePresence>
+                      {isHovered && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, y: 8 }}
+                          className="absolute bottom-full mb-3 w-48 bg-slate-900/95 backdrop-blur-md border border-slate-800 text-white rounded-xl p-3 text-[10px] space-y-1 shadow-2xl z-50 pointer-events-none text-left"
+                        >
+                          <div className="flex justify-between items-center border-b border-white/10 pb-1">
+                            <span className="font-extrabold text-emerald-400">{plot.id}</span>
+                            <span className="font-bold text-white bg-white/15 px-1.5 py-0.5 rounded">{plot.score}%</span>
+                          </div>
+                          <div className="space-y-1 text-gray-300 font-semibold font-mono leading-tight">
+                            <div>Farmer: <span className="text-white font-bold block text-[11px]">{plot.farmer}</span></div>
+                            <div>Crop: <span className="text-white font-bold block text-[11px]">{plot.crop}</span></div>
+                            <div>Village: <span className="text-white font-bold block text-[11px]">{plot.village}</span></div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dedicated bottom readout bar */}
+          <div className="mt-4 bg-gray-50 border border-gray-150 p-3 rounded-2xl min-h-[60px] flex items-center justify-between text-[11px]">
+            {hoveredHeatmapIndex !== null ? (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full font-mono text-gray-500 leading-tight">
+                <div>
+                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Plot ID</span>
+                  <span className="font-extrabold text-gray-900">{heatmapPlots[hoveredHeatmapIndex].id}</span>
+                </div>
+                <div>
+                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Farmer</span>
+                  <span className="font-extrabold text-gray-900 truncate block max-w-[100px]">{heatmapPlots[hoveredHeatmapIndex].farmer}</span>
+                </div>
+                <div>
+                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Crop</span>
+                  <span className="font-extrabold text-gray-900">{heatmapPlots[hoveredHeatmapIndex].crop}</span>
+                </div>
+                <div>
+                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Village</span>
+                  <span className="font-extrabold text-gray-900">{heatmapPlots[hoveredHeatmapIndex].village}</span>
+                </div>
+                <div>
+                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Health</span>
+                  <span className={`font-black ${
+                    heatmapPlots[hoveredHeatmapIndex].score >= 80 ? "text-emerald-600" :
+                    heatmapPlots[hoveredHeatmapIndex].score >= 60 ? "text-amber-600" : "text-rose-650"
+                  }`}>
+                    {heatmapPlots[hoveredHeatmapIndex].score}%
+                  </span>
                 </div>
               </div>
-            ))}
-
-            {/* Detailed hover popover */}
-            <AnimatePresence>
-              {hoveredHeatmapIndex !== null && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute inset-x-0 -bottom-16 bg-slate-950/95 border border-slate-900 text-white rounded-2xl p-4 text-[10px] space-y-1.5 shadow-2xl z-20"
-                >
-                  <p className="font-extrabold text-sm text-emerald-400">{heatmapFarms[hoveredHeatmapIndex].name}</p>
-                  <div className="grid grid-cols-4 gap-2 text-gray-300 font-semibold font-mono">
-                    <div>Farmer: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].farmer}</span></div>
-                    <div>Crop: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].crop}</span></div>
-                    <div>Prescription: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].recommendation}</span></div>
-                    <div className="text-right">Inspection: <span className="text-white font-bold">{heatmapFarms[hoveredHeatmapIndex].inspection}</span></div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            ) : (
+              <div className="text-gray-400 font-semibold italic text-center w-full py-1">
+                {cropFilter !== "All Crops" 
+                  ? `Showing plots for crop: ${cropFilter}. Hover over highlighted plots to inspect.`
+                  : "Hover over any plot block to inspect live telemetry and diagnostics."}
+              </div>
+            )}
           </div>
         </div>
 
