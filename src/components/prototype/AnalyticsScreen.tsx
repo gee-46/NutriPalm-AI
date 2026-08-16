@@ -73,6 +73,31 @@ const getSparklinePath = (points: number[], width: number, height: number) => {
   return path;
 };
 
+// Helper for generating smooth Bezier area filled paths for sparklines
+const getSparklineAreaPath = (points: number[], width: number, height: number) => {
+  if (points.length < 2) return "";
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min === 0 ? 1 : max - min;
+  
+  const coords = points.map((val, idx) => {
+    const x = (idx / (points.length - 1)) * width;
+    const y = height - 2 - ((val - min) / range) * (height - 4);
+    return { x, y };
+  });
+
+  let path = `M ${coords[0].x} ${coords[0].y}`;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const cp1x = coords[i].x + (coords[i+1].x - coords[i].x) / 3;
+    const cp1y = coords[i].y;
+    const cp2x = coords[i].x + 2 * (coords[i+1].x - coords[i].x) / 3;
+    const cp2y = coords[i+1].y;
+    path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${coords[i+1].x} ${coords[i+1].y}`;
+  }
+  path += ` L ${width} ${height} L 0 ${height} Z`;
+  return path;
+};
+
 // Helper to generate deterministic heatmap data
 const generateHeatmapPlots = () => {
   const farmers = ["Swaminathan Gowda", "K. Ramachandra Rao", "M. Devamma", "Rajesh Kumar", "Anil Mehta", "Siddharth Sen", "Priya Nair"];
@@ -106,7 +131,6 @@ const heatmapPlots = generateHeatmapPlots();
 
 export const AnalyticsScreen: React.FC = () => {
   const [lastUpdated] = useState("Just Now");
-  const [isExporting, setIsExporting] = useState(false);
   const [cropFilter, setCropFilter] = useState("All Crops");
   const [dateFilter, setDateFilter] = useState("Last 30 Days");
 
@@ -152,15 +176,29 @@ export const AnalyticsScreen: React.FC = () => {
 
   // 3. Farmer Registration Growth Line Data
   const farmerGrowth = [
-    { month: "Jan", count: 24, x: 20, y: 120 },
-    { month: "Feb", count: 42, x: 70, y: 100 },
-    { month: "Mar", count: 58, x: 120, y: 85 },
-    { month: "Apr", count: 76, x: 170, y: 70 },
-    { month: "May", count: 98, x: 220, y: 55 },
-    { month: "Jun", count: 124, x: 270, y: 35 },
+    { month: "Jan", count: 24, x: 30, y: 160 },
+    { month: "Feb", count: 42, x: 78, y: 139 },
+    { month: "Mar", count: 58, x: 127, y: 120 },
+    { month: "Apr", count: 76, x: 175, y: 98 },
+    { month: "May", count: 98, x: 223, y: 72 },
+    { month: "Jun", count: 124, x: 272, y: 41 },
     { month: "Jul", count: 142, x: 320, y: 20 }
   ];
-  const farmerGrowthPath = `M ${farmerGrowth.map(p => `${p.x} ${p.y}`).join(" L ")}`;
+  
+  // Generates a smooth cubic Bezier curve path for the line chart
+  const getSmoothPath = (points: { x: number; y: number }[]) => {
+    if (points.length < 2) return "";
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const cp1x = points[i].x + (points[i+1].x - points[i].x) / 3;
+      const cp1y = points[i].y;
+      const cp2x = points[i].x + 2 * (points[i+1].x - points[i].x) / 3;
+      const cp2y = points[i+1].y;
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${points[i+1].x} ${points[i+1].y}`;
+    }
+    return path;
+  };
+  const farmerGrowthPath = getSmoothPath(farmerGrowth);
 
   // 4. AI Recommendation Trends Area Data (Generated vs Accepted vs Pending vs Completed)
   const recTrends = [
@@ -238,40 +276,32 @@ export const AnalyticsScreen: React.FC = () => {
     { name: "Water Schedule Optimization Grid", farmer: "Rajesh Kumar", date: "Jul 18, 2026", status: "Pending", color: "bg-gray-50 text-gray-500 border-gray-150" }
   ];
 
-  const handleExport = () => {
-    setIsExporting(true);
-    setTimeout(() => {
-      setIsExporting(false);
-      alert("Executive AgriTech report generated & downloaded.");
-    }, 1500);
-  };
+
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -15 }}
-      className="space-y-6 text-left"
+      className="space-y-6 text-left p-6 min-h-screen bg-gradient-to-b from-slate-50 via-emerald-50/10 to-slate-50 rounded-3xl"
     >
       {/* ================= 1. ANALYTICS OVERVIEW ================= */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200/50 pb-5">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2.5">
-            <BarChart3 className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none flex items-center gap-2.5">
+            <BarChart3 className="w-8 h-8 text-emerald-600" />
             AI Farm Analytics
           </h1>
-          <p className="text-sm font-semibold text-gray-500 mt-2">
+          <p className="text-sm font-semibold text-slate-500 mt-2">
             Monitor agricultural performance, AI recommendations, and operational insights across all managed farms.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-col items-end text-xs font-mono font-bold text-gray-400">
-            <span className="flex items-center gap-1 text-primary">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-md" />
-              Operational Core online
-            </span>
-            <span className="text-[10px] text-gray-450 mt-1">Last Updated: {lastUpdated}</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-mono font-bold text-emerald-800 leading-none">Core Online</span>
+            <span className="text-[9px] font-mono text-emerald-600 border-l border-emerald-250/60 pl-2 leading-none">Updated: {lastUpdated}</span>
           </div>
 
           {/* Quick Filters */}
@@ -279,7 +309,7 @@ export const AnalyticsScreen: React.FC = () => {
             <select
               value={cropFilter}
               onChange={(e) => setCropFilter(e.target.value)}
-              className="px-3 py-2 text-xs font-extrabold text-gray-650 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all"
+              className="px-3 py-2 text-xs font-extrabold text-slate-600 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all h-9"
             >
               <option value="All Crops">Crop: All</option>
               <option value="Oil Palm">Oil Palm</option>
@@ -291,7 +321,7 @@ export const AnalyticsScreen: React.FC = () => {
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-2 text-xs font-extrabold text-gray-650 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all"
+              className="px-3 py-2 text-xs font-extrabold text-slate-600 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all h-9"
             >
               <option value="Last 30 Days">Last 30 Days</option>
               <option value="This Season">This Season</option>
@@ -299,15 +329,6 @@ export const AnalyticsScreen: React.FC = () => {
               <option value="This Year">This Year</option>
             </select>
           </div>
-
-          <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold rounded-xl shadow-md transition-all text-xs cursor-pointer border-0"
-          >
-            {isExporting ? <RefreshCwSpinner /> : <Download className="w-4 h-4" />}
-            Export Report
-          </button>
         </div>
       </div>
 
@@ -318,13 +339,15 @@ export const AnalyticsScreen: React.FC = () => {
           return (
             <div 
               key={i} 
-              className="bg-white border border-gray-150 p-4 rounded-2xl shadow-xs text-left flex flex-col justify-between min-h-[130px] hover:-translate-y-0.5 hover:shadow-md transition-all"
+              className="bg-white/95 border border-slate-200/80 p-4.5 rounded-2xl shadow-xs text-left flex flex-col justify-between min-h-[140px] hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
             >
               <div className="flex justify-between items-start">
-                <span className={`p-2 rounded-xl text-primary ${card.bg}`}>{card.icon}</span>
+                <span className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 shadow-xs flex items-center justify-center">
+                  {card.icon}
+                </span>
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${
                   card.trend === "Online"
-                    ? "text-emerald-700 bg-emerald-100/50 border-emerald-200"
+                    ? "text-emerald-750 bg-emerald-100/50 border-emerald-200"
                     : isPos
                     ? "text-emerald-600 bg-emerald-50/50 border-emerald-100"
                     : "text-rose-600 bg-rose-50/50 border-rose-100"
@@ -334,19 +357,29 @@ export const AnalyticsScreen: React.FC = () => {
               </div>
               
               <div className="mt-4">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
-                <span className="text-xl font-black text-gray-950 block mt-0.5">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{card.label}</span>
+                <span className="text-2xl font-extrabold text-slate-900 tracking-tight block mt-1">
                   <AnimatedCounter value={card.val} suffix={card.suffix} decimals={card.val % 1 !== 0 ? 1 : 0} />
                 </span>
               </div>
 
-              {/* Tiny mini-sparkline */}
-              <div className="w-full h-3 mt-2">
+              {/* Tiny mini-sparkline with area gradient */}
+              <div className="w-full h-4 mt-3">
                 <svg className="w-full h-full" viewBox="0 0 100 12">
+                  <defs>
+                    <linearGradient id={`sparkGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={card.trend === "Online" || isPos ? "#10b981" : "#ef4444"} stopOpacity="0.2" />
+                      <stop offset="100%" stopColor={card.trend === "Online" || isPos ? "#10b981" : "#ef4444"} stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={getSparklineAreaPath(card.spark, 100, 12)}
+                    fill={`url(#sparkGrad-${i})`}
+                  />
                   <path
                     d={getSparklinePath(card.spark, 100, 12)}
                     fill="none"
-                    stroke={card.trend === "Online" || isPos ? "#16a34a" : "#e11d48"}
+                    stroke={card.trend === "Online" || isPos ? "#10b981" : "#ef4444"}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -359,88 +392,94 @@ export const AnalyticsScreen: React.FC = () => {
       </div>
 
       {/* ================= CHARTS SECTION ROW 1 ================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         
-        {/* Line Chart: Farmer registration growth (7/12 width) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <Users className="w-4.5 h-4.5 text-primary" />
-              Farmer Registration Growth
-            </h3>
-            
-            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
-              <svg className="w-full h-full" viewBox="0 0 350 140">
-                <path d={farmerGrowthPath} fill="none" stroke="#2E7D32" strokeWidth="2.5" />
-                
-                {/* Points */}
-                {farmerGrowth.map((pt, i) => (
-                  <circle
-                    key={i}
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={hoveredFarmerPoint === i ? 6 : 4}
-                    fill="#FFF"
-                    stroke="#2E7D32"
-                    strokeWidth="2"
-                    className="cursor-pointer"
-                    onMouseEnter={() => setHoveredFarmerPoint(i)}
-                    onMouseLeave={() => setHoveredFarmerPoint(null)}
-                  />
-                ))}
+        {/* Line Chart: Farmer registration growth */}
+        <div className="bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col h-full">
+          <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5 shrink-0">
+            <Users className="w-4.5 h-4.5 text-emerald-600" />
+            Farmer Registration Growth
+          </h3>
+          
+          <div className="w-full relative bg-slate-50/50 border border-slate-100 rounded-xl p-3 select-none flex-grow flex items-center justify-center">
+            <svg className="w-full h-full" viewBox="0 0 350 200">
+              {/* Horizontal Grid Lines */}
+              <line x1="20" y1="50" x2="330" y2="50" stroke="#e2e8f0" strokeDasharray="3 3" strokeWidth="1" />
+              <line x1="20" y1="100" x2="330" y2="100" stroke="#e2e8f0" strokeDasharray="3 3" strokeWidth="1" />
+              <line x1="20" y1="150" x2="330" y2="150" stroke="#e2e8f0" strokeDasharray="3 3" strokeWidth="1" />
 
-                {/* X Axis labels */}
-                {farmerGrowth.map((pt, i) => (
-                  <text key={i} x={pt.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
-                    {pt.month}
-                  </text>
-                ))}
-              </svg>
+              <path d={farmerGrowthPath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+              
+              {/* Points */}
+              {farmerGrowth.map((pt, i) => (
+                <circle
+                  key={i}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={hoveredFarmerPoint === i ? 6 : 4}
+                  fill="#FFF"
+                  stroke="#10b981"
+                  strokeWidth="2.5"
+                  className="cursor-pointer transition-all duration-150"
+                  onMouseEnter={() => setHoveredFarmerPoint(i)}
+                  onMouseLeave={() => setHoveredFarmerPoint(null)}
+                />
+              ))}
 
-              {/* Tooltip Overlay */}
-              <AnimatePresence>
-                {hoveredFarmerPoint !== null && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
-                  >
-                    <span className="block font-bold text-emerald-400">Total Registered</span>
-                    <span className="block mt-0.5">{farmerGrowth[hoveredFarmerPoint].month}: {farmerGrowth[hoveredFarmerPoint].count} Farmers</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {/* X Axis labels */}
+              {farmerGrowth.map((pt, i) => (
+                <text key={i} x={pt.x} y="192" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono font-bold">
+                  {pt.month}
+                </text>
+              ))}
+            </svg>
+
+            {/* Tooltip Overlay */}
+            <AnimatePresence>
+              {hoveredFarmerPoint !== null && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md z-10"
+                >
+                  <span className="block font-bold text-emerald-400">Total Registered</span>
+                  <span className="block mt-0.5">{farmerGrowth[hoveredFarmerPoint].month}: {farmerGrowth[hoveredFarmerPoint].count} Farmers</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Pie Chart: Crop Distribution (5/12 width) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        {/* Pie Chart: Crop Distribution */}
+        <div className="bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full">
           <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <PieChart className="w-4.5 h-4.5 text-primary" />
+            <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
+              <PieChart className="w-4.5 h-4.5 text-emerald-600" />
               Crop Distribution
             </h3>
             
-            <div className="h-44 relative flex items-center justify-center bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
-              <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 160 160">
-                <circle cx="80" cy="80" r="54" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+            <div className="w-full min-h-[220px] sm:min-h-[260px] relative flex items-center justify-center bg-slate-50/50 border border-slate-100 rounded-xl p-3 select-none flex-grow">
+              <svg className="w-52 h-52 transform -rotate-90" viewBox="0 0 220 220">
+                <circle cx="110" cy="110" r="75" fill="transparent" stroke="#e2e8f0" strokeWidth="18" />
                 
                 {preparedSlices.map((slice, i) => {
                   const isHovered = hoveredPieIndex === i;
                   return (
                     <circle
                       key={i}
-                      cx="80"
-                      cy="80"
-                      r="54"
+                      cx="110"
+                      cy="110"
+                      r="75"
                       fill="transparent"
                       stroke={slice.color}
-                      strokeWidth={isHovered ? 16 : 12}
+                      strokeWidth={isHovered ? 24 : 18}
                       strokeDasharray={slice.dashArray}
                       strokeDashoffset={slice.dashOffset}
-                      className="transition-all duration-300 cursor-pointer"
+                      className="transition-all duration-200 cursor-pointer"
+                      style={{
+                        filter: isHovered ? `drop-shadow(0 0 6px ${slice.color}80)` : "none"
+                      }}
                       onMouseEnter={() => setHoveredPieIndex(i)}
                       onMouseLeave={() => setHoveredPieIndex(null)}
                     />
@@ -452,24 +491,24 @@ export const AnalyticsScreen: React.FC = () => {
                 {hoveredPieIndex !== null ? (
                   <>
                     <span 
-                      className="text-[10px] font-extrabold uppercase tracking-wider block font-bold"
+                      className="text-xs font-black uppercase tracking-wider block"
                       style={{ color: preparedSlices[hoveredPieIndex].color }}
                     >
                       {preparedSlices[hoveredPieIndex].name}
                     </span>
-                    <span className="text-sm font-black text-gray-900 block mt-1">
+                    <span className="text-base font-black text-slate-900 block mt-1">
                       {preparedSlices[hoveredPieIndex].acres} Acres
                     </span>
-                    <span className="text-[10px] font-bold text-gray-500 block">
+                    <span className="text-[10px] font-bold text-slate-550 block">
                       ({preparedSlices[hoveredPieIndex].pct}%)
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="text-[10px] font-mono text-slate-400 block uppercase font-bold tracking-wider">
+                    <span className="text-xs font-mono text-slate-400 block uppercase font-bold tracking-wider">
                       TOTAL AREA
                     </span>
-                    <span className="text-base font-black text-gray-900 block mt-1">
+                    <span className="text-lg font-black text-slate-900 block mt-1">
                       39.5 Acres
                     </span>
                   </>
@@ -478,22 +517,22 @@ export const AnalyticsScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-[10px] font-bold mt-4">
+          <div className="grid grid-cols-2 gap-3 mt-4">
             {preparedSlices.map((s, i) => (
               <div 
                 key={i} 
-                className={`bg-slate-50 border p-2 rounded-xl text-gray-700 flex items-center gap-2 cursor-pointer transition-all duration-200 ${
+                className={`bg-slate-50 border p-2.5 rounded-xl text-slate-700 flex items-center gap-2.5 cursor-pointer transition-all duration-200 ${
                   hoveredPieIndex === i 
-                    ? "border-emerald-500 scale-102 bg-emerald-50/20 shadow-xs" 
-                    : "border-gray-200/60"
+                    ? "border-emerald-500 scale-102 bg-emerald-50/10 shadow-xs" 
+                    : "border-slate-200/60"
                 }`}
                 onMouseEnter={() => setHoveredPieIndex(i)}
                 onMouseLeave={() => setHoveredPieIndex(null)}
               >
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                 <div className="flex flex-col text-left">
-                  <span className="text-gray-900 font-extrabold leading-tight">{s.name}</span>
-                  <span className="text-[9px] text-gray-500 font-medium mt-0.5">{s.acres} Ac ({s.pct}%)</span>
+                  <span className="text-slate-900 font-extrabold leading-tight text-xs">{s.name}</span>
+                  <span className="text-[10px] text-slate-500 font-semibold mt-0.5">{s.acres} Ac ({s.pct}%)</span>
                 </div>
               </div>
             ))}
@@ -506,27 +545,27 @@ export const AnalyticsScreen: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Area Chart: AI Recommendation Trends (7/12 width) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <Bot className="w-4.5 h-4.5 text-primary" />
+            <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
+              <Bot className="w-4.5 h-4.5 text-emerald-600" />
               AI Recommendation Trends
             </h3>
             
-            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+            <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 350 140">
                 <defs>
                   <linearGradient id="areaGenGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2E7D32" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#2E7D32" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                   </linearGradient>
                   <linearGradient id="areaAccGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2E7D32" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#2E7D32" stopOpacity="0.0" />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
                 <path d={recGenPath} fill="url(#areaGenGrad)" />
-                <path d={recAccPath} fill="url(#areaAccGrad)" stroke="#1B4D22" strokeWidth="2" />
+                <path d={recAccPath} fill="url(#areaAccGrad)" stroke="#10b981" strokeWidth="2.5" />
 
                 {recTrends.map((pt, i) => (
                   <circle
@@ -535,9 +574,9 @@ export const AnalyticsScreen: React.FC = () => {
                     cy={140 - pt.acc / 1.5}
                     r={hoveredRecPoint === i ? 5 : 3.5}
                     fill="#FFF"
-                    stroke="#1B4D22"
-                    strokeWidth="2"
-                    className="cursor-pointer"
+                    stroke="#10b981"
+                    strokeWidth="2.5"
+                    className="cursor-pointer transition-all"
                     onMouseEnter={() => setHoveredRecPoint(i)}
                     onMouseLeave={() => setHoveredRecPoint(null)}
                   />
@@ -545,7 +584,7 @@ export const AnalyticsScreen: React.FC = () => {
 
                 {/* X labels */}
                 {recTrends.map((pt, i) => (
-                  <text key={i} x={pt.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                  <text key={i} x={pt.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono font-bold">
                     {pt.month}
                   </text>
                 ))}
@@ -558,7 +597,7 @@ export const AnalyticsScreen: React.FC = () => {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
+                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md z-10"
                   >
                     <span className="block font-bold text-emerald-400">{recTrends[hoveredRecPoint].month} Metrics</span>
                     <span className="block mt-0.5">Generated: {recTrends[hoveredRecPoint].gen} | Accepted: {recTrends[hoveredRecPoint].acc}</span>
@@ -571,23 +610,23 @@ export const AnalyticsScreen: React.FC = () => {
         </div>
 
         {/* Multi-Line Chart: Soil Health Trends (5/12 width) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <Activity className="w-4.5 h-4.5 text-primary" />
+            <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
+              <Activity className="w-4.5 h-4.5 text-emerald-600" />
               Soil Health Trends (12 Months)
             </h3>
             
-            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+            <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 300 140">
                 {/* Dynamic path lines (N, P, K, pH, Carbon) */}
-                <path d={`M 10 ${140 - soilMetrics.nitrogen[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.nitrogen[i]}`).join(" L ")}`} fill="none" stroke="#F59E0B" strokeWidth="1.5" />
-                <path d={`M 10 ${140 - soilMetrics.phosphorus[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.phosphorus[i]}`).join(" L ")}`} fill="none" stroke="#84CC16" strokeWidth="1.5" />
-                <path d={`M 10 ${140 - soilMetrics.potassium[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.potassium[i]}`).join(" L ")}`} fill="none" stroke="#EF4444" strokeWidth="1.5" />
+                <path d={`M 10 ${140 - soilMetrics.nitrogen[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.nitrogen[i]}`).join(" L ")}`} fill="none" stroke="#f59e0b" strokeWidth="2" />
+                <path d={`M 10 ${140 - soilMetrics.phosphorus[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.phosphorus[i]}`).join(" L ")}`} fill="none" stroke="#10b981" strokeWidth="2" />
+                <path d={`M 10 ${140 - soilMetrics.potassium[0]} L ${soilMonths.map((_, i) => `${10 + i * 25} ${140 - soilMetrics.potassium[i]}`).join(" L ")}`} fill="none" stroke="#8b5cf6" strokeWidth="2" />
 
                 {/* X labels */}
                 {soilMonths.map((m, i) => (
-                  <text key={i} x={10 + i * 25} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                  <text key={i} x={10 + i * 25} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono font-bold">
                     {m}
                   </text>
                 ))}
@@ -595,10 +634,10 @@ export const AnalyticsScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2.5 text-[9px] font-bold mt-2">
-            <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">Nitrogen (N)</span>
-            <span className="text-lime-600 bg-lime-50 px-2 py-0.5 rounded-md">Phosphorus (P)</span>
-            <span className="text-rose-650 bg-rose-50 px-2 py-0.5 rounded-md">Potassium (K)</span>
+          <div className="flex flex-wrap gap-2 text-[9px] font-bold mt-2">
+            <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">Nitrogen (N)</span>
+            <span className="text-emerald-700 bg-emerald-55 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">Phosphorus (P)</span>
+            <span className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">Potassium (K)</span>
           </div>
         </div>
 
@@ -608,14 +647,14 @@ export const AnalyticsScreen: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Bar Chart: Yield Prediction (Jan - Jun) (7/12 width) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
-              <BarChart3 className="w-4.5 h-4.5 text-primary" />
+            <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
+              <BarChart3 className="w-4.5 h-4.5 text-emerald-600" />
               Monthly Yield Predictions (Tons/ha)
             </h3>
             
-            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+            <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 350 140">
                 {/* Expected vs Actual bars */}
                 {monthlyYield.map((y, i) => {
@@ -627,7 +666,8 @@ export const AnalyticsScreen: React.FC = () => {
                         y={120 - y.exp * 20}
                         width="14"
                         height={y.exp * 20}
-                        fill="#A5D6A7"
+                        fill="#a7f3d0"
+                        rx="2"
                         className="transition-all"
                       />
                       {/* Actual Yield Bar */}
@@ -636,8 +676,9 @@ export const AnalyticsScreen: React.FC = () => {
                         y={120 - y.act * 20}
                         width="14"
                         height={y.act * 20}
-                        fill="#2E7D32"
-                        className="transition-all"
+                        fill="#10b981"
+                        rx="2"
+                        className="transition-all cursor-pointer"
                         onMouseEnter={() => setHoveredYieldBar(i)}
                         onMouseLeave={() => setHoveredYieldBar(null)}
                       />
@@ -647,7 +688,7 @@ export const AnalyticsScreen: React.FC = () => {
 
                 {/* X Labels */}
                 {monthlyYield.map((y, i) => (
-                  <text key={i} x={y.x + 15} y="133" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                  <text key={i} x={y.x + 15} y="133" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono font-bold">
                     {y.label}
                   </text>
                 ))}
@@ -660,7 +701,7 @@ export const AnalyticsScreen: React.FC = () => {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md"
+                    className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md z-10"
                   >
                     <span className="block font-bold text-emerald-400">{monthlyYield[hoveredYieldBar].label} Yields</span>
                     <span className="block mt-0.5">Expected: {monthlyYield[hoveredYieldBar].exp} t/ha</span>
@@ -673,21 +714,21 @@ export const AnalyticsScreen: React.FC = () => {
         </div>
 
         {/* Area Chart: Water Usage Analytics (5/12 width) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
-            <h3 className="font-extrabold text-gray-900 text-sm mb-4 flex items-center gap-1.5">
+            <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
               <Droplets className="w-4.5 h-4.5 text-blue-500" />
               Water Usage Analytics (L/acre)
             </h3>
             
-            <div className="h-44 relative bg-gray-50/50 border border-gray-150 rounded-2xl p-2 select-none">
+            <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 350 140">
                 <path d={waterConsPath} fill="#EFF6FF" opacity="0.4" />
-                <path d={waterOptPath} fill="#DBEAFE" stroke="#2563EB" strokeWidth="2" />
+                <path d={waterOptPath} fill="#DBEAFE" stroke="#3b82f6" strokeWidth="2.5" />
                 
                 {/* Labels */}
                 {waterUsage.map((w, i) => (
-                  <text key={i} x={w.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono">
+                  <text key={i} x={w.x} y="135" fill="#94a3b8" fontSize="8" textAnchor="middle" className="font-mono font-bold">
                     {w.label}
                   </text>
                 ))}
@@ -695,7 +736,7 @@ export const AnalyticsScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-between items-center text-[10px] font-bold text-gray-450 uppercase mt-2 pt-2 border-t border-gray-100">
+          <div className="flex justify-between items-center text-[10px] font-bold text-slate-450 uppercase mt-2 pt-2 border-t border-slate-100">
             <span>Optimized savings</span>
             <span className="text-blue-600 font-extrabold">-12.8% Saved</span>
           </div>
@@ -707,21 +748,21 @@ export const AnalyticsScreen: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Horizontal Sensor Online Bar Chart (5/12 width) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
-          <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
-            <Cpu className="w-4.5 h-4.5 text-primary" />
+        <div className="lg:col-span-5 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 text-left space-y-4">
+          <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+            <Cpu className="w-4.5 h-4.5 text-emerald-600" />
             Sensor Online Reliability
           </h3>
           
-          <div className="space-y-3.5 text-xs text-gray-700 font-semibold">
+          <div className="space-y-3.5 text-xs text-slate-700 font-semibold">
             {sensors.map((s, i) => (
               <div key={i} className="space-y-1">
                 <div className="flex justify-between font-bold">
                   <span>{s.label}</span>
-                  <span className="text-gray-950">{s.pct}% Online</span>
+                  <span className="text-slate-950">{s.pct}% Online</span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${s.pct}%` }} />
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500" style={{ width: `${s.pct}%` }} />
                 </div>
               </div>
             ))}
@@ -729,21 +770,21 @@ export const AnalyticsScreen: React.FC = () => {
         </div>
 
         {/* Visual Heatmap Farm Health grid (7/12 width) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left flex flex-col justify-between min-h-[360px]">
+        <div className="lg:col-span-7 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 text-left flex flex-col justify-between min-h-[360px]">
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
               <div>
-                <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
-                  <LayoutGrid className="w-4.5 h-4.5 text-primary" />
+                <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+                  <LayoutGrid className="w-4.5 h-4.5 text-emerald-600" />
                   Farm Health Heatmap Status
                 </h3>
-                <p className="text-[10px] font-bold text-gray-400 mt-0.5">
+                <p className="text-[10px] font-bold text-slate-400 mt-0.5">
                   Real-time health status of 45 plots
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold text-gray-500">
+              <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold text-slate-500">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500" /> 80%+</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-450 bg-amber-400" /> 60-79%</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" /> 60-79%</span>
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-500" /> &lt;60%</span>
               </div>
             </div>
@@ -799,27 +840,27 @@ export const AnalyticsScreen: React.FC = () => {
           </div>
 
           {/* Dedicated bottom readout bar */}
-          <div className="mt-4 bg-gray-50 border border-gray-150 p-3 rounded-2xl min-h-[60px] flex items-center justify-between text-[11px]">
+          <div className="mt-4 bg-slate-50 border border-slate-200 p-3 rounded-2xl min-h-[60px] flex items-center justify-between text-[11px]">
             {hoveredHeatmapIndex !== null ? (
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full font-mono text-gray-500 leading-tight">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full font-mono text-slate-500 leading-tight">
                 <div>
-                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Plot ID</span>
-                  <span className="font-extrabold text-gray-900">{heatmapPlots[hoveredHeatmapIndex].id}</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Plot ID</span>
+                  <span className="font-extrabold text-slate-900">{heatmapPlots[hoveredHeatmapIndex].id}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Farmer</span>
-                  <span className="font-extrabold text-gray-900 truncate block max-w-[100px]">{heatmapPlots[hoveredHeatmapIndex].farmer}</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Farmer</span>
+                  <span className="font-extrabold text-slate-900 truncate block max-w-[100px]">{heatmapPlots[hoveredHeatmapIndex].farmer}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Crop</span>
-                  <span className="font-extrabold text-gray-900">{heatmapPlots[hoveredHeatmapIndex].crop}</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Crop</span>
+                  <span className="font-extrabold text-slate-900">{heatmapPlots[hoveredHeatmapIndex].crop}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Village</span>
-                  <span className="font-extrabold text-gray-900">{heatmapPlots[hoveredHeatmapIndex].village}</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Village</span>
+                  <span className="font-extrabold text-slate-900">{heatmapPlots[hoveredHeatmapIndex].village}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-gray-400 font-bold uppercase">Health</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Health</span>
                   <span className={`font-black ${
                     heatmapPlots[hoveredHeatmapIndex].score >= 80 ? "text-emerald-600" :
                     heatmapPlots[hoveredHeatmapIndex].score >= 60 ? "text-amber-600" : "text-rose-650"
@@ -829,7 +870,7 @@ export const AnalyticsScreen: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-gray-400 font-semibold italic text-center w-full py-1">
+              <div className="text-slate-400 font-semibold italic text-center w-full py-1">
                 {cropFilter !== "All Crops" 
                   ? `Showing plots for crop: ${cropFilter}. Hover over highlighted plots to inspect.`
                   : "Hover over any plot block to inspect live telemetry and diagnostics."}
@@ -841,33 +882,33 @@ export const AnalyticsScreen: React.FC = () => {
       </div>
 
       {/* ================= 12. AI INSIGHTS PANEL ================= */}
-      <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
-        <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+      <div className="bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 text-left space-y-5">
+        <div className="flex justify-between items-center border-b border-slate-100 pb-3">
           <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-            <Bot className="w-4.5 h-4.5 text-primary" /> AI Agronomy Insights
+            <Bot className="w-4.5 h-4.5 text-emerald-600" /> AI Agronomy Insights
           </h4>
-          <span className="text-[10px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-black text-emerald-750 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
             Real-time recommendations
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {aiInsights.map((insight, idx) => (
-            <div key={idx} className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl space-y-2 flex flex-col justify-between text-xs">
+            <div key={idx} className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-2xl space-y-2 flex flex-col justify-between text-xs">
               <div className="flex justify-between items-start">
-                <span className="p-1.5 bg-white border border-gray-200 rounded-lg">{insight.icon}</span>
+                <span className="p-1.5 bg-white border border-slate-200 rounded-lg">{insight.icon}</span>
                 <span className={`text-[8px] font-black px-2 py-0.5 rounded-md ${
                   insight.severity === "Warning" 
                     ? "bg-amber-50 text-amber-600 border border-amber-100" 
-                    : "bg-emerald-50 text-primary border border-emerald-100"
+                    : "bg-emerald-50 text-emerald-700 border border-emerald-100"
                 }`}>
                   {insight.severity}
                 </span>
               </div>
               
-              <p className="text-[11px] text-gray-800 font-extrabold leading-snug">{insight.text}</p>
+              <p className="text-[11px] text-slate-800 font-extrabold leading-snug">{insight.text}</p>
               
-              <div className="flex justify-between text-[9px] text-gray-400 font-bold uppercase pt-2 border-t border-gray-100/50">
+              <div className="flex justify-between text-[9px] text-slate-450 font-bold uppercase pt-2 border-t border-slate-100/50">
                 <span>{insight.score}</span>
                 <span>{insight.time}</span>
               </div>
@@ -877,21 +918,21 @@ export const AnalyticsScreen: React.FC = () => {
       </div>
 
       {/* ================= 11. RECENT REPORTS TABLE ================= */}
-      <div className="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs text-left">
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+      <div className="bg-white/95 border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 rounded-2xl text-left">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
           <div>
-            <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-1.5">
-              <Calendar className="w-4.5 h-4.5 text-primary" />
+            <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+              <Calendar className="w-4.5 h-4.5 text-emerald-600" />
               Generated Analytical Reports
             </h3>
-            <p className="text-[11px] text-gray-450 mt-0.5">Telemetry reports compiled for cooperatives</p>
+            <p className="text-[11px] text-slate-450 mt-0.5">Telemetry reports compiled for cooperatives</p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-gray-50/75 border-b border-gray-150 text-[10px] font-bold text-gray-450 uppercase tracking-wider">
+              <tr className="bg-slate-50/75 border-b border-slate-200 text-[10px] font-bold text-slate-450 uppercase tracking-wider">
                 <th className="py-3.5 px-6">Report Title</th>
                 <th className="py-3.5 px-6">Landholder</th>
                 <th className="py-3.5 px-6">Compiled Date</th>
@@ -899,19 +940,19 @@ export const AnalyticsScreen: React.FC = () => {
                 <th className="py-3.5 px-6 text-right pr-6">Download Link</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-gray-700">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {reportsList.map((row, idx) => (
-                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="py-4 px-6 font-bold text-gray-950">{row.name}</td>
-                  <td className="py-4 px-6 text-gray-450 font-semibold">{row.farmer}</td>
-                  <td className="py-4 px-6 text-gray-450 font-semibold">{row.date}</td>
+                <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-4 px-6 font-bold text-slate-950">{row.name}</td>
+                  <td className="py-4 px-6 text-slate-450 font-semibold">{row.farmer}</td>
+                  <td className="py-4 px-6 text-slate-450 font-semibold">{row.date}</td>
                   <td className="py-4 px-6">
                     <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold border ${row.color}`}>
                       {row.status}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right pr-6">
-                    <button className="text-primary hover:text-emerald-700 bg-transparent border-0 cursor-pointer font-extrabold inline-flex items-center gap-0.5">
+                    <button className="text-emerald-700 hover:text-emerald-800 bg-transparent border-0 cursor-pointer font-extrabold inline-flex items-center gap-0.5">
                       Download PDF <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
                   </td>
@@ -923,35 +964,35 @@ export const AnalyticsScreen: React.FC = () => {
       </div>
 
       {/* ================= 13. EXPORT ACTIONS SECTION ================= */}
-      <div className="flex flex-wrap gap-3 items-center justify-start bg-gray-50 border border-gray-150 p-4 rounded-3xl text-xs font-bold text-gray-800">
-        <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider pl-2 pr-4">Global actions:</span>
+      <div className="flex flex-wrap gap-3 items-center justify-start bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs font-bold text-slate-800">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-2 pr-4">Global actions:</span>
         
         <button
           onClick={() => alert("Downloading analytical payload...")}
-          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+          className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          <Download className="w-4 h-4 text-gray-500" /> Export PDF Report
+          <Download className="w-4 h-4 text-slate-500" /> Export PDF Report
         </button>
 
         <button
           onClick={() => alert("Exported database records to CSV.")}
-          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+          className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
           Export CSV Records
         </button>
 
         <button
           onClick={() => alert("Dashboard share payload copied.")}
-          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+          className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          <Share2 className="w-4 h-4 text-gray-500" /> Share Dashboard
+          <Share2 className="w-4 h-4 text-slate-500" /> Share Dashboard
         </button>
 
         <button
           onClick={() => window.print()}
-          className="px-4 py-2.5 bg-white border border-gray-250 hover:bg-gray-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
+          className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          <Printer className="w-4 h-4 text-gray-500" /> Print Summary
+          <Printer className="w-4 h-4 text-slate-500" /> Print Summary
         </button>
       </div>
 
@@ -959,7 +1000,4 @@ export const AnalyticsScreen: React.FC = () => {
   );
 };
 
-// Reusable spinner component to satisfy TS compile rules
-const RefreshCwSpinner: React.FC = () => {
-  return <TrendingUp className="w-4 h-4 text-white animate-spin" />;
-};
+
