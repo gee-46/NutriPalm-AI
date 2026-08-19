@@ -71,8 +71,11 @@ export async function computeCentroid(
 
 export interface ReverseGeocodeResult {
   village: string;
+  /** Taluk/tehsil — maps to Nominatim's `county` key (closest Indian admin subdivision) */
+  taluk: string;
   district: string;
   state: string;
+  country: string;
   display: string;
 }
 
@@ -88,6 +91,7 @@ export async function reverseGeocode(
   const data = await response.json();
   const addr = data.address ?? {};
   return {
+    // Village: walk down from most to least specific
     village:
       addr.village ||
       addr.suburb ||
@@ -95,8 +99,13 @@ export async function reverseGeocode(
       addr.hamlet ||
       addr.neighbourhood ||
       "",
-    district: addr.state_district || addr.county || addr.district || "",
+    // Taluk/tehsil: Nominatim returns Indian sub-district level as `county`
+    // (state_district is the district-equivalent; county is one level below that)
+    taluk: addr.county || "",
+    // District: prefer state_district which Nominatim returns for Indian districts
+    district: addr.state_district || addr.district || "",
     state: addr.state || "",
+    country: addr.country || "",
     display: data.display_name || "",
   };
 }

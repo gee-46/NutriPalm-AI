@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@geoman-io/leaflet-geoman-free": "^2.20.0",
-    "@supabase/supabase-js": "^2.112.2",
+    "@supabase/supabase-js": "^2.112.3",
     "@tailwindcss/vite": "^4.3.3",
     "@turf/area": "^7.4.0",
     "@turf/centroid": "^7.4.0",
@@ -29,6 +29,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "dotenv": "^17.4.2",
     "oxlint": "^1.71.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"

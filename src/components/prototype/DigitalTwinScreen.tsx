@@ -4,6 +4,7 @@ import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, Wind, CheckC
 import { usePlots, type Plot } from "../../data/plots";
 import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
+import { useDigitalTwinSnapshots } from "../../data/digitalTwins";
 
 // PlotData type is now the shared Plot type from src/data/plots.ts
 type PlotData = Plot;
@@ -98,13 +99,31 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   const activePlot = plots.find((p) => p.id === activePlotId) || plots[0];
 
+  const { snapshots, isLoading: isTwinsLoading } = useDigitalTwinSnapshots(activePlotId);
+  const activeSnapshot = snapshots[simMode];
+
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
-  const activeNDVI = activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0;
-  const activeMoisture = activePlot?.moistureTimeline ? Math.round(activePlot.moistureTimeline[simMode] + fluctuateMoisture) : 0;
-  const activeSoilHealth = activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0;
-  const activeYield = activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A";
-  const activeDiseasePct = activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0;
-  const activeDiseaseRisk = activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending";
+  const activeNDVI = activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0);
+  const activeMoisture = activeSnapshot?.water_stress_score 
+    ? Math.round(activeSnapshot.water_stress_score + fluctuateMoisture) 
+    : (activePlot?.moistureTimeline ? Math.round(activePlot.moistureTimeline[simMode] + fluctuateMoisture) : 0);
+  const activeSoilHealth = activeSnapshot?.crop_health_score ?? (activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0);
+  const activeYield = activeSnapshot?.yield_prediction 
+    ? `${activeSnapshot.yield_prediction} Tons` 
+    : (activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A");
+  const activeDiseasePct = activeSnapshot?.disease_probability ?? (activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0);
+  const activeDiseaseRisk = activeSnapshot?.risk_level ?? (activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending");
+  
+  const activeConfidence = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? 0;
+  const activeWhyDisease = activeSnapshot?.disease_explanation ?? activePlot?.whyDisease;
+  const activeRecommendedAction = activeSnapshot?.recommended_action ?? activePlot?.recommendedAction;
+  const activeAdvisoryReason = activeSnapshot?.advisory_reason ?? activePlot?.advisoryReason;
+
+  // Dynamic average for the main Twin Health donut
+  const healthComponents = [activeSoilHealth, activeNDVI * 100, activeMoisture].filter(v => v > 0);
+  const overallTwinHealth = healthComponents.length > 0 
+    ? Math.round(healthComponents.reduce((a, b) => a + b, 0) / healthComponents.length)
+    : 0;
 
   const telemetryBadges: TelemetryBadge[] = [
     { id: "temp", label: "Temperature", value: `${(31.4 + fluctuateTemp).toFixed(1)}°C`, interpretation: "Vegetative cellular respiration optimal.", x: 25, y: 35 },
@@ -352,9 +371,9 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       {/* ================= LAYOUT GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
         
-        {/* Shimmer loading overlay when switching plot/modes */}
+        {/* Shimmer loading overlay when switching plot/modes or fetching twins */}
         <AnimatePresence>
-          {isChangingPlot && (
+          {(isChangingPlot || isTwinsLoading) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.4 }}
@@ -363,7 +382,9 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             >
               <div className="bg-white border border-gray-150 p-5 rounded-2xl shadow-xl flex items-center gap-3">
                 <RefreshCw className="w-5 h-5 text-primary animate-spin" />
-                <span className="text-xs font-black text-gray-800">Calibrating biophysical simulation model...</span>
+                <span className="text-xs font-black text-gray-800">
+                  {isTwinsLoading ? "Syncing with Supabase AI Engine..." : "Calibrating biophysical simulation model..."}
+                </span>
               </div>
             </motion.div>
           )}
@@ -653,12 +674,14 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   <circle cx="56" cy="56" r="48" stroke="#F1F5F0" strokeWidth="8" fill="transparent" />
                   <circle cx="56" cy="56" r="48" stroke="#2E7D32" strokeWidth="8" fill="transparent"
                     strokeDasharray={2 * Math.PI * 48}
-                    strokeDashoffset={2 * Math.PI * 48 * (1 - 0.87)}
+                    strokeDashoffset={2 * Math.PI * 48 * (1 - (overallTwinHealth / 100))}
                   />
                 </svg>
                 <div className="absolute text-center">
-                  <span className="block text-2xl font-black text-gray-950">87%</span>
-                  <span className="text-[9px] font-black text-emerald-650 uppercase">Healthy</span>
+                  <span className="block text-2xl font-black text-gray-950">{overallTwinHealth}%</span>
+                  <span className="text-[9px] font-black text-emerald-650 uppercase">
+                    {overallTwinHealth > 75 ? "Healthy" : overallTwinHealth > 40 ? "Moderate" : "Critical"}
+                  </span>
                 </div>
               </div>
 
@@ -709,7 +732,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
                 <span className="block text-[8px] font-bold text-gray-400 uppercase">AI Confidence</span>
-                <span className="text-xs font-black text-primary">{activePlot.confidence}%</span>
+                <span className="text-xs font-black text-primary">{activeConfidence}%</span>
               </div>
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
                 <span className="block text-[8px] font-bold text-gray-400 uppercase">Model Accuracy</span>
@@ -738,7 +761,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Expected Yield</span>
                 <p className="text-lg font-black text-gray-950">{activeYield}</p>
-                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activePlot.confidence}% Conf.</span>
+                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activeConfidence}% Conf.</span>
               </div>
               
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
@@ -773,7 +796,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 </div>
               </div>
               
-              {!activePlot.whyDisease ? (
+              {!activeWhyDisease ? (
                 <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl text-[10px] text-gray-450 font-semibold">
                   Insufficient telemetry data to generate disease probability.
                 </div>
@@ -781,7 +804,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
                   <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
                   <ul className="list-disc pl-3.5 space-y-1 leading-normal">
-                    <li>{activePlot.whyDisease}</li>
+                    <li>{activeWhyDisease}</li>
                     <li>Stable ambient humidity index (64%)</li>
                     <li>NDVI greenness ratio meets chlorophyll expectations</li>
                   </ul>
@@ -819,12 +842,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <FlaskConical className="w-4.5 h-4.5 text-primary" /> AI Agronomy Advisory
               </h4>
               <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                {activePlot.confidence ?? "—"}% Confidence
+                {activeConfidence ?? "—"}% Confidence
               </span>
             </div>
 
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
-              {!activePlot.recommendedAction ? (
+              {!activeRecommendedAction ? (
                 <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
                   <p className="text-gray-900 font-black leading-snug">No AI analysis yet — attach a soil report to generate a recommendation.</p>
                 </div>
@@ -833,11 +856,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
                     <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
                     <p className="text-gray-900 font-black leading-snug">
-                      {activePlot.recommendedAction}
+                      {activeRecommendedAction}
                     </p>
                   </div>
                   <p className="text-[10px] text-gray-450 leading-relaxed">
-                    {activePlot.advisoryReason}
+                    {activeAdvisoryReason}
                   </p>
                 </>
               )}

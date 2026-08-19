@@ -34,3 +34,5 @@ __pycache__/
 venv/
 env/
 
+# Test files
+test-*.js
