@@ -43,6 +43,7 @@ if (isValidUrl(supabaseUrl) && supabaseAnonKey) {
           getSession: () => Promise.resolve({ data: { session: null } }),
           onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
           signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase client not configured with a valid HTTP URL.') }),
+          signInWithOAuth: () => Promise.resolve({ data: null, error: new Error('Supabase client not configured with a valid HTTP URL.') }),
           signUp: () => Promise.resolve({ data: null, error: new Error('Supabase client not configured with a valid HTTP URL.') }),
           signOut: () => Promise.resolve({ error: null }),
         };

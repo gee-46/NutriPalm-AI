@@ -82,9 +82,12 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     farmer: "Swaminathan Gowda",
     area: "",
     crop: "Oil Palm",
-    coordinates: "17.3912° N, 78.4948° E",
+    coordinates: "17.3912 N, 78.4948 E",
     soilType: "Loamy",
-    irrigation: "Precision Drip"
+    irrigation: "Precision Drip",
+    // Phase 5 additions
+    plantingDate: "",  // optional — ISO date string
+    plantCount: "",    // optional — number of plants
   });
 
   // Phase 2 wizard state — real boundary + geocoding
@@ -94,7 +97,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const [step3Data, setStep3Data] = useState<{
     areaAcres: number;
     village: string;
+    taluk: string;     // Phase 4 addition
     district: string;
+    state: string;     // Phase 4 addition
+    country: string;   // Phase 4 addition
     elevation: number;
     geocodeOk: boolean;
   } | null>(null);
@@ -102,7 +108,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const geoJSONFileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Shared store ─────────────────────────────────────────────────────────
-  const { plots, addPlot: storAddPlot } = usePlots();
+  const { plots, isLoading: isDbLoading, addPlot: storAddPlot } = usePlots();
 
   const selectedPlot = plots.find((p) => p.id === selectedPlotId) || plots[0];
 
@@ -113,6 +119,13 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       alert(`${type.toUpperCase()}: ${msg}`);
     }
   };
+
+  // Register triggerToast with the plots store so store-level errors (fetch/insert failures)
+  // surface as toasts rather than staying silent in the console.
+  React.useEffect(() => {
+    import("../../data/plots").then(({ registerToastFn }) => registerToastFn(triggerToast));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const triggerScan = () => {
     setIsScanning(true);
@@ -151,7 +164,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     setIsGeocodingStep3(true);
 
     let village = "";
+    let taluk = "";
     let district = "";
+    let state = "";
+    let country = "";
     let elevation = 0;
     let geocodeOk = true;
 
@@ -164,7 +180,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         ]);
         if (geoResult.status === "fulfilled") {
           village = geoResult.value.village;
+          taluk = geoResult.value.taluk;         // Phase 4 addition
           district = geoResult.value.district;
+          state = geoResult.value.state;         // Phase 4 addition
+          country = geoResult.value.country;     // Phase 4 addition
         } else {
           geocodeOk = false;
         }
@@ -180,27 +199,39 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       triggerToast("Location data unavailable — plot saved with blank fields, editable later.", "info");
     }
 
-    setStep3Data({ areaAcres, village, district, elevation, geocodeOk });
+    setStep3Data({ areaAcres, village, taluk, district, state, country, elevation, geocodeOk });
     setIsGeocodingStep3(false);
 
     // Persist to shared store
     const status: Plot["status"] = "Healthy";
     const coordStrings = wizardBoundary
       ? (wizardBoundary.geoJSON.coordinates[0] as number[][]).map(
-          ([lng, lat]) => `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? "E" : "W"}`
+          ([lng, lat]) => `${Math.abs(lat).toFixed(4)} ${lat >= 0 ? "N" : "S"}, ${Math.abs(lng).toFixed(4)} ${lng >= 0 ? "E" : "W"}`
         )
       : [newPlotData.coordinates];
 
-    storAddPlot({
+    // Derive plantation_age from plantingDate (Phase 5)
+    let plantationAge = 0;
+    if (newPlotData.plantingDate) {
+      const msPerYear = 365.25 * 24 * 3600 * 1000;
+      plantationAge = Math.max(0, Math.round((Date.now() - new Date(newPlotData.plantingDate).getTime()) / msPerYear));
+    }
+
+    await storAddPlot({
       name: newPlotData.name,
       farmer: newPlotData.farmer,
       crop: newPlotData.crop,
       stage: "Seedling",
-      age: 0,
+      age: plantationAge,
+      plantingDate: newPlotData.plantingDate || undefined,
+      plantCount: newPlotData.plantCount ? parseInt(newPlotData.plantCount, 10) : undefined,
       area: areaAcres,
-      elevation,
+      elevation: elevation || undefined,
       village: village || undefined,
+      taluk: taluk || undefined,
       district: district || undefined,
+      state: state || undefined,
+      country: country || undefined,
       coordinates: coordStrings,
       geoJSON: wizardBoundary?.geoJSON,
       soil: newPlotData.soilType,
@@ -278,7 +309,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 crop: "Oil Palm",
                 coordinates: "17.3912° N, 78.4948° E",
                 soilType: "Loamy",
-                irrigation: "Precision Drip"
+                irrigation: "Precision Drip",
+                plantingDate: "",
+                plantCount: "",
               });
               setIsAddModalOpen(true);
             }}
@@ -387,8 +420,49 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
       </div>
 
+      {/* ================= Phase 7: Loading & Empty States ================= */}
+      {isDbLoading && (
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center border border-emerald-100">
+            <RefreshCw className="w-6 h-6 text-primary animate-spin" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-extrabold text-gray-800">Loading your plots...</p>
+            <p className="text-xs text-gray-400 mt-1">Fetching your farm data from the server.</p>
+          </div>
+        </div>
+      )}
+
+      {!isDbLoading && plots.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
+          <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-200">
+            <Globe className="w-8 h-8 text-gray-300" />
+          </div>
+          <div>
+            <p className="text-base font-extrabold text-gray-800">No plots yet</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-xs">
+              Create your first plot to start monitoring your farm with GIS satellite data and AI insights.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setAddStep(1);
+              setWizardBoundary(null);
+              setImportedGeoJSON(undefined);
+              setStep3Data(null);
+              setNewPlotData({ name: "", farmer: "Swaminathan Gowda", area: "", crop: "Oil Palm", coordinates: "17.3912 N, 78.4948 E", soilType: "Loamy", irrigation: "Precision Drip", plantingDate: "", plantCount: "" });
+              setIsAddModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md text-xs border-0 cursor-pointer transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Add Your First Plot
+          </button>
+        </div>
+      )}
+
       {/* ================= 2-COLUMN RESPONSIVE LAYOUT ================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {(plots.length > 0 || isDbLoading) && <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* LEFT COLUMN: Map toolbar, Canvas, legend, Stats (8/12 width) */}
         <div className="lg:col-span-8 space-y-6">
@@ -834,13 +908,14 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               <div className="space-y-1.5 pt-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-400">Soil Health Score</span>
-                  <span className="text-primary font-bold">{selectedPlot.soilHealth.Current}%</span>
+                  {/* soilHealth is optional for DB-sourced plots (AI data not yet populated) */}
+                  <span className="text-primary font-bold">{selectedPlot.soilHealth?.Current ?? 0}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div 
                     className="h-full bg-primary" 
                     initial={{ width: 0 }}
-                    animate={{ width: `${selectedPlot.soilHealth.Current}%` }}
+                    animate={{ width: `${selectedPlot.soilHealth?.Current ?? 0}%` }}
                     transition={{ duration: 0.8 }}
                   />
                 </div>
@@ -901,7 +976,8 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             <div className="space-y-2.5">
               <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">AI Boundary Observations</h4>
               <div className="space-y-2 text-xs text-gray-700">
-                {selectedPlot.soilHealth.Current < 60 && (
+                {/* soilHealth is optional for DB-sourced plots (AI telemetry not yet populated) */}
+                {(selectedPlot.soilHealth?.Current ?? 0) < 60 && (
                   <div className="p-2.5 bg-red-50/50 border border-red-100 rounded-xl flex gap-2 items-start">
                     <span className="text-red-500 mt-0.5">⚠️</span>
                     <div className="space-y-0.5">
@@ -983,7 +1059,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
         </div>
 
-      </div>
+      </div>}
 
       {/* ================= 12. Add Plot Multi-step Modal ================= */}
       <AnimatePresence>
@@ -1056,13 +1132,28 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                               {step3Data.elevation ? `${step3Data.elevation} m MSL` : "–"}
                             </p>
                           </div>
+                        </div>
+                        {/* Location row: village / taluk / district / state / country */}
+                        <div className="grid grid-cols-3 gap-2 text-xs">
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Village</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.village || "–"}</p>
                           </div>
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Taluk</p>
+                            <p className="font-black text-gray-900 mt-0.5">{step3Data.taluk || "–"}</p>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">District</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.district || "–"}</p>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">State</p>
+                            <p className="font-black text-gray-900 mt-0.5">{step3Data.state || "–"}</p>
+                          </div>
+                          <div className="bg-gray-50 border border-gray-150 p-2.5 col-span-2 rounded-xl">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Country</p>
+                            <p className="font-black text-gray-900 mt-0.5">{step3Data.country || "–"}</p>
                           </div>
                         </div>
                         {!step3Data.geocodeOk && (
@@ -1113,16 +1204,21 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Farmer Landholder *</label>
-                        <select
+                        <input
+                          type="text"
+                          required
+                          list="farmer-options"
                           value={newPlotData.farmer}
                           onChange={(e) => setNewPlotData(prev => ({ ...prev, farmer: e.target.value }))}
+                          placeholder="e.g. Swaminathan Gowda"
                           className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
-                        >
-                          <option>Swaminathan Gowda</option>
-                          <option>K. Ramachandra Rao</option>
-                          <option>M. Devamma</option>
-                          <option>Rajesh Kumar</option>
-                        </select>
+                        />
+                        <datalist id="farmer-options">
+                          <option value="Swaminathan Gowda" />
+                          <option value="K. Ramachandra Rao" />
+                          <option value="M. Devamma" />
+                          <option value="Rajesh Kumar" />
+                        </datalist>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -1139,15 +1235,44 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Primary Crop</label>
-                          <select
+                          <input
+                            type="text"
+                            list="crop-options"
                             value={newPlotData.crop}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, crop: e.target.value }))}
+                            placeholder="e.g. Oil Palm"
                             className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
-                          >
-                            <option>Oil Palm</option>
-                            <option>Coconut Palm</option>
-                            <option>Cocoa</option>
-                          </select>
+                          />
+                          <datalist id="crop-options">
+                            <option value="Oil Palm" />
+                            <option value="Coconut Palm" />
+                            <option value="Cocoa" />
+                          </datalist>
+                        </div>
+                      </div>
+
+                      {/* Phase 5: Planting date + plant count (optional) */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Planting Date <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+                          <input
+                            type="date"
+                            value={newPlotData.plantingDate}
+                            onChange={(e) => setNewPlotData(prev => ({ ...prev, plantingDate: e.target.value }))}
+                            className="w-full bg-gray-50 border border-gray-250 text-gray-900 text-xs rounded-xl focus:ring-primary focus:border-primary block p-3 transition-colors shadow-xs"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">No. of Plants <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={newPlotData.plantCount}
+                            onChange={(e) => setNewPlotData(prev => ({ ...prev, plantCount: e.target.value }))}
+                            placeholder="e.g. 240"
+                            className="w-full bg-gray-50 border border-gray-250 text-gray-900 text-xs rounded-xl focus:ring-primary focus:border-primary block p-3 transition-colors shadow-xs"
+                          />
                         </div>
                       </div>
                     </div>
