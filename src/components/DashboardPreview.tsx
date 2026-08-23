@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SectionHeading } from "./SectionHeading";
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 export const DashboardPreview: React.FC = () => {
+    const { t } = useTranslation();
   const [activeNutrient, setActiveNutrient] = useState<"N" | "P" | "K">("N");
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -48,7 +50,7 @@ export const DashboardPreview: React.FC = () => {
         <div className="mb-16 flex justify-center">
           <SectionHeading
             eyebrow="Live Environment"
-            title="Experience the Farm Control Center"
+            title={t('dashboardpreview.experience_the_farm_control_center')}
             description="An intuitive digital twin control dashboard built for venture operators. Toggle parameters, track live soil sensors, and review crop health."
           />
         </div>
@@ -75,29 +77,29 @@ export const DashboardPreview: React.FC = () => {
                       <path d="M50 55 C40 50 35 40 48 30" stroke="white" strokeWidth="8" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <span className="text-xs font-bold text-gray-900">NutriPalm Console</span>
+                  <span className="text-xs font-bold text-gray-900">{t('dashboardpreview.nutripalm_console')}</span>
                 </div>
 
                 {/* Nav items */}
                 <nav className="flex flex-col gap-1 text-left">
                   <span className="px-3 py-2 rounded-lg text-xs font-bold bg-[#2E7D32]/10 text-primary flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5" /> Dashboard
-                  </span>
+                    <Activity className="w-3.5 h-3.5" />  {t('dashboardpreview.dashboard')}
+                                                        </span>
                   <span className="px-3 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
-                    <Compass className="w-3.5 h-3.5" /> Field Twin
-                  </span>
+                    <Compass className="w-3.5 h-3.5" />  {t('dashboardpreview.field_twin')}
+                                                        </span>
                   <span className="px-3 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-100 cursor-pointer flex items-center gap-2">
-                    <FileSpreadsheet className="w-3.5 h-3.5" /> Soil Reports
-                  </span>
+                    <FileSpreadsheet className="w-3.5 h-3.5" />  {t('dashboardpreview.soil_reports')}
+                                                        </span>
                 </nav>
               </div>
 
               {/* Farmer Signout card */}
               <div className="pt-4 border-t border-gray-150 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700 text-xs">SO</div>
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700 text-xs">{t('dashboardpreview.so')}</div>
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-gray-800">Samruddhi Farm</span>
-                  <span className="text-[8px] text-gray-400">Premium Account</span>
+                  <span className="text-[10px] font-bold text-gray-800">{t('dashboardpreview.samruddhi_farm')}</span>
+                  <span className="text-[8px] text-gray-400">{t('dashboardpreview.premium_account')}</span>
                 </div>
               </div>
             </div>
@@ -108,10 +110,11 @@ export const DashboardPreview: React.FC = () => {
               {/* Header Bar */}
               <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
                 <div className="text-left">
-                  <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-wider block">Field Status</span>
+                  <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-wider block">{t('dashboardpreview.field_status')}</span>
                   <h3 className="text-lg font-extrabold text-gray-950 flex items-center gap-2">
-                    Plot-B: Maize Crop Rotation
-                  </h3>
+                    
+                                                          {t('dashboardpreview.plot_b_maize_crop_rotation')}
+                                                        </h3>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -122,34 +125,35 @@ export const DashboardPreview: React.FC = () => {
                     {isSyncing ? "Syncing..." : "Sync Telemetry"}
                   </button>
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-150 px-3 py-1 rounded-full">
-                    Twin Live
-                  </span>
+                    
+                                                          {t('dashboardpreview.twin_live')}
+                                                        </span>
                 </div>
               </div>
 
               {/* Quick Metrics Row */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 <div className="p-3.5 rounded-xl border border-gray-150/80 bg-gray-50/50 text-left">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase">Soil Moisture</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">{t('dashboardpreview.soil_moisture')}</span>
                   <span className="text-base font-extrabold text-gray-900 block mt-0.5">28.4%</span>
                   <div className="w-full bg-gray-200 h-1 rounded-full mt-2 overflow-hidden">
                     <div className="w-[28%] h-full bg-sky-500" />
                   </div>
                 </div>
                 <div className="p-3.5 rounded-xl border border-gray-150/80 bg-gray-50/50 text-left">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase">Organic Carbon</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">{t('dashboardpreview.organic_carbon')}</span>
                   <span className="text-base font-extrabold text-gray-900 block mt-0.5">1.28%</span>
-                  <span className="text-[8px] font-bold text-green-600">● Rich Quality</span>
+                  <span className="text-[8px] font-bold text-green-600">{t('dashboardpreview.rich_quality')}</span>
                 </div>
                 <div className="p-3.5 rounded-xl border border-gray-150/80 bg-gray-50/50 text-left">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase">Crop Health</span>
-                  <span className="text-base font-extrabold text-gray-900 block mt-0.5">92 / 100</span>
-                  <span className="text-[8px] font-bold text-green-600">● Excellent (NDVI)</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">{t('dashboardpreview.crop_health')}</span>
+                  <span className="text-base font-extrabold text-gray-900 block mt-0.5">{t('dashboardpreview.92_100')}</span>
+                  <span className="text-[8px] font-bold text-green-600">{t('dashboardpreview.excellent_ndvi')}</span>
                 </div>
                 <div className="p-3.5 rounded-xl border border-gray-150/80 bg-gray-50/50 text-left">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase">Soil pH</span>
-                  <span className="text-base font-extrabold text-gray-900 block mt-0.5">6.48 pH</span>
-                  <span className="text-[8px] font-bold text-amber-500">● Slightly Acidic</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase">{t('dashboardpreview.soil_ph')}</span>
+                  <span className="text-base font-extrabold text-gray-900 block mt-0.5">{t('dashboardpreview.6_48_ph')}</span>
+                  <span className="text-[8px] font-bold text-amber-500">{t('dashboardpreview.slightly_acidic')}</span>
                 </div>
               </div>
 
@@ -161,7 +165,7 @@ export const DashboardPreview: React.FC = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-primary" />
-                      <span className="text-xs font-bold text-gray-800">Historical Nutrient Trend</span>
+                      <span className="text-xs font-bold text-gray-800">{t('dashboardpreview.historical_nutrient_trend')}</span>
                     </div>
                     {/* Nutrient Toggles */}
                     <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
@@ -204,18 +208,20 @@ export const DashboardPreview: React.FC = () => {
 
                     {/* SVG Bottom fade overlay */}
                     <div className="absolute bottom-2 left-3 text-[8px] font-bold text-gray-400">
-                      Sensor Logs: 14 Days
-                    </div>
+                      
+                                                                {t('dashboardpreview.sensor_logs_14_days')}
+                                                              </div>
                   </div>
 
                   {/* Forecast details */}
                   <div className="flex items-center justify-between border-t border-gray-100 pt-3 mt-3">
                     <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
-                      <Wind className="w-3.5 h-3.5 text-gray-400" /> Wind speed: 12 km/h
-                    </span>
+                      <Wind className="w-3.5 h-3.5 text-gray-400" />  {t('dashboardpreview.wind_speed_12_km_h')}
+                                                              </span>
                     <span className="text-[10px] font-bold text-gray-500">
-                      Next soil report due: Aug 5
-                    </span>
+                      
+                                                                {t('dashboardpreview.next_soil_report_due_aug_5')}
+                                                              </span>
                   </div>
                 </div>
 
@@ -224,7 +230,7 @@ export const DashboardPreview: React.FC = () => {
                   {/* Weather Widget */}
                   <div className="border border-gray-150 rounded-xl p-3.5 bg-gray-50/50 flex flex-col justify-between flex-1 text-left">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase">Precipitation Forecast</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">{t('dashboardpreview.precipitation_forecast')}</span>
                       <CloudRain className="w-4 h-4 text-sky-500 animate-bounce" />
                     </div>
                     
@@ -245,11 +251,12 @@ export const DashboardPreview: React.FC = () => {
                   <div className="border border-red-100 rounded-xl p-3.5 bg-red-50/40 text-left flex gap-3">
                     <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-extrabold text-red-700 uppercase tracking-wide">AI Recommendation</span>
-                      <span className="text-xs font-extrabold text-gray-800 mt-0.5">High Nitrogen Anomaly</span>
+                      <span className="text-[9px] font-extrabold text-red-700 uppercase tracking-wide">{t('dashboardpreview.ai_recommendation')}</span>
+                      <span className="text-xs font-extrabold text-gray-800 mt-0.5">{t('dashboardpreview.high_nitrogen_anomaly')}</span>
                       <p className="text-[10px] text-gray-500 leading-snug mt-1">
-                        Reduce NPK 19-19-19 dosage by 15% to avoid crop burning. Apply organic potash.
-                      </p>
+                        
+                                                                      {t('dashboardpreview.reduce_npk_19_19_19_dosage_by_15_to_avoi')}
+                                                                    </p>
                     </div>
                   </div>
                 </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React from "react";
 import { motion } from "framer-motion";
 import { MapPinOff, LayoutDashboard } from "lucide-react";
@@ -7,6 +8,7 @@ interface NotFoundScreenProps {
 }
 
 export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({ onBack }) => {
+    const { t } = useTranslation();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -27,10 +29,11 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({ onBack }) => {
         {/* Text Details */}
         <div className="space-y-2 relative z-10">
           <h2 className="text-4xl font-black text-gray-950 tracking-tight leading-none">404</h2>
-          <h3 className="text-base font-extrabold text-gray-800">Coordinates Uncharted</h3>
+          <h3 className="text-base font-extrabold text-gray-800">{t('notfoundscreen.coordinates_uncharted')}</h3>
           <p className="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
-            The telemetry coordinate page you requested does not map to any registered crop twin, farm plot boundary, or soil database in the NutriPalm AI workspace.
-          </p>
+            
+                                  {t('notfoundscreen.the_telemetry_coordinate_page_you_reques')}
+                                </p>
         </div>
 
         {/* Visual Map Grid mock illustration */}
@@ -45,7 +48,7 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({ onBack }) => {
               />
             ))}
           </div>
-          <span className="text-[9px] font-mono text-rose-600 font-extrabold uppercase">GPS Search Lock: FAILED</span>
+          <span className="text-[9px] font-mono text-rose-600 font-extrabold uppercase">{t('notfoundscreen.gps_search_lock_failed')}</span>
         </div>
 
         {/* Return Action */}
@@ -55,8 +58,9 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({ onBack }) => {
             className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
           >
             <LayoutDashboard className="w-4 h-4" />
-            Return to Dashboard
-          </button>
+            
+                                  {t('notfoundscreen.return_to_dashboard')}
+                                </button>
         </div>
       </div>
     </motion.div>

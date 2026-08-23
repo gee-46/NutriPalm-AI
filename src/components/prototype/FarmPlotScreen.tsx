@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -65,6 +66,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   onNavigate,
   showToast
 }) => {
+    const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [activeLayer, setActiveLayer] = useState<"NDVI" | "Moisture" | "Boundary">("NDVI");
@@ -287,11 +289,13 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200/50 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none">
-            Farm Plot Management
-          </h1>
+            
+                                  {t('farmplotscreen.farm_plot_management')}
+                                </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
-            Visualize farm boundaries, monitor crop health, and prepare Digital Twin simulations.
-          </p>
+            
+                                  {t('farmplotscreen.visualize_farm_boundaries_monitor_crop_h')}
+                                </p>
         </div>
         
         {/* Top Right Header Action Triggers */}
@@ -318,8 +322,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
           >
             <Plus className="w-4 h-4" />
-            Add Plot
-          </button>
+            
+                                  {t('farmplotscreen.add_plot')}
+                                </button>
           
           {/* Hidden GeoJSON file input */}
           <input
@@ -334,13 +339,14 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all text-xs cursor-pointer"
           >
             <Download className="w-4 h-4 text-gray-500" />
-            Import GIS Data
-          </button>
+            
+                                  {t('farmplotscreen.import_gis_data')}
+                                </button>
 
           <button
             onClick={handleRefreshMap}
             className="inline-flex items-center justify-center p-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
-            title="Refresh map layers"
+            title={t('farmplotscreen.refresh_map_layers')}
           >
             <RefreshCw className={`w-4 h-4 text-gray-500 ${isLoading ? "animate-spin" : ""}`} />
           </button>
@@ -350,16 +356,19 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       {/* Summary Chips */}
       <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-gray-650">
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          🌾 Total Plots: <strong className="text-primary font-black">{plots.length}</strong>
+          
+                            {t('farmplotscreen.total_plots')} <strong className="text-primary font-black">{plots.length}</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          📐 Total Area: <strong className="text-primary font-black">39.5 Acres</strong>
+          
+                            {t('farmplotscreen.total_area')} <strong className="text-primary font-black">{t('farmplotscreen.39_5_acres')}</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          🛰️ GIS Sync: <strong className="text-primary font-black">100% Online</strong>
+          
+                            {t('farmplotscreen.gis_sync')} <strong className="text-primary font-black">{t('farmplotscreen.100_online')}</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Healthy Plots: <strong className="text-primary font-black">3</strong>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.healthy_plots')} <strong className="text-primary font-black">3</strong>
         </span>
       </div>
 
@@ -369,7 +378,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         {/* KPI 1 */}
         <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Farm Plots</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.total_farm_plots')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
               <AnimatedCounter value={plots.length} />
             </h3>
@@ -382,7 +391,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         {/* KPI 2 */}
         <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cultivated Area</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.cultivated_area')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
               <AnimatedCounter value={39.5} decimals={1} suffix=" Ac" />
             </h3>
@@ -395,7 +404,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         {/* KPI 3 */}
         <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Average Soil Health</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.average_soil_health')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
               <AnimatedCounter value={67} suffix="%" />
             </h3>
@@ -408,7 +417,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         {/* KPI 4 */}
         <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Crop Types</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.active_crop_types')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
               <AnimatedCounter value={3} />
             </h3>
@@ -427,8 +436,8 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             <RefreshCw className="w-6 h-6 text-primary animate-spin" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-extrabold text-gray-800">Loading your plots...</p>
-            <p className="text-xs text-gray-400 mt-1">Fetching your farm data from the server.</p>
+            <p className="text-sm font-extrabold text-gray-800">{t('farmplotscreen.loading_your_plots')}</p>
+            <p className="text-xs text-gray-400 mt-1">{t('farmplotscreen.fetching_your_farm_data_from_the_server')}</p>
           </div>
         </div>
       )}
@@ -439,10 +448,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             <Globe className="w-8 h-8 text-gray-300" />
           </div>
           <div>
-            <p className="text-base font-extrabold text-gray-800">No plots yet</p>
+            <p className="text-base font-extrabold text-gray-800">{t('farmplotscreen.no_plots_yet')}</p>
             <p className="text-xs text-gray-400 mt-1 max-w-xs">
-              Create your first plot to start monitoring your farm with GIS satellite data and AI insights.
-            </p>
+              
+                                        {t('farmplotscreen.create_your_first_plot_to_start_monitori')}
+                                      </p>
           </div>
           <button
             onClick={() => {
@@ -456,8 +466,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             className="inline-flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md text-xs border-0 cursor-pointer transition-all"
           >
             <Plus className="w-4 h-4" />
-            Add Your First Plot
-          </button>
+            
+                                  {t('farmplotscreen.add_your_first_plot')}
+                                </button>
         </div>
       )}
 
@@ -476,16 +487,18 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   viewMode === "Satellite" ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
                 }`}
               >
-                Satellite View
-              </button>
+                
+                                              {t('farmplotscreen.satellite_view')}
+                                            </button>
               <button
                 onClick={() => setViewMode("Terrain")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                   viewMode === "Terrain" ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
                 }`}
               >
-                Terrain View
-              </button>
+                
+                                              {t('farmplotscreen.terrain_view')}
+                                            </button>
               
               <div className="h-6 w-[1px] bg-gray-250 mx-1" />
 
@@ -495,24 +508,27 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   activeLayer === "NDVI" ? "bg-[#84cc16]/10 text-[#5f930e] border-[#84cc16]/30" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
                 }`}
               >
-                NDVI Layer
-              </button>
+                
+                                              {t('farmplotscreen.ndvi_layer')}
+                                            </button>
               <button
                 onClick={() => setActiveLayer("Moisture")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                   activeLayer === "Moisture" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
                 }`}
               >
-                Soil Layer
-              </button>
+                
+                                              {t('farmplotscreen.soil_layer')}
+                                            </button>
               <button
                 onClick={() => setActiveLayer("Boundary")}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                   activeLayer === "Boundary" ? "bg-gray-100 text-gray-800 border-gray-300" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
                 }`}
               >
-                Boundary View
-              </button>
+                
+                                              {t('farmplotscreen.boundary_view')}
+                                            </button>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -532,8 +548,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 onClick={() => { setZoomLevel(100); setViewMode("Satellite"); setActiveLayer("NDVI"); }}
                 className="px-2.5 py-1.5 rounded-lg border border-gray-250 bg-white text-[10px] font-bold hover:bg-gray-50 cursor-pointer"
               >
-                Center
-              </button>
+                
+                                              {t('farmplotscreen.center')}
+                                            </button>
             </div>
           </div>
 
@@ -544,7 +561,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
               <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[10px] text-emerald-400 font-mono flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
-                <span>ACTIVE VIEW: {viewMode.toUpperCase()} | Layer: {activeLayer.toUpperCase()}</span>
+                <span>{t('farmplotscreen.active_view')} {viewMode.toUpperCase()}  {t('farmplotscreen.layer')} {activeLayer.toUpperCase()}</span>
               </div>
               <button
                 onClick={triggerScan}
@@ -612,6 +629,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
                   {/* SVG paths mapping */}
                   {plots.map((plot) => {
+
                     const isSelected = selectedPlotId === plot.id;
                     const fillValue = activeLayer === "Moisture" ? "url(#moistureGrad)" : plot.fillGradient;
                     const strokeValue = isSelected ? "#FFF" : plot.strokeColor;
@@ -661,8 +679,8 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                           textAnchor="middle"
                           className="pointer-events-none select-none font-mono drop-shadow-md"
                         >
-                          {plot.crop} ({plot.area} ac)
-                        </text>
+                          {plot.crop} ({plot.area}  {t('farmplotscreen.ac')}
+                                                        </text>
                       </g>
                     );
                   })}
@@ -670,49 +688,50 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               </motion.div>
 
               <div className="absolute bottom-4 left-4 text-[9px] font-mono text-slate-500">
-                WGS 84 / EPSG:4326 | Coordinate Ticks: 17.38° N, 78.49° E
-              </div>
+                
+                                              {t('farmplotscreen.wgs_84_epsg_4326_coordinate_ticks_17_38_')}
+                                            </div>
             </div>
           </div>
 
           {/* ================= 9. GIS Legend Card ================= */}
           <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs space-y-3.5 text-xs text-gray-700">
             <span className="font-bold text-gray-500 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-primary" /> Spatial Map Legend:
-            </span>
+              <Layers className="w-4 h-4 text-primary" />  {t('farmplotscreen.spatial_map_legend')}
+                                      </span>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
               <div className="space-y-1.5">
-                <p className="font-extrabold text-[9px] text-gray-400 uppercase">Health Status</p>
+                <p className="font-extrabold text-[9px] text-gray-400 uppercase">{t('farmplotscreen.health_status')}</p>
                 <div className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Healthy</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-lime-500" /> Moderate</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Attention</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Critical</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />  {t('farmplotscreen.healthy')}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-lime-500" />  {t('farmplotscreen.moderate')}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" />  {t('farmplotscreen.attention')}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" />  {t('farmplotscreen.critical')}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <p className="font-extrabold text-[9px] text-gray-400 uppercase">Crop Types</p>
+                <p className="font-extrabold text-[9px] text-gray-400 uppercase">{t('farmplotscreen.crop_types')}</p>
                 <div className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1">🌴 Oil Palm</span>
-                  <span className="flex items-center gap-1">🥥 Coconut Palm</span>
-                  <span className="flex items-center gap-1">🍫 Cocoa</span>
+                  <span className="flex items-center gap-1">{t('farmplotscreen.oil_palm')}</span>
+                  <span className="flex items-center gap-1">{t('farmplotscreen.coconut_palm')}</span>
+                  <span className="flex items-center gap-1">{t('farmplotscreen.cocoa')}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <p className="font-extrabold text-[9px] text-gray-400 uppercase">Irrigation</p>
+                <p className="font-extrabold text-[9px] text-gray-400 uppercase">{t('farmplotscreen.irrigation')}</p>
                 <div className="flex flex-col gap-1">
-                  <span className="text-gray-500 font-medium">💧 Precision Drip</span>
-                  <span className="text-gray-500 font-medium">🚿 Manual / Drip</span>
+                  <span className="text-gray-500 font-medium">{t('farmplotscreen.precision_drip')}</span>
+                  <span className="text-gray-500 font-medium">{t('farmplotscreen.manual_drip')}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <p className="font-extrabold text-[9px] text-gray-400 uppercase">Telemetry Nodes</p>
+                <p className="font-extrabold text-[9px] text-gray-400 uppercase">{t('farmplotscreen.telemetry_nodes')}</p>
                 <div className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> IoT Sensors</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-white border border-primary" /> Selected Plot</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.iot_sensors')}</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-white border border-primary" />  {t('farmplotscreen.selected_plot')}</span>
                 </div>
               </div>
             </div>
@@ -722,17 +741,18 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs space-y-6">
             <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
               <Activity className="w-4.5 h-4.5 text-primary" />
-              GIS Analytical Summary
-            </h3>
+              
+                                        {t('farmplotscreen.gis_analytical_summary')}
+                                      </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-gray-700">
               {/* Crop Distribution */}
               <div className="space-y-2">
-                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">Crop Distribution</p>
+                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.crop_distribution')}</p>
                 <div className="space-y-2">
                   <div>
                     <div className="flex justify-between font-bold mb-1">
-                      <span>Oil Palm</span>
+                      <span>{t('farmplotscreen.oil_palm_1')}</span>
                       <span>85%</span>
                     </div>
                     <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -741,7 +761,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   </div>
                   <div>
                     <div className="flex justify-between font-bold mb-1">
-                      <span>Coconut Palm</span>
+                      <span>{t('farmplotscreen.coconut_palm_1')}</span>
                       <span>10%</span>
                     </div>
                     <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -750,7 +770,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   </div>
                   <div>
                     <div className="flex justify-between font-bold mb-1">
-                      <span>Cocoa</span>
+                      <span>{t('farmplotscreen.cocoa_1')}</span>
                       <span>5%</span>
                     </div>
                     <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -762,7 +782,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
               {/* Healthy vs Attention Plots */}
               <div className="space-y-2">
-                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">Plot Health Ratios</p>
+                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.plot_health_ratios')}</p>
                 <div className="flex items-center gap-4 py-2">
                   <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
                     <svg className="w-full h-full transform -rotate-90">
@@ -772,28 +792,29 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                     <span className="absolute text-[10px] font-black text-gray-800">60%</span>
                   </div>
                   <div className="space-y-1.5">
-                    <p className="font-bold text-gray-800">60% Optimal</p>
+                    <p className="font-bold text-gray-800">{t('farmplotscreen.60_optimal')}</p>
                     <p className="text-gray-400 leading-normal text-[10px]">
-                      3 Healthy / 1 Attention / 1 Critical Plot calibrated.
-                    </p>
+                      
+                                                                {t('farmplotscreen.3_healthy_1_attention_1_critical_plot_ca')}
+                                                              </p>
                   </div>
                 </div>
               </div>
 
               {/* Water Usage / Irrigation */}
               <div className="space-y-2">
-                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">Water & Irrigation</p>
+                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.water_irrigation')}</p>
                 <div className="space-y-2 pt-1 font-semibold">
                   <div className="flex justify-between">
-                    <span>Irrigation Coverage</span>
+                    <span>{t('farmplotscreen.irrigation_coverage')}</span>
                     <span className="text-primary">94%</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Moisture Efficiency</span>
-                    <span className="text-primary">Optimal</span>
+                    <span>{t('farmplotscreen.moisture_efficiency')}</span>
+                    <span className="text-primary">{t('farmplotscreen.optimal')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Weekly Water Saved</span>
+                    <span>{t('farmplotscreen.weekly_water_saved')}</span>
                     <span className="text-primary font-bold">+18.5%</span>
                   </div>
                 </div>
@@ -805,18 +826,19 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs">
             <h3 className="font-extrabold text-gray-900 text-sm mb-6 flex items-center gap-1.5">
               <Activity className="w-4.5 h-4.5 text-primary" />
-              Recent Plot Spatial Logs
-            </h3>
+              
+                                        {t('farmplotscreen.recent_plot_spatial_logs')}
+                                      </h3>
             
             <div className="relative pl-6 border-l border-gray-100 space-y-6 text-xs text-gray-700">
               <div className="relative">
                 <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-primary shadow-xs" />
                 <div className="space-y-0.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold">Boundary Updated</span>
-                    <span className="text-[8px] font-mono text-gray-400">10:45 AM</span>
+                    <span className="font-bold">{t('farmplotscreen.boundary_updated')}</span>
+                    <span className="text-[8px] font-mono text-gray-400">{t('farmplotscreen.10_45_am')}</span>
                   </div>
-                  <p className="text-gray-500">Plot E boundary adjusted after land survey.</p>
+                  <p className="text-gray-500">{t('farmplotscreen.plot_e_boundary_adjusted_after_land_surv')}</p>
                 </div>
               </div>
 
@@ -824,10 +846,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-indigo-500 shadow-xs" />
                 <div className="space-y-0.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold">Drone Canopy Survey Completed</span>
-                    <span className="text-[8px] font-mono text-gray-400">09:12 AM</span>
+                    <span className="font-bold">{t('farmplotscreen.drone_canopy_survey_completed')}</span>
+                    <span className="text-[8px] font-mono text-gray-400">{t('farmplotscreen.09_12_am')}</span>
                   </div>
-                  <p className="text-gray-500">NDVI indices synced for Swamy North Plot.</p>
+                  <p className="text-gray-500">{t('farmplotscreen.ndvi_indices_synced_for_swamy_north_plot')}</p>
                 </div>
               </div>
 
@@ -835,10 +857,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
                 <div className="space-y-0.5">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold">Digital Twin Synced</span>
-                    <span className="text-[8px] font-mono text-gray-400">08:00 AM</span>
+                    <span className="font-bold">{t('farmplotscreen.digital_twin_synced')}</span>
+                    <span className="text-[8px] font-mono text-gray-400">{t('farmplotscreen.08_00_am')}</span>
                   </div>
-                  <p className="text-gray-500">Canopy biophysical metrics synced with twin engine.</p>
+                  <p className="text-gray-500">{t('farmplotscreen.canopy_biophysical_metrics_synced_with_t')}</p>
                 </div>
               </div>
             </div>
@@ -858,7 +880,8 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full">
-                    Plot ID: {selectedPlot.id.toUpperCase()}
+                    
+                                                          {t('farmplotscreen.plot_id')} {selectedPlot.id.toUpperCase()}
                   </span>
                 </div>
                 {/* Health Badge */}
@@ -872,42 +895,42 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             {/* Specs detail list */}
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Landholder</span>
+                <span className="text-gray-400">{t('farmplotscreen.landholder')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.farmer}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Acreage</span>
-                <span className="font-bold text-primary">{selectedPlot.area} Acres</span>
+                <span className="text-gray-400">{t('farmplotscreen.acreage')}</span>
+                <span className="font-bold text-primary">{selectedPlot.area}  {t('farmplotscreen.acres')}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Crop Variety</span>
+                <span className="text-gray-400">{t('farmplotscreen.crop_variety')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.crop}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Growth Stage</span>
+                <span className="text-gray-400">{t('farmplotscreen.growth_stage')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.stage}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Soil Classification</span>
+                <span className="text-gray-400">{t('farmplotscreen.soil_classification')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.soil}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Irrigation Method</span>
+                <span className="text-gray-400">{t('farmplotscreen.irrigation_method')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.irrigation}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Elevation</span>
-                <span className="font-bold text-gray-900">{selectedPlot.elevation}m MSL</span>
+                <span className="text-gray-400">{t('farmplotscreen.elevation')}</span>
+                <span className="font-bold text-gray-900">{selectedPlot.elevation}{t('farmplotscreen.m_msl')}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="text-gray-400">Last Inspection</span>
+                <span className="text-gray-400">{t('farmplotscreen.last_inspection')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.lastInspection}</span>
               </div>
               
               {/* Soil Health score progress bar */}
               <div className="space-y-1.5 pt-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Soil Health Score</span>
+                  <span className="text-gray-400">{t('farmplotscreen.soil_health_score')}</span>
                   {/* soilHealth is optional for DB-sourced plots (AI data not yet populated) */}
                   <span className="text-primary font-bold">{selectedPlot.soilHealth?.Current ?? 0}%</span>
                 </div>
@@ -924,48 +947,48 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
             {/* ================= 6. Environmental Snapshot ================= */}
             <div className="space-y-3">
-              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">Environmental Snapshot</h4>
+              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.environmental_snapshot')}</h4>
               <div className="grid grid-cols-3 gap-2">
                 
                 {/* Temp */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Thermometer className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">Temp</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.temp')}</span>
                   <span className="text-xs font-extrabold text-gray-800">{selectedPlot.temp}</span>
                 </div>
 
                 {/* Humidity */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Droplets className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">Humidity</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.humidity')}</span>
                   <span className="text-xs font-extrabold text-gray-800">{selectedPlot.humidity}</span>
                 </div>
 
                 {/* Wind */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Wind className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">Wind</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.wind')}</span>
                   <span className="text-xs font-extrabold text-gray-800">{selectedPlot.windSpeed}</span>
                 </div>
 
                 {/* Solar */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Sun className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">Solar</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.solar')}</span>
                   <span className="text-[10px] font-extrabold text-gray-800">{selectedPlot.solarRad}</span>
                 </div>
 
                 {/* UV */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Sparkles className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">UV Index</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.uv_index')}</span>
                   <span className="text-xs font-extrabold text-gray-800">{selectedPlot.uvIndex}</span>
                 </div>
 
                 {/* NDVI */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Layers className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">NDVI</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.ndvi')}</span>
                   <span className="text-xs font-extrabold text-primary">{selectedPlot.ndvi}</span>
                 </div>
 
@@ -974,40 +997,40 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
             {/* ================= 7. AI Plot Insights ================= */}
             <div className="space-y-2.5">
-              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">AI Boundary Observations</h4>
+              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.ai_boundary_observations')}</h4>
               <div className="space-y-2 text-xs text-gray-700">
                 {/* soilHealth is optional for DB-sourced plots (AI telemetry not yet populated) */}
                 {(selectedPlot.soilHealth?.Current ?? 0) < 60 && (
                   <div className="p-2.5 bg-red-50/50 border border-red-100 rounded-xl flex gap-2 items-start">
                     <span className="text-red-500 mt-0.5">⚠️</span>
                     <div className="space-y-0.5">
-                      <p className="font-extrabold">Nitrogen Deficiency Detected</p>
-                      <p className="text-[9px] text-gray-450 font-medium">Confidence: 94% • Updated 2 mins ago</p>
+                      <p className="font-extrabold">{t('farmplotscreen.nitrogen_deficiency_detected')}</p>
+                      <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_94_updated_2_mins_ago')}</p>
                     </div>
                   </div>
                 )}
-                {selectedPlot.moisture < 35 ? (
+                {selectedPlot.moisture !== undefined && selectedPlot.moisture < 35 ? (
                   <div className="p-2.5 bg-amber-50/50 border border-amber-100 rounded-xl flex gap-2 items-start">
                     <span className="text-amber-500 mt-0.5">⚠️</span>
                     <div className="space-y-0.5">
-                      <p className="font-extrabold">Soil moisture below optimal VWC</p>
-                      <p className="text-[9px] text-gray-450 font-medium">Confidence: 89% • Updated 1 hour ago</p>
+                      <p className="font-extrabold">{t('farmplotscreen.soil_moisture_below_optimal_vwc')}</p>
+                      <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_89_updated_1_hour_ago')}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="p-2.5 bg-emerald-50/40 border border-emerald-100/50 rounded-xl flex gap-2 items-start">
                     <span className="text-emerald-500 mt-0.5">✓</span>
                     <div className="space-y-0.5">
-                      <p className="font-extrabold">Soil moisture level optimal</p>
-                      <p className="text-[9px] text-gray-450 font-medium">Confidence: 96% • Updated 2 hours ago</p>
+                      <p className="font-extrabold">{t('farmplotscreen.soil_moisture_level_optimal')}</p>
+                      <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_96_updated_2_hours_ago')}</p>
                     </div>
                   </div>
                 )}
                 <div className="p-2.5 bg-emerald-50/40 border border-emerald-100/50 rounded-xl flex gap-2 items-start">
                   <span className="text-emerald-500 mt-0.5">✓</span>
                   <div className="space-y-0.5">
-                    <p className="font-extrabold">Healthy vegetation indices scanned</p>
-                    <p className="text-[9px] text-gray-450 font-medium">Confidence: 91% • Sentinel-2 calibrated</p>
+                    <p className="font-extrabold">{t('farmplotscreen.healthy_vegetation_indices_scanned')}</p>
+                    <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_91_sentinel_2_calibrated')}</p>
                   </div>
                 </div>
               </div>
@@ -1020,38 +1043,43 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
               >
                 <Cpu className="w-4 h-4" />
-                Open Digital Twin
-              </button>
+                
+                                              {t('farmplotscreen.open_digital_twin')}
+                                            </button>
 
               <button
                 onClick={() => onNavigate && onNavigate("Soil Reports")}
                 className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-primary" />
-                Upload Soil Report
-              </button>
+                
+                                              {t('farmplotscreen.upload_soil_report')}
+                                            </button>
 
               <button
                 onClick={() => onNavigate && onNavigate("Recommendations")}
                 className="w-full bg-indigo-550 hover:bg-indigo-650 text-white font-extrabold py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
               >
                 <FlaskConical className="w-4 h-4" />
-                Generate AI Recommendation
-              </button>
+                
+                                              {t('farmplotscreen.generate_ai_recommendation')}
+                                            </button>
 
               <div className="grid grid-cols-2 gap-2 pt-1 font-bold">
                 <button
                   onClick={() => triggerToast("Compiling historical GIS satellite delta indices...", "info")}
                   className="py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-250 rounded-xl text-[10px] text-gray-800 cursor-pointer"
                 >
-                  View Plot History
-                </button>
+                  
+                                                    {t('farmplotscreen.view_plot_history')}
+                                                  </button>
                 <button
                   onClick={() => triggerToast("Generating PDF diagnostics payload report...", "info")}
                   className="py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-250 rounded-xl text-[10px] text-gray-800 cursor-pointer"
                 >
-                  Export Plot Report
-                </button>
+                  
+                                                    {t('farmplotscreen.export_plot_report')}
+                                                  </button>
               </div>
             </div>
 
@@ -1092,8 +1120,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               {/* Progress headers */}
               <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-gray-100">
                 <span className="text-[10px] font-black text-primary bg-emerald-50 px-2.5 py-1 rounded-full uppercase">
-                  GIS WIZARD STEP {addStep} OF 3
-                </span>
+                  
+                                                    {t('farmplotscreen.gis_wizard_step')} {addStep}  {t('farmplotscreen.of_3')}
+                                                  </span>
                 <span className="text-xs font-bold text-gray-400">
                   {addStep === 1 ? "Plot Info" : addStep === 2 ? "Location Specs" : "Success"}
                 </span>
@@ -1110,24 +1139,24 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                     )}
                   </div>
                   <div className="space-y-1.5 max-w-sm mx-auto">
-                    <h3 className="text-lg font-black text-gray-900">GIS Boundary Registered Successfully</h3>
+                    <h3 className="text-lg font-black text-gray-900">{t('farmplotscreen.gis_boundary_registered_successfully')}</h3>
                     {isGeocodingStep3 ? (
-                      <p className="text-xs text-gray-500">Fetching location data and elevation&hellip;</p>
+                      <p className="text-xs text-gray-500">{t('farmplotscreen.fetching_location_data_and_elevation_hel')}</p>
                     ) : step3Data ? (
                       <div className="text-left space-y-2 mt-3">
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Computed Area</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.computed_area')}</p>
                             <p className="font-black text-gray-900 mt-0.5">
-                              {step3Data.areaAcres.toFixed(2)} ac
-                              {" "}
+                              {step3Data.areaAcres.toFixed(2)}  {t('farmplotscreen.ac_1')}
+                                                                                            {" "}
                               <span className="text-gray-400 font-semibold text-[9px]">
-                                ({(step3Data.areaAcres * 0.404686).toFixed(2)} ha)
-                              </span>
+                                ({(step3Data.areaAcres * 0.404686).toFixed(2)}  {t('farmplotscreen.ha')}
+                                                                                                </span>
                             </p>
                           </div>
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Elevation</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.elevation')}</p>
                             <p className="font-black text-gray-900 mt-0.5">
                               {step3Data.elevation ? `${step3Data.elevation} m MSL` : "–"}
                             </p>
@@ -1136,39 +1165,42 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         {/* Location row: village / taluk / district / state / country */}
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Village</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.village')}</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.village || "–"}</p>
                           </div>
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Taluk</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.taluk')}</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.taluk || "–"}</p>
                           </div>
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">District</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.district')}</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.district || "–"}</p>
                           </div>
                           <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">State</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.state')}</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.state || "–"}</p>
                           </div>
                           <div className="bg-gray-50 border border-gray-150 p-2.5 col-span-2 rounded-xl">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Country</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">{t('farmplotscreen.country')}</p>
                             <p className="font-black text-gray-900 mt-0.5">{step3Data.country || "–"}</p>
                           </div>
                         </div>
                         {!step3Data.geocodeOk && (
                           <p className="text-[10px] text-amber-600 font-semibold">
-                            ⚠️ Location data unavailable — editable after creation.
-                          </p>
+                            
+                                                                                      {t('farmplotscreen.location_data_unavailable_editable_after')}
+                                                                                    </p>
                         )}
                         <p className="text-xs text-gray-500 leading-relaxed">
-                          Boundary mapped. Digital Twin telemetry will populate after the first satellite scan cycle.
-                        </p>
+                          
+                                                                                {t('farmplotscreen.boundary_mapped_digital_twin_telemetry_w')}
+                                                                              </p>
                       </div>
                     ) : (
                       <p className="text-xs text-gray-500">
-                        Plot saved. Digital Twin telemetry will populate after the first satellite scan cycle.
-                      </p>
+                        
+                                                                              {t('farmplotscreen.plot_saved_digital_twin_telemetry_will_p')}
+                                                                            </p>
                     )}
                   </div>
                   <button
@@ -1176,8 +1208,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                     disabled={isGeocodingStep3}
                     className="w-full bg-primary hover:bg-[#235F26] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
                   >
-                    Done
-                  </button>
+                    
+                                                          {t('farmplotscreen.done')}
+                                                        </button>
                 </div>
               ) : (
                 <form onSubmit={handleAddPlotSubmit} className="space-y-5">
@@ -1186,31 +1219,31 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   {addStep === 1 && (
                     <div className="space-y-4">
                       <div className="space-y-1 bg-gray-50 p-3 rounded-2xl border border-gray-150 mb-2">
-                        <h4 className="text-xs font-extrabold text-gray-800">Plot Details</h4>
-                        <p className="text-[11px] text-gray-450">Please set plot identification fields.</p>
+                        <h4 className="text-xs font-extrabold text-gray-800">{t('farmplotscreen.plot_details')}</h4>
+                        <p className="text-[11px] text-gray-450">{t('farmplotscreen.please_set_plot_identification_fields')}</p>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Plot Name *</label>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.plot_name')}</label>
                         <input
                           required
                           type="text"
                           value={newPlotData.name}
                           onChange={(e) => setNewPlotData(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="e.g. Swamy North Plot (Plot 2A)"
+                          placeholder={t('farmplotscreen.e_g_swamy_north_plot_plot_2a')}
                           className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 text-xs focus:ring-2 focus:ring-primary/10 focus:border-primary font-semibold"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Farmer Landholder *</label>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.farmer_landholder')}</label>
                         <input
                           type="text"
                           required
                           list="farmer-options"
                           value={newPlotData.farmer}
                           onChange={(e) => setNewPlotData(prev => ({ ...prev, farmer: e.target.value }))}
-                          placeholder="e.g. Swaminathan Gowda"
+                          placeholder={t('farmplotscreen.e_g_swaminathan_gowda')}
                           className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
                         />
                         <datalist id="farmer-options">
@@ -1223,24 +1256,24 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Estimated Acreage (optional — recalculated from boundary)</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.estimated_acreage_optional_recalculated_')}</label>
                           <input
                             type="number"
                             step="0.01"
                             value={newPlotData.area}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, area: e.target.value }))}
-                            placeholder="e.g. 12.5"
+                            placeholder={t('farmplotscreen.e_g_12_5')}
                             className="w-full bg-gray-50 border border-gray-250 text-gray-900 text-xs rounded-xl focus:ring-primary focus:border-primary block p-3 transition-colors shadow-xs"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Primary Crop</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.primary_crop')}</label>
                           <input
                             type="text"
                             list="crop-options"
                             value={newPlotData.crop}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, crop: e.target.value }))}
-                            placeholder="e.g. Oil Palm"
+                            placeholder={t('farmplotscreen.e_g_oil_palm')}
                             className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
                           />
                           <datalist id="crop-options">
@@ -1254,7 +1287,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                       {/* Phase 5: Planting date + plant count (optional) */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Planting Date <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.planting_date')} <span className="font-normal normal-case text-gray-400">{t('farmplotscreen.optional')}</span></label>
                           <input
                             type="date"
                             value={newPlotData.plantingDate}
@@ -1263,14 +1296,14 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">No. of Plants <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.no_of_plants')} <span className="font-normal normal-case text-gray-400">{t('farmplotscreen.optional')}</span></label>
                           <input
                             type="number"
                             min="1"
                             step="1"
                             value={newPlotData.plantCount}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, plantCount: e.target.value }))}
-                            placeholder="e.g. 240"
+                            placeholder={t('farmplotscreen.e_g_240')}
                             className="w-full bg-gray-50 border border-gray-250 text-gray-900 text-xs rounded-xl focus:ring-primary focus:border-primary block p-3 transition-colors shadow-xs"
                           />
                         </div>
@@ -1282,13 +1315,13 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   {addStep === 2 && (
                     <div className="space-y-4">
                       <div className="space-y-1 bg-gray-50 p-3 rounded-2xl border border-gray-150 mb-2">
-                        <h4 className="text-xs font-extrabold text-gray-800">Draw Boundary on Map</h4>
-                        <p className="text-[11px] text-gray-450">Use the polygon tool to trace your plot boundary, or use your GPS location to center the map.</p>
+                        <h4 className="text-xs font-extrabold text-gray-800">{t('farmplotscreen.draw_boundary_on_map')}</h4>
+                        <p className="text-[11px] text-gray-450">{t('farmplotscreen.use_the_polygon_tool_to_trace_your_plot_')}</p>
                       </div>
 
                       {/* Area unit toggle */}
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Area Unit</label>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.area_unit')}</label>
                         <div className="inline-flex bg-gray-50 border border-gray-200 rounded-xl p-0.5">
                           {(["acres", "hectares"] as const).map((u) => (
                             <button
@@ -1323,27 +1356,27 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Irrigation Method</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.irrigation_method')}</label>
                           <select
                             value={newPlotData.irrigation}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, irrigation: e.target.value }))}
                             className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
                           >
-                            <option>Precision Drip</option>
-                            <option>Manual Drip</option>
-                            <option>Sprinkler</option>
+                            <option>{t('farmplotscreen.precision_drip_1')}</option>
+                            <option>{t('farmplotscreen.manual_drip_1')}</option>
+                            <option>{t('farmplotscreen.sprinkler')}</option>
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Soil Classification</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.soil_classification')}</label>
                           <select
                             value={newPlotData.soilType}
                             onChange={(e) => setNewPlotData(prev => ({ ...prev, soilType: e.target.value }))}
                             className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
                           >
-                            <option>Loamy</option>
-                            <option>Clay</option>
-                            <option>Sandy</option>
+                            <option>{t('farmplotscreen.loamy')}</option>
+                            <option>{t('farmplotscreen.clay')}</option>
+                            <option>{t('farmplotscreen.sandy')}</option>
                           </select>
                         </div>
                       </div>
@@ -1358,16 +1391,18 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         onClick={() => setIsAddModalOpen(false)}
                         className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 bg-transparent border-0 cursor-pointer"
                       >
-                        Cancel
-                      </button>
+                        
+                                                                          {t('farmplotscreen.cancel')}
+                                                                        </button>
                     ) : (
                       <button
                         type="button"
                         onClick={() => setAddStep(1)}
                         className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 flex items-center gap-1.5 bg-transparent border-0 cursor-pointer"
                       >
-                        Back
-                      </button>
+                        
+                                                                              {t('farmplotscreen.back')}
+                                                                            </button>
                     )}
 
                     {addStep === 1 ? (
@@ -1382,8 +1417,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         }}
                         className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm"
                       >
-                        Next Location
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        
+                                                                          {t('farmplotscreen.next_location')}
+                                                                          <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     ) : (
                       <button
@@ -1395,8 +1431,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                             : "bg-primary hover:bg-[#235F26] text-white cursor-pointer animate-pulse"
                         }`}
                       >
-                        Create Plot
-                      </button>
+                        
+                                                                              {t('farmplotscreen.create_plot')}
+                                                                            </button>
                     )}
                   </div>
 

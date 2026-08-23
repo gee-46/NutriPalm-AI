@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -6,6 +7,7 @@ interface LoaderProps {
 }
 
 export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
+    const { t } = useTranslation();
   const [stage, setStage] = useState(0); // 0: seed, 1: organic shoot growing, 2: logo details, 3: fade out
 
   useEffect(() => {
@@ -164,7 +166,8 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                 animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                NutriPalm <span className="text-[#2E7D32]">AI</span>
+                
+                                              {t('loader.nutripalm')} <span className="text-[#2E7D32]">{t('loader.ai')}</span>
               </motion.h1>
 
               <motion.p
@@ -173,8 +176,9 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                 animate={stage >= 2 ? { opacity: 0.8 } : { opacity: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                by Samruddhi Organics
-              </motion.p>
+                
+                                              {t('loader.by_samruddhi_organics')}
+                                            </motion.p>
 
               {/* Slogan details */}
               <div className="h-6 flex items-center justify-center overflow-hidden">
@@ -188,8 +192,9 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
                     >
-                      Planted in Science...
-                    </motion.p>
+                      
+                                                                {t('loader.planted_in_science')}
+                                                              </motion.p>
                   ) : stage >= 2 ? (
                     <motion.p
                       key="slogan2"
@@ -199,8 +204,9 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3 }}
                     >
-                      Growing Smarter Agriculture
-                    </motion.p>
+                      
+                                                                    {t('loader.growing_smarter_agriculture')}
+                                                                  </motion.p>
                   ) : null}
                 </AnimatePresence>
               </div>

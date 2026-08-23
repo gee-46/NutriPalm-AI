@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap');
 @import "tailwindcss";
 
@@ -163,4 +164,24 @@ body {
 .mask-gradient {
   mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
+}
+
+/* Kannada font scope — only activates when html[lang="kn"] is set by LanguageContext */
+html[lang="kn"] body,
+html[lang="kn"] p,
+html[lang="kn"] span,
+html[lang="kn"] a,
+html[lang="kn"] button,
+html[lang="kn"] h1,
+html[lang="kn"] h2,
+html[lang="kn"] h3,
+html[lang="kn"] h4,
+html[lang="kn"] h5,
+html[lang="kn"] h6 {
+  font-family: 'Noto Sans Kannada', 'Geist', system-ui, -apple-system, sans-serif;
+}
+
+/* Language toggle — prevent layout shift; width fixed regardless of locale */
+.lang-toggle {
+  flex-shrink: 0;
 }

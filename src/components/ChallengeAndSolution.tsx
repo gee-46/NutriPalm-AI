@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React from "react";
 import { motion } from "framer-motion";
 import { 
@@ -7,6 +8,7 @@ import {
 import { SectionHeading } from "./SectionHeading";
 
 export const ChallengeAndSolution: React.FC = () => {
+    const { t } = useTranslation();
   const problems = [
     {
       icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
@@ -70,7 +72,7 @@ export const ChallengeAndSolution: React.FC = () => {
           <div className="mb-20 flex justify-center">
             <SectionHeading
               eyebrow="The Bottleneck"
-              title="The Challenge in Modern Agriculture"
+              title={t('challengeandsolution.the_challenge_in_modern_agriculture')}
               description="Farming currently operates with critical information gaps, making it difficult to make precise agronomic choices."
             />
           </div>
@@ -126,8 +128,9 @@ export const ChallengeAndSolution: React.FC = () => {
         >
           <div className="h-10 w-[1.5px] bg-gradient-to-b from-red-400 to-[#2E7D32]" />
           <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.2em] bg-[#2E7D32]/5 border border-[#2E7D32]/10 px-3 py-1 rounded-full">
-            Bridging The Gap
-          </span>
+            
+                                  {t('challengeandsolution.bridging_the_gap')}
+                                </span>
           <div className="h-10 w-[1.5px] bg-[#2E7D32]" />
         </motion.div>
       </div>
@@ -142,7 +145,7 @@ export const ChallengeAndSolution: React.FC = () => {
           <div className="mb-20 flex justify-center">
             <SectionHeading
               eyebrow="The Innovation"
-              title="Our Solution"
+              title={t('challengeandsolution.our_solution')}
               description="NutriPalm AI exists to convert soil reports into live digital twins, delivering precise crop-nutrition guidelines straight to the farmer."
             />
           </div>

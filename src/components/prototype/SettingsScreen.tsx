@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Sun, Bell, Globe, Building, Check, Save } from "lucide-react";
@@ -9,6 +10,7 @@ interface SettingsScreenProps {
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, onSaveSuccess }) => {
+    const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(activeSection || "Profile");
   const [isSaved, setIsSaved] = useState(false);
 
@@ -180,8 +182,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
     >
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">System Settings</h1>
-        <p className="text-sm text-gray-500">Configure personal agronomist profiles and telemetry preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('settingsscreen.system_settings')}</h1>
+        <p className="text-sm text-gray-500">{t('settingsscreen.configure_personal_agronomist_profiles_a')}</p>
       </div>
 
       <div className="bg-white rounded-3xl border border-gray-150 shadow-xs flex flex-col md:flex-row overflow-hidden min-h-[440px]">
@@ -220,14 +222,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   className="space-y-4"
                 >
                   <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                    <h3 className="font-extrabold text-gray-900 text-sm">Profile Details</h3>
+                    <h3 className="font-extrabold text-gray-900 text-sm">{t('settingsscreen.profile_details')}</h3>
                     <button
                       type="button"
                       onClick={openEditModal}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-lg transition-all text-xs cursor-pointer border-0"
                     >
-                      Edit Profile
-                    </button>
+                      
+                                                                {t('settingsscreen.edit_profile')}
+                                                              </button>
                   </div>
                   
                   {isLoadingProfile ? (
@@ -250,25 +253,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 pt-2">
                         <div className="border-b border-gray-100 pb-2">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Email Address</span>
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.email_address')}</span>
                           <span className="text-xs font-semibold text-gray-800">{profile.email || "N/A"}</span>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Contact Number</span>
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.contact_number')}</span>
                           <span className="text-xs font-semibold text-gray-800">{profile.phone || "Not Configured"}</span>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">State & District</span>
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.state_district')}</span>
                           <span className="text-xs font-semibold text-gray-800">
                             {profile.state || profile.district ? `${profile.state || ""}, ${profile.district || ""}` : "Not Configured"}
                           </span>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Village Name</span>
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.village_name')}</span>
                           <span className="text-xs font-semibold text-gray-800">{profile.village || "Not Configured"}</span>
                         </div>
                         <div className="border-b border-gray-100 pb-2 col-span-1 sm:col-span-2">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Preferred Language</span>
+                          <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.preferred_language')}</span>
                           <span className="text-xs font-semibold text-gray-800">{profile.preferred_language || "English"}</span>
                         </div>
                       </div>
@@ -286,7 +289,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">UI Theme Select</h3>
+                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">{t('settingsscreen.ui_theme_select')}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Option 1: Green Mesh */}
                     <div
@@ -296,10 +299,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-bold text-gray-800">Green Mesh (Default)</span>
+                        <span className="text-xs font-bold text-gray-800">{t('settingsscreen.green_mesh_default')}</span>
                         {theme === "Green Mesh" && <Check className="w-4 h-4 text-primary" />}
                       </div>
-                      <p className="text-[10px] text-gray-400">NutriPalm agricultural trademark design layout</p>
+                      <p className="text-[10px] text-gray-400">{t('settingsscreen.nutripalm_agricultural_trademark_design_')}</p>
                     </div>
 
                     {/* Option 2: Dark Forest */}
@@ -310,10 +313,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-bold text-gray-800">Dark Forest Mode</span>
+                        <span className="text-xs font-bold text-gray-800">{t('settingsscreen.dark_forest_mode')}</span>
                         {theme === "Dark Forest" && <Check className="w-4 h-4 text-primary" />}
                       </div>
-                      <p className="text-[10px] text-gray-400">High contrast dark theme for field tablets</p>
+                      <p className="text-[10px] text-gray-400">{t('settingsscreen.high_contrast_dark_theme_for_field_table')}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -328,13 +331,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">Telemetry Warnings</h3>
+                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">{t('settingsscreen.telemetry_warnings')}</h3>
                   
                   <div className="space-y-4">
                     <div className="flex justify-between items-center py-1">
                       <div>
-                        <p className="text-xs font-bold text-gray-800">Soil Moisture Spikes</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Send SMS warning if water content drops below 30%</p>
+                        <p className="text-xs font-bold text-gray-800">{t('settingsscreen.soil_moisture_spikes')}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{t('settingsscreen.send_sms_warning_if_water_content_drops_')}</p>
                       </div>
                       <button
                         type="button"
@@ -349,8 +352,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
 
                     <div className="flex justify-between items-center py-1">
                       <div>
-                        <p className="text-xs font-bold text-gray-800">Sentinel-2 Scan Completed</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Notify when biweekly NDVI vegetation map updates</p>
+                        <p className="text-xs font-bold text-gray-800">{t('settingsscreen.sentinel_2_scan_completed')}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{t('settingsscreen.notify_when_biweekly_ndvi_vegetation_map')}</p>
                       </div>
                       <button
                         type="button"
@@ -365,8 +368,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
 
                     <div className="flex justify-between items-center py-1">
                       <div>
-                        <p className="text-xs font-bold text-gray-800">AI Prescription Overrides</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Request manual check if weather forecasts shift significantly</p>
+                        <p className="text-xs font-bold text-gray-800">{t('settingsscreen.ai_prescription_overrides')}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{t('settingsscreen.request_manual_check_if_weather_forecast')}</p>
                       </div>
                       <button
                         type="button"
@@ -391,20 +394,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">Language Preferences</h3>
+                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">{t('settingsscreen.language_preferences')}</h3>
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-600">Select Local Language Override</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.select_local_language_override')}</label>
                     <select
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-medium focus:border-primary focus:outline-hidden transition-all cursor-pointer"
                     >
-                      <option value="English">English (Global)</option>
-                      <option value="Telugu">Telugu (Regional Andhra/TS)</option>
-                      <option value="Kannada">Kannada (Regional Karnataka)</option>
-                      <option value="Bahasa">Bahasa Indonesia (Sumatra/Kalimantan)</option>
+                      <option value="English">{t('settingsscreen.english_global')}</option>
+                      <option value="Telugu">{t('settingsscreen.telugu_regional_andhra_ts')}</option>
+                      <option value="Kannada">{t('settingsscreen.kannada_regional_karnataka')}</option>
+                      <option value="Bahasa">{t('settingsscreen.bahasa_indonesia_sumatra_kalimantan')}</option>
                     </select>
-                    <p className="text-[10px] text-gray-400 mt-1">This translates farmer report prints and SMS alerts into local dialects.</p>
+                    <p className="text-[10px] text-gray-400 mt-1">{t('settingsscreen.this_translates_farmer_report_prints_and')}</p>
                   </div>
                 </motion.div>
               )}
@@ -418,10 +421,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">Organization & Licensing</h3>
+                  <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">{t('settingsscreen.organization_licensing')}</h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Corporate Entity Name</label>
+                      <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.corporate_entity_name')}</label>
                       <input
                         type="text"
                         value={org.name}
@@ -430,7 +433,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Department Segment</label>
+                      <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.department_segment')}</label>
                       <input
                         type="text"
                         value={org.dept}
@@ -439,7 +442,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">SaaS License Key</label>
+                      <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.saas_license_key')}</label>
                       <input
                         type="text"
                         readOnly
@@ -461,12 +464,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                 >
                   {isSaved ? (
                     <>
-                      <Check className="w-4 h-4 animate-bounce" /> Changes Saved!
-                    </>
+                      <Check className="w-4 h-4 animate-bounce" />  {t('settingsscreen.changes_saved')}
+                                                              </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4" /> Save Configuration
-                    </>
+                      <Save className="w-4 h-4" />  {t('settingsscreen.save_configuration')}
+                                                                  </>
                   )}
                 </button>
               </div>
@@ -486,7 +489,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
               className="bg-white rounded-3xl border border-gray-150 shadow-2xl p-6 md:p-8 max-w-lg w-full text-left space-y-5 overflow-y-auto max-h-[90vh]"
             >
               <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <h3 className="font-extrabold text-gray-900 text-base">Edit Profile Information</h3>
+                <h3 className="font-extrabold text-gray-900 text-base">{t('settingsscreen.edit_profile_information')}</h3>
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
@@ -499,7 +502,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">Full Name</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.full_name')}</label>
                     <input
                       type="text"
                       required
@@ -510,75 +513,75 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">Professional Role</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.professional_role')}</label>
                     <select
                       value={editFields.userRole}
                       onChange={(e) => setEditFields({ ...editFields, userRole: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs focus:border-primary focus:outline-hidden transition-all cursor-pointer font-semibold"
                     >
-                      <option value="Agronomist">Agronomist</option>
-                      <option value="Farmer">Farmer</option>
-                      <option value="Extension Worker">Extension Worker</option>
-                      <option value="Admin">Admin</option>
+                      <option value="Agronomist">{t('settingsscreen.agronomist')}</option>
+                      <option value="Farmer">{t('settingsscreen.farmer')}</option>
+                      <option value="Extension Worker">{t('settingsscreen.extension_worker')}</option>
+                      <option value="Admin">{t('settingsscreen.admin')}</option>
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">Contact Number</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.contact_number')}</label>
                     <input
                       type="tel"
                       value={editFields.phoneNumber}
                       onChange={(e) => setEditFields({ ...editFields, phoneNumber: e.target.value })}
-                      placeholder="e.g. +91 98480 12345"
+                      placeholder={t('settingsscreen.e_g_91_98480_12345')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">Preferred Language</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.preferred_language')}</label>
                     <select
                       value={editFields.preferredLanguage}
                       onChange={(e) => setEditFields({ ...editFields, preferredLanguage: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs focus:border-primary focus:outline-hidden transition-all cursor-pointer font-semibold"
                     >
-                      <option value="English">English</option>
-                      <option value="Hindi">Hindi</option>
-                      <option value="Kannada">Kannada</option>
-                      <option value="Telugu">Telugu</option>
-                      <option value="Bahasa">Bahasa</option>
+                      <option value="English">{t('settingsscreen.english')}</option>
+                      <option value="Hindi">{t('settingsscreen.hindi')}</option>
+                      <option value="Kannada">{t('settingsscreen.kannada')}</option>
+                      <option value="Telugu">{t('settingsscreen.telugu')}</option>
+                      <option value="Bahasa">{t('settingsscreen.bahasa')}</option>
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">State</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.state')}</label>
                     <input
                       type="text"
                       value={editFields.state}
                       onChange={(e) => setEditFields({ ...editFields, state: e.target.value })}
-                      placeholder="Andhra Pradesh"
+                      placeholder={t('settingsscreen.andhra_pradesh')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600">District</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.district')}</label>
                     <input
                       type="text"
                       value={editFields.district}
                       onChange={(e) => setEditFields({ ...editFields, district: e.target.value })}
-                      placeholder="Chittoor"
+                      placeholder={t('settingsscreen.chittoor')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-600">Village</label>
+                  <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.village')}</label>
                   <input
                     type="text"
                     value={editFields.village}
                     onChange={(e) => setEditFields({ ...editFields, village: e.target.value })}
-                    placeholder="Rangampeta"
+                    placeholder={t('settingsscreen.rangampeta')}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-xs focus:border-primary focus:outline-hidden transition-all"
                   />
                 </div>
@@ -589,14 +592,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                     onClick={() => setIsEditModalOpen(false)}
                     className="px-4.5 py-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 text-xs font-bold transition-all cursor-pointer bg-white"
                   >
-                    Cancel
-                  </button>
+                    
+                                                          {t('settingsscreen.cancel')}
+                                                        </button>
                   <button
                     type="submit"
                     className="px-5 py-2 rounded-xl bg-primary hover:bg-[#235F26] text-white text-xs font-bold transition-all cursor-pointer border-0 shadow-md shadow-primary/10 flex items-center gap-1.5"
                   >
-                    Save Changes
-                  </button>
+                    
+                                                          {t('settingsscreen.save_changes')}
+                                                        </button>
                 </div>
               </form>
             </motion.div>

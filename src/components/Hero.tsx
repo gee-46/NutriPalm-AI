@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useState } from "react";
 import { ArrowRight, Play, CheckCircle, Shield, Sparkles, Compass, Sprout, Database } from "lucide-react";
 import { motion } from "framer-motion";
@@ -7,6 +8,7 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
+    const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
   const handleScrollTo = (id: string) => {
     const element = document.querySelector(id);
@@ -114,7 +116,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as any }}
           >
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>NUTRIPALM AI BY SAMRUDDHI ORGANICS</span>
+            <span>{t('hero.nutripalm_ai_by_samruddhi_organics')}</span>
           </motion.div>
 
           {/* Heading - Refactored typography */}
@@ -124,10 +126,13 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] as any }}
           >
-            The Digital Agronomist <br />
-            for <span className="text-gradient">Precision</span> <br />
-            Agriculture
-          </motion.h1>
+            
+                                  {t('hero.the_digital_agronomist')} <br />
+            
+                                  {t('hero.for')} <span className="text-gradient">{t('hero.precision')}</span> <br />
+            
+                                  {t('hero.agriculture')}
+                                </motion.h1>
 
           {/* Subheadline - Clearer value proposition under 5 seconds */}
           <motion.p
@@ -136,8 +141,9 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] as any }}
           >
-            Translating complex biological soil chemistry reports into real-time digital twin models and precision NPK crop prescriptions.
-          </motion.p>
+            
+                                  {t('hero.translating_complex_biological_soil_chem')}
+                                </motion.p>
 
           {/* Action Buttons */}
           <motion.div
@@ -166,12 +172,14 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
               {isInitializing ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                  Initializing NutriPalm AI...
-                </>
+                  
+                                                    {t('hero.initializing_nutripalm_ai')}
+                                                  </>
               ) : (
                 <>
-                  Explore Prototype
-                  <ArrowRight className="w-4 h-4" />
+                  
+                                                        {t('hero.explore_prototype')}
+                                                        <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
@@ -180,8 +188,9 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-gray-700 bg-white hover:bg-gray-50 border border-gray-250 active:scale-95 transition-all"
             >
               <Play className="w-4 h-4 fill-gray-600 text-gray-600" />
-              Watch Workflow
-            </button>
+              
+                                        {t('hero.watch_workflow')}
+                                      </button>
           </motion.div>
 
           {/* Realistic Product Pillars instead of generic SaaS metrics */}
@@ -196,8 +205,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                 <Compass className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
-                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Soil Twins</h4>
-                <p className="text-[11px] text-gray-500 mt-1 leading-normal">Interactive virtual field chemistry layer mapping.</p>
+                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{t('hero.soil_twins')}</h4>
+                <p className="text-[11px] text-gray-500 mt-1 leading-normal">{t('hero.interactive_virtual_field_chemistry_laye')}</p>
               </div>
             </div>
 
@@ -206,8 +215,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                 <Sprout className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
-                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">NPK Recipes</h4>
-                <p className="text-[11px] text-gray-500 mt-1 leading-normal">Precision mineral recipes preventing nitrogen burn.</p>
+                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{t('hero.npk_recipes')}</h4>
+                <p className="text-[11px] text-gray-500 mt-1 leading-normal">{t('hero.precision_mineral_recipes_preventing_nit')}</p>
               </div>
             </div>
 
@@ -216,8 +225,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                 <Database className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
-                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Yield Telemetry</h4>
-                <p className="text-[11px] text-gray-500 mt-1 leading-normal">NDVI biomass metrics and harvest estimations.</p>
+                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">{t('hero.yield_telemetry')}</h4>
+                <p className="text-[11px] text-gray-500 mt-1 leading-normal">{t('hero.ndvi_biomass_metrics_and_harvest_estimat')}</p>
               </div>
             </div>
           </motion.div>
@@ -251,11 +260,12 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
                   <div className="w-3 h-3 rounded-full bg-green-400" />
-                  <span className="text-[10px] font-medium text-gray-400 ml-2">nutripalm-twin-v1.2</span>
+                  <span className="text-[10px] font-medium text-gray-400 ml-2">{t('hero.nutripalm_twin_v1_2')}</span>
                 </div>
                 <div className="px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-[10px] font-bold text-green-700">
-                  ● Real-Time
-                </div>
+                  
+                                                    {t('hero.real_time')}
+                                                  </div>
               </div>
 
               {/* Digital Twin Graphic Area */}
@@ -292,30 +302,30 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                     animate={{ scale: [1, 1.6, 1] }}
                     transition={{ repeat: Infinity, duration: 2 }}
                   />
-                  <text x="110" y="68" fill="#E53E3E" fontSize="8" fontWeight="bold">Soil pH Anomaly</text>
+                  <text x="110" y="68" fill="#E53E3E" fontSize="8" fontWeight="bold">{t('hero.soil_ph_anomaly')}</text>
                 </svg>
 
                 {/* Plot Health Banner */}
                 <div className="absolute bottom-3 left-3 px-4 py-2 rounded-lg bg-white/95 backdrop-blur shadow-sm border border-gray-100 flex items-center gap-2">
                   <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                  <span className="text-[10px] font-bold text-gray-700">Digital Twin Synchronized</span>
+                  <span className="text-[10px] font-bold text-gray-700">{t('hero.digital_twin_synchronized')}</span>
                 </div>
               </div>
 
               {/* Stats Widgets */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Nitrogen Levels</span>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{t('hero.nitrogen_levels')}</span>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-xl font-bold text-gray-800">42 mg/kg</span>
-                    <span className="text-[10px] font-bold text-green-600">Optimal</span>
+                    <span className="text-[10px] font-bold text-green-600">{t('hero.optimal')}</span>
                   </div>
                 </div>
                 <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/50">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Soil Moisture</span>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">{t('hero.soil_moisture')}</span>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-xl font-bold text-gray-800">28.4%</span>
-                    <span className="text-[10px] font-bold text-amber-500">Irrigate Soon</span>
+                    <span className="text-[10px] font-bold text-amber-500">{t('hero.irrigate_soon')}</span>
                   </div>
                 </div>
               </div>
@@ -336,8 +346,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                 <Shield className="w-5 h-5" />
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">NPK Analyzer</span>
-                <span className="text-xs font-extrabold text-gray-800">100% Accurate</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{t('hero.npk_analyzer')}</span>
+                <span className="text-xs font-extrabold text-gray-800">{t('hero.100_accurate')}</span>
               </div>
             </motion.div>
 
@@ -354,10 +364,10 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             >
               <div className="flex flex-col text-left w-full">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Crop Recommendation</span>
-                  <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded bg-green-50 text-green-700">AI</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{t('hero.crop_recommendation')}</span>
+                  <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded bg-green-50 text-green-700">{t('hero.ai')}</span>
                 </div>
-                <span className="text-xs font-extrabold text-gray-800">Switch to Millet Rotation</span>
+                <span className="text-xs font-extrabold text-gray-800">{t('hero.switch_to_millet_rotation')}</span>
                 <div className="w-full bg-gray-100 h-1 rounded-full mt-2 overflow-hidden">
                   <div className="w-11/12 h-full bg-primary" />
                 </div>

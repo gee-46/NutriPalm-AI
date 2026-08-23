@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, Wind, CheckCircle2, ChevronRight, Bot, Cpu, RefreshCw, Download, X, Calendar } from "lucide-react";
-import { usePlots, type Plot } from "../../data/plots";
+import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, ChevronRight, Bot, Cpu, RefreshCw, Download, X, Calendar } from "lucide-react";
+import { usePlots } from "../../data/plots";
 import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
 import { useDigitalTwinSnapshots } from "../../data/digitalTwins";
 
-// PlotData type is now the shared Plot type from src/data/plots.ts
-type PlotData = Plot;
+
 
 interface TelemetryBadge {
   id: string;

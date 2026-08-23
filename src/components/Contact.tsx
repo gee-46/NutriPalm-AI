@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Phone, Mail, Send, Sparkles, CheckCircle2, X } from "lucide-react";
@@ -23,6 +24,7 @@ interface ContactProps {
 }
 
 export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
+    const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -103,8 +105,9 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
             transition={{ duration: 0.5 }}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Get in Touch
-          </motion.span>
+            
+                                  {t('contact.get_in_touch')}
+                                </motion.span>
           
           <motion.h2
             className="text-3xl md:text-4xl font-extrabold text-gray-950 tracking-tight leading-tight mb-4"
@@ -113,8 +116,9 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Let's Build the Future of Precision Agriculture
-          </motion.h2>
+            
+                                  {t('contact.let_s_build_the_future_of_precision_agri')}
+                                </motion.h2>
 
           <motion.p
             className="text-sm md:text-base text-gray-500 leading-relaxed"
@@ -123,8 +127,9 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Whether you're interested in NutriPalm AI, exploring partnerships, or learning more about our AI-powered precision agriculture platform, we'd love to hear from you.
-          </motion.p>
+            
+                                  {t('contact.whether_you_re_interested_in_nutripalm_a')}
+                                </motion.p>
         </div>
 
         {/* Two-Column Form & Contact Info */}
@@ -145,12 +150,14 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">Office Address</h4>
-                  <p className="text-sm text-gray-900 font-bold mb-0.5">Samruddhi Organics</p>
+                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">{t('contact.office_address')}</h4>
+                  <p className="text-sm text-gray-900 font-bold mb-0.5">{t('contact.samruddhi_organics')}</p>
                   <p className="text-xs md:text-sm text-gray-500 leading-relaxed">
-                    Belthangady, Dakshina Kannada<br />
-                    Karnataka – 574217, India
-                  </p>
+                    
+                                                          {t('contact.belthangady_dakshina_kannada')}<br />
+                    
+                                                          {t('contact.karnataka_574217_india')}
+                                                        </p>
                 </div>
               </div>
             </div>
@@ -163,11 +170,11 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">Phone</h4>
+                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">{t('contact.phone')}</h4>
                   <a href="tel:+919663541622" className="text-sm md:text-base font-bold text-gray-900 hover:text-primary transition-colors">
                     +91 96635 41622
                   </a>
-                  <p className="text-2xs text-gray-400 mt-1 uppercase tracking-wider">Mon-Sat • 9:00 AM - 6:00 PM</p>
+                  <p className="text-2xs text-gray-400 mt-1 uppercase tracking-wider">{t('contact.mon_sat_9_00_am_6_00_pm')}</p>
                 </div>
               </div>
             </div>
@@ -180,11 +187,12 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">Email</h4>
+                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">{t('contact.email')}</h4>
                   <a href="mailto:samruddhiorganics24@gmail.com" className="text-sm md:text-base font-bold text-gray-900 hover:text-primary transition-colors break-all">
-                    samruddhiorganics24@gmail.com
-                  </a>
-                  <p className="text-2xs text-gray-400 mt-1 uppercase tracking-wider">Queries reply within 24 hours</p>
+                    
+                                                          {t('contact.samruddhiorganics24_gmail_com')}
+                                                        </a>
+                  <p className="text-2xs text-gray-400 mt-1 uppercase tracking-wider">{t('contact.queries_reply_within_24_hours')}</p>
                 </div>
               </div>
             </div>
@@ -197,16 +205,17 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                   <LinkedInIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">LinkedIn</h4>
+                  <h4 className="text-sm font-black text-gray-950 uppercase tracking-wider mb-2">{t('contact.linkedin')}</h4>
                   <a 
                     href="https://www.linkedin.com/company/samruddhiorganic/" 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-sm md:text-base font-bold text-gray-900 hover:text-primary transition-colors break-all flex items-center gap-1"
                   >
-                    Samruddhi Organics
-                  </a>
-                  <p className="text-2xs text-gray-400 mt-1 uppercase tracking-wider">Follow for recent platform updates</p>
+                    
+                                                          {t('contact.samruddhi_organics')}
+                                                        </a>
+                  <p className="text-2xs text-gray-400 mt-1 uppercase tracking-wider">{t('contact.follow_for_recent_platform_updates')}</p>
                 </div>
               </div>
             </div>
@@ -225,7 +234,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Name field */}
                   <div className="space-y-2">
-                    <label htmlFor="name" className="block text-xs font-black text-gray-600 uppercase tracking-wider">Full Name *</label>
+                    <label htmlFor="name" className="block text-xs font-black text-gray-600 uppercase tracking-wider">{t('contact.full_name')}</label>
                     <input
                       type="text"
                       id="name"
@@ -233,13 +242,13 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                       required
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="e.g. John Doe"
+                      placeholder={t('contact.e_g_john_doe')}
                       className="w-full px-4 py-3 bg-white/40 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm text-sm text-gray-800 placeholder-gray-400"
                     />
                   </div>
                   {/* Email field */}
                   <div className="space-y-2">
-                    <label htmlFor="email" className="block text-xs font-black text-gray-600 uppercase tracking-wider">Email Address *</label>
+                    <label htmlFor="email" className="block text-xs font-black text-gray-600 uppercase tracking-wider">{t('contact.email_address')}</label>
                     <input
                       type="email"
                       id="email"
@@ -247,7 +256,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="e.g. john@company.com"
+                      placeholder={t('contact.e_g_john_company_com')}
                       className="w-full px-4 py-3 bg-white/40 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm text-sm text-gray-800 placeholder-gray-400"
                     />
                   </div>
@@ -256,27 +265,27 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Organization field */}
                   <div className="space-y-2">
-                    <label htmlFor="organization" className="block text-xs font-black text-gray-600 uppercase tracking-wider">Organization</label>
+                    <label htmlFor="organization" className="block text-xs font-black text-gray-600 uppercase tracking-wider">{t('contact.organization')}</label>
                     <input
                       type="text"
                       id="organization"
                       name="organization"
                       value={formData.organization}
                       onChange={handleInputChange}
-                      placeholder="e.g. Agri Farms Ltd"
+                      placeholder={t('contact.e_g_agri_farms_ltd')}
                       className="w-full px-4 py-3 bg-white/40 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm text-sm text-gray-800 placeholder-gray-400"
                     />
                   </div>
                   {/* Subject field */}
                   <div className="space-y-2">
-                    <label htmlFor="subject" className="block text-xs font-black text-gray-600 uppercase tracking-wider">Subject</label>
+                    <label htmlFor="subject" className="block text-xs font-black text-gray-600 uppercase tracking-wider">{t('contact.subject')}</label>
                     <input
                       type="text"
                       id="subject"
                       name="subject"
                       value={formData.subject}
                       onChange={handleInputChange}
-                      placeholder="e.g. Partnership Opportunity"
+                      placeholder={t('contact.e_g_partnership_opportunity')}
                       className="w-full px-4 py-3 bg-white/40 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm text-sm text-gray-800 placeholder-gray-400"
                     />
                   </div>
@@ -284,7 +293,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
 
                 {/* Message field */}
                 <div className="space-y-2">
-                  <label htmlFor="message" className="block text-xs font-black text-gray-600 uppercase tracking-wider">Message *</label>
+                  <label htmlFor="message" className="block text-xs font-black text-gray-600 uppercase tracking-wider">{t('contact.message')}</label>
                   <textarea
                     id="message"
                     name="message"
@@ -292,7 +301,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                     rows={4}
                     value={formData.message}
                     onChange={handleInputChange}
-                    placeholder="How can we help you?"
+                    placeholder={t('contact.how_can_we_help_you')}
                     className="w-full px-4 py-3 bg-white/40 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm text-sm text-gray-800 placeholder-gray-400 resize-none"
                   />
                 </div>
@@ -303,8 +312,9 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                   className="w-full bg-gradient-to-r from-primary to-[#43A047] text-white font-extrabold px-6 py-3.5 rounded-xl hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all duration-300 text-sm flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
-                  Send Message
-                </button>
+                  
+                                                    {t('contact.send_message')}
+                                                  </button>
               </form>
             </div>
           </motion.div>
@@ -319,11 +329,13 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
           transition={{ duration: 0.6, delay: 0.1 }}
         >
           <h3 className="text-lg md:text-xl font-extrabold text-gray-950 mb-3">
-            Interested in experiencing NutriPalm AI in action?
-          </h3>
+            
+                                  {t('contact.interested_in_experiencing_nutripalm_ai_')}
+                                </h3>
           <p className="text-xs md:text-sm text-gray-500 max-w-xl mx-auto mb-6">
-            Dive straight into our interactive SaaS console dashboard or coordinate a private walk-through customized for your cultivation plots.
-          </p>
+            
+                                  {t('contact.dive_straight_into_our_interactive_saas_')}
+                                </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {/* Explore Prototype button */}
             <button
@@ -344,8 +356,9 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
               {isInitializing ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                  Initializing NutriPalm AI...
-                </>
+                  
+                                                    {t('contact.initializing_nutripalm_ai')}
+                                                  </>
               ) : (
                 "Explore Prototype"
               )}
@@ -355,8 +368,9 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
               onClick={handleDemoRequest}
               className="px-6 py-3 bg-white border border-gray-200 hover:border-primary/30 text-gray-800 font-extrabold text-xs md:text-sm rounded-xl hover:bg-gray-50 active:scale-[0.98] transition-all duration-300 cursor-pointer w-full sm:w-auto"
             >
-              Request a Demo
-            </button>
+              
+                                        {t('contact.request_a_demo')}
+                                      </button>
           </div>
         </motion.div>
       </div>

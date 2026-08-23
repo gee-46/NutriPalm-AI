@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Sparkles } from "lucide-react";
@@ -7,6 +8,7 @@ interface CTAProps {
 }
 
 export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
+    const { t } = useTranslation();
   const [isInitializing, setIsInitializing] = useState(false);
   const handleScrollTo = (id: string) => {
     const element = document.querySelector(id);
@@ -48,19 +50,23 @@ export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
             
             {/* Small Tag */}
             <span className="text-[10px] font-bold text-[#A5D6A7] uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full border border-white/15 mb-6">
-              Get Incubation Access
-            </span>
+              
+                                        {t('cta.get_incubation_access')}
+                                      </span>
 
             {/* Headline */}
             <h2 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
-              Ready to Transform <br className="hidden sm:inline" />
-              Agriculture?
-            </h2>
+              
+                                        {t('cta.ready_to_transform')} <br className="hidden sm:inline" />
+              
+                                        {t('cta.agriculture')}
+                                      </h2>
 
             {/* Subtext */}
             <p className="text-sm md:text-base text-[#C3D8C2] leading-relaxed mb-8 max-w-lg">
-              Explore the digital twin prototype of NutriPalm AI and see how Samruddhi Organics is merging sustainable agronomy with AI-driven analytics.
-            </p>
+              
+                                        {t('cta.explore_the_digital_twin_prototype_of_nu')}
+                                      </p>
 
             {/* Button */}
             <button
@@ -83,12 +89,14 @@ export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
               {isInitializing ? (
                 <>
                   <span className="w-4 h-4 border-2 border-[#1B4D22] border-t-transparent rounded-full animate-spin shrink-0" />
-                  Initializing NutriPalm AI...
-                </>
+                  
+                                                    {t('cta.initializing_nutripalm_ai')}
+                                                  </>
               ) : (
                 <>
-                  Explore Prototype
-                  <ArrowUpRight className="w-4 h-4" />
+                  
+                                                        {t('cta.explore_prototype')}
+                                                        <ArrowUpRight className="w-4 h-4" />
                 </>
               )}
             </button>

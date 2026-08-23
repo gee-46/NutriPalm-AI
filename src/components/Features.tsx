@@ -1,9 +1,11 @@
+import { useTranslation } from "../translation/useTranslation";
 import React from "react";
 import { motion } from "framer-motion";
 import { UserCheck, MapPin, Layers, Pipette, Cpu, BarChart2 } from "lucide-react";
 import { SectionHeading } from "./SectionHeading";
 
 export const Features: React.FC = () => {
+    const { t } = useTranslation();
   const containerVariants = {
     hidden: {},
     visible: {
@@ -34,7 +36,7 @@ export const Features: React.FC = () => {
         <div className="mb-20 flex justify-center">
           <SectionHeading
             eyebrow="The Console Suite"
-            title="Unified AgriTech Infrastructure"
+            title={t('features.unified_agritech_infrastructure')}
             description="NutriPalm AI bundles six premium modules into a unified bento interface, giving operators complete oversight of their agricultural ecosystem."
           />
         </div>
@@ -59,28 +61,31 @@ export const Features: React.FC = () => {
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  Core CRM
-                </span>
+                  
+                                                    {t('features.core_crm')}
+                                                  </span>
               </div>
               <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                Farmer Management
-              </h3>
+                
+                                              {t('features.farmer_management')}
+                                            </h3>
               <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6">
-                Onboard farm operators, tracking acreage limits, historical regional yield outputs, and profile contracts in a streamlined system.
-              </p>
+                
+                                              {t('features.onboard_farm_operators_tracking_acreage_')}
+                                            </p>
             </div>
 
             {/* Apple-style UI Preview */}
             <div className="w-full mt-auto pt-4 border-t border-gray-100">
               <div className="bg-gray-50 rounded-2xl border border-gray-150 p-3 flex items-center justify-between shadow-sm">
                 <div className="flex gap-3 items-center">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700 text-xs">RK</div>
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700 text-xs">{t('features.rk')}</div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-gray-800">Rajesh Kumar</span>
-                    <span className="text-[9px] text-gray-400">4 Plots • Dakshina Kannada</span>
+                    <span className="text-xs font-bold text-gray-800">{t('features.rajesh_kumar')}</span>
+                    <span className="text-[9px] text-gray-400">{t('features.4_plots_dakshina_kannada')}</span>
                   </div>
                 </div>
-                <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-150">Active</span>
+                <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-150">{t('features.active')}</span>
               </div>
             </div>
           </motion.div>
@@ -96,15 +101,18 @@ export const Features: React.FC = () => {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  GeoSpatial
-                </span>
+                  
+                                                    {t('features.geospatial')}
+                                                  </span>
               </div>
               <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                Plot Mapping
-              </h3>
+                
+                                              {t('features.plot_mapping')}
+                                            </h3>
               <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6">
-                Trace exact plot boundaries utilizing high-precision mobile GPS inputs. Automatically calculate acreage slope and shading.
-              </p>
+                
+                                              {t('features.trace_exact_plot_boundaries_utilizing_hi')}
+                                            </p>
             </div>
 
             {/* Apple-style UI Preview */}
@@ -117,7 +125,7 @@ export const Features: React.FC = () => {
                   <circle cx="80" cy="30" r="3" fill="currentColor" />
                   <circle cx="70" cy="80" r="3" fill="currentColor" />
                 </svg>
-                <span className="absolute bottom-1 right-2 text-[9px] font-bold text-sky-850 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">5.4 Acres</span>
+                <span className="absolute bottom-1 right-2 text-[9px] font-bold text-sky-850 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">{t('features.5_4_acres')}</span>
               </div>
             </div>
           </motion.div>
@@ -133,15 +141,18 @@ export const Features: React.FC = () => {
                   <Pipette className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  Chemistry
-                </span>
+                  
+                                                    {t('features.chemistry')}
+                                                  </span>
               </div>
               <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                Soil Intelligence
-              </h3>
+                
+                                              {t('features.soil_intelligence')}
+                                            </h3>
               <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6">
-                Digitize chemical soil cores to track precise NPK ratios, pH, electrical conductivity, and organic carbon health indices.
-              </p>
+                
+                                              {t('features.digitize_chemical_soil_cores_to_track_pr')}
+                                            </p>
             </div>
 
             {/* Apple-style UI Preview */}
@@ -174,31 +185,34 @@ export const Features: React.FC = () => {
                   <Layers className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  Virtual Simulation
-                </span>
+                  
+                                                    {t('features.virtual_simulation')}
+                                                  </span>
               </div>
               <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                Digital Twin
-              </h3>
+                
+                                              {t('features.digital_twin')}
+                                            </h3>
               <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6 max-w-xl">
-                A continuous, layered virtual replica mapping NDVI vegetation index, soil moisture cycles, topography slopes, and thermal telemetry, allowing growers to simulate weather anomaly tolerances.
-              </p>
+                
+                                              {t('features.a_continuous_layered_virtual_replica_map')}
+                                            </p>
             </div>
 
             {/* Apple-style UI Preview */}
             <div className="w-full mt-auto pt-4 border-t border-gray-100">
               <div className="bg-gray-50 rounded-2xl border border-gray-150 p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 rounded-xl border border-indigo-150 bg-indigo-50/20 text-indigo-700 flex flex-col justify-between">
-                  <span className="text-[9px] font-bold uppercase">Moisture Scan</span>
-                  <span className="text-sm font-black mt-1">84% Saturation</span>
+                  <span className="text-[9px] font-bold uppercase">{t('features.moisture_scan')}</span>
+                  <span className="text-sm font-black mt-1">{t('features.84_saturation')}</span>
                 </div>
                 <div className="p-3 rounded-xl border border-green-150 bg-green-50/20 text-green-700 flex flex-col justify-between">
-                  <span className="text-[9px] font-bold uppercase">NDVI Biomass</span>
-                  <span className="text-sm font-black mt-1">0.72 Index</span>
+                  <span className="text-[9px] font-bold uppercase">{t('features.ndvi_biomass')}</span>
+                  <span className="text-sm font-black mt-1">{t('features.0_72_index')}</span>
                 </div>
                 <div className="p-3 rounded-xl border border-gray-200 bg-white text-gray-600 flex flex-col justify-between">
-                  <span className="text-[9px] font-bold uppercase">Topography</span>
-                  <span className="text-sm font-black mt-1">320m Altitude</span>
+                  <span className="text-[9px] font-bold uppercase">{t('features.topography')}</span>
+                  <span className="text-sm font-black mt-1">{t('features.320m_altitude')}</span>
                 </div>
               </div>
             </div>
@@ -215,22 +229,25 @@ export const Features: React.FC = () => {
                   <BarChart2 className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  Telemetry Hub
-                </span>
+                  
+                                                    {t('features.telemetry_hub')}
+                                                  </span>
               </div>
               <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                Analytics Dashboard
-              </h3>
+                
+                                              {t('features.analytics_dashboard')}
+                                            </h3>
               <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6">
-                Track historical yield progress curves, regional rainfall telemetry, crop development states, and budget allocations in real-time.
-              </p>
+                
+                                              {t('features.track_historical_yield_progress_curves_r')}
+                                            </p>
             </div>
 
             {/* Apple-style UI Preview */}
             <div className="w-full mt-auto pt-4 border-t border-gray-100">
               <div className="bg-gray-50 rounded-2xl border border-gray-150 p-3 flex flex-col justify-between h-20">
                 <div className="flex justify-between text-[9px] font-bold text-gray-400">
-                  <span>YIELD PROGRESS</span>
+                  <span>{t('features.yield_progress')}</span>
                   <span className="text-emerald-600">+12.4%</span>
                 </div>
                 <svg className="w-full h-8 text-emerald-500" viewBox="0 0 100 40">
@@ -252,27 +269,31 @@ export const Features: React.FC = () => {
                   <Cpu className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  Prescription Engine
-                </span>
+                  
+                                                    {t('features.prescription_engine')}
+                                                  </span>
               </div>
               <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                AI Recommendation Engine
-              </h3>
+                
+                                              {t('features.ai_recommendation_engine')}
+                                            </h3>
               <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6 max-w-xl">
-                Run deep agricultural neural networks to generate dynamic fertilizer targets, soil enrichment recipes, and custom crop rotation warnings, reducing mineral waste and maximizing outputs.
-              </p>
+                
+                                              {t('features.run_deep_agricultural_neural_networks_to')}
+                                            </p>
             </div>
 
             {/* Apple-style UI Preview */}
             <div className="w-full mt-auto pt-4 border-t border-gray-100">
               <div className="bg-gray-50 rounded-2xl border border-gray-150 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-left flex flex-col">
-                  <span className="text-[9px] font-bold text-gray-450 uppercase">Prescribed Action</span>
-                  <span className="text-xs font-black text-gray-800 mt-0.5">Apply NPK 19-19-19 target: 45kg/acre</span>
+                  <span className="text-[9px] font-bold text-gray-450 uppercase">{t('features.prescribed_action')}</span>
+                  <span className="text-xs font-black text-gray-800 mt-0.5">{t('features.apply_npk_19_19_19_target_45kg_acre')}</span>
                 </div>
                 <button className="px-4 py-2 bg-[#2E7D32] hover:bg-[#235F26] text-white text-[10px] font-bold rounded-xl transition-all shadow-md flex-shrink-0">
-                  Apply Prescription
-                </button>
+                  
+                                                    {t('features.apply_prescription')}
+                                                  </button>
               </div>
             </div>
           </motion.div>

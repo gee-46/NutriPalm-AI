@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -51,6 +52,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
   onLoad,
   showToast
 }) => {
+    const { t } = useTranslation();
   useEffect(() => {
     if (onLoad) onLoad();
   }, [onLoad]);
@@ -91,7 +93,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
           >
             <div className="bg-white border border-gray-150 p-5 rounded-2xl shadow-xl flex items-center gap-3">
               <RefreshCwSpinner />
-              <span className="text-xs font-black text-gray-800">Recalibrating agronomical recommendation models...</span>
+              <span className="text-xs font-black text-gray-800">{t('recommendationscreen.recalibrating_agronomical_recommendation')}</span>
             </div>
           </motion.div>
         )}
@@ -102,11 +104,13 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2">
             <Bot className="w-8 h-8 text-primary" />
-            AI Crop Recommendation Engine
-          </h1>
+            
+                                  {t('recommendationscreen.ai_crop_recommendation_engine')}
+                                </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
-            AI-generated precision agriculture recommendations based on soil health, Digital Twin analysis, weather forecasts, and telemetry insights.
-          </p>
+            
+                                  {t('recommendationscreen.ai_generated_precision_agriculture_recom')}
+                                </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -115,63 +119,66 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
           >
             <Sparkles className="w-4 h-4 text-white fill-white/20 animate-pulse" />
-            Generate New Recommendation
-          </button>
+            
+                                  {t('recommendationscreen.generate_new_recommendation')}
+                                </button>
           
           <button
             onClick={() => triggerToast("Compiling PDF advisory report...", "info")}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all text-xs cursor-pointer"
           >
             <Download className="w-4 h-4 text-gray-500" />
-            Export PDF
-          </button>
+            
+                                  {t('recommendationscreen.export_pdf')}
+                                </button>
 
           <button
             onClick={() => triggerToast("Copied advisory token to clipboard.", "success")}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all text-xs cursor-pointer"
           >
             <Share2 className="w-4 h-4 text-gray-500" />
-            Share Report
-          </button>
+            
+                                  {t('recommendationscreen.share_report')}
+                                </button>
         </div>
       </div>
 
       {/* ================= SECTION 1 — Farm Summary ================= */}
       <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-xs grid grid-cols-2 md:grid-cols-5 lg:grid-cols-9 gap-4 text-xs font-semibold text-gray-700">
         <div className="space-y-1">
-          <span className="block text-[8px] text-gray-400 uppercase">Farmer</span>
-          <span className="text-gray-900 font-black block">S. Gowda</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.farmer')}</span>
+          <span className="text-gray-900 font-black block">{t('recommendationscreen.s_gowda')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Farm Plot</span>
-          <span className="text-gray-900 font-black block">Plot 2A</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.farm_plot')}</span>
+          <span className="text-gray-900 font-black block">{t('recommendationscreen.plot_2a')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Crop Type</span>
-          <span className="text-primary font-black block">🌴 Oil Palm</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.crop_type')}</span>
+          <span className="text-primary font-black block">{t('recommendationscreen.oil_palm')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Area</span>
-          <span className="text-gray-900 font-black block">12.5 Acres</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.area')}</span>
+          <span className="text-gray-900 font-black block">{t('recommendationscreen.12_5_acres')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Growth Phase</span>
-          <span className="text-gray-900 font-black block">Fruit Dev</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.growth_phase')}</span>
+          <span className="text-gray-900 font-black block">{t('recommendationscreen.fruit_dev')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Last Soil Scan</span>
-          <span className="text-emerald-650 font-black block flex items-center gap-1">✓ Complete</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.last_soil_scan')}</span>
+          <span className="text-emerald-650 font-black block flex items-center gap-1">{t('recommendationscreen.complete')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Weather Index</span>
-          <span className="text-emerald-650 font-black block flex items-center gap-1">🟢 Storm Alert: None</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.weather_index')}</span>
+          <span className="text-emerald-650 font-black block flex items-center gap-1">{t('recommendationscreen.storm_alert_none')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Digital Twin</span>
-          <span className="text-emerald-650 font-black block flex items-center gap-1">🟢 Calibrated</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.digital_twin')}</span>
+          <span className="text-emerald-650 font-black block flex items-center gap-1">{t('recommendationscreen.calibrated')}</span>
         </div>
         <div className="space-y-1 border-l border-gray-100 pl-3">
-          <span className="block text-[8px] text-gray-400 uppercase">Overall Health</span>
+          <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.overall_health')}</span>
           <span className="text-white bg-[#2E7D32] px-2 py-0.5 rounded-md font-bold block text-center">87%</span>
         </div>
       </div>
@@ -190,39 +197,40 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full">
-                    slow-release organic carrier
-                  </span>
-                  <h3 className="text-xl font-black text-gray-900 mt-4">NPK 20:10:10 + Organic Compost</h3>
+                    
+                                                          {t('recommendationscreen.slow_release_organic_carrier')}
+                                                        </span>
+                  <h3 className="text-xl font-black text-gray-900 mt-4">{t('recommendationscreen.npk_20_10_10_organic_compost')}</h3>
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] font-mono text-gray-400 block uppercase">Priority level</span>
-                  <span className="text-rose-600 font-black text-sm bg-rose-50 border border-rose-100 px-3 py-1 rounded-xl">HIGH</span>
+                  <span className="text-[9px] font-mono text-gray-400 block uppercase">{t('recommendationscreen.priority_level')}</span>
+                  <span className="text-rose-600 font-black text-sm bg-rose-50 border border-rose-100 px-3 py-1 rounded-xl">{t('recommendationscreen.high')}</span>
                 </div>
               </div>
 
               {/* Progress counter fields */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                 <div className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase block">Confidence Score</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase block">{t('recommendationscreen.confidence_score')}</span>
                   <span className="text-xl font-black text-gray-950 mt-1 block">
                     <AnimatedCounter value={96} suffix="%" />
                   </span>
                 </div>
                 <div className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase block">Yield Increase</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase block">{t('recommendationscreen.yield_increase')}</span>
                   <span className="text-xl font-black text-primary mt-1 block">
                     <AnimatedCounter value={18} suffix="%" />
                   </span>
                 </div>
                 <div className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase block">Soil Improvement</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase block">{t('recommendationscreen.soil_improvement')}</span>
                   <span className="text-xl font-black text-primary mt-1 block">
                     <AnimatedCounter value={12} suffix="%" />
                   </span>
                 </div>
                 <div className="bg-gray-50 border border-gray-150 p-3.5 rounded-2xl">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase block">Application Window</span>
-                  <span className="text-sm font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg mt-2.5 inline-block">Within 5 Days</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase block">{t('recommendationscreen.application_window')}</span>
+                  <span className="text-sm font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg mt-2.5 inline-block">{t('recommendationscreen.within_5_days')}</span>
                 </div>
               </div>
             </div>
@@ -231,41 +239,41 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
           {/* SECTION 3 — Dosage Plan */}
           <div className="bg-white rounded-3xl border border-gray-150 overflow-hidden shadow-xs">
             <div className="p-5 border-b border-gray-100">
-              <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Advisory Dosage Specification</h4>
+              <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">{t('recommendationscreen.advisory_dosage_specification')}</h4>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-150 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    <th className="p-4 pl-6">Fertilizer Component</th>
-                    <th className="p-4">Quantity / Acre</th>
-                    <th className="p-4">Application Method</th>
-                    <th className="p-4">Frequency</th>
-                    <th className="p-4 pr-6">Optimal Timing</th>
+                    <th className="p-4 pl-6">{t('recommendationscreen.fertilizer_component')}</th>
+                    <th className="p-4">{t('recommendationscreen.quantity_acre')}</th>
+                    <th className="p-4">{t('recommendationscreen.application_method')}</th>
+                    <th className="p-4">{t('recommendationscreen.frequency')}</th>
+                    <th className="p-4 pr-6">{t('recommendationscreen.optimal_timing')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-xs text-gray-700 font-semibold">
                   <tr>
-                    <td className="p-4 pl-6 font-extrabold text-gray-950">NPK 20:10:10</td>
-                    <td className="p-4 text-gray-800">50 kg / acre</td>
-                    <td className="p-4">Soil Broadcast (Ring)</td>
-                    <td className="p-4">Once</td>
-                    <td className="p-4 text-primary font-bold pr-6">Morning Hours (Pre-noon)</td>
+                    <td className="p-4 pl-6 font-extrabold text-gray-950">{t('recommendationscreen.npk_20_10_10')}</td>
+                    <td className="p-4 text-gray-800">{t('recommendationscreen.50_kg_acre')}</td>
+                    <td className="p-4">{t('recommendationscreen.soil_broadcast_ring')}</td>
+                    <td className="p-4">{t('recommendationscreen.once')}</td>
+                    <td className="p-4 text-primary font-bold pr-6">{t('recommendationscreen.morning_hours_pre_noon')}</td>
                   </tr>
                   <tr>
-                    <td className="p-4 pl-6 font-extrabold text-gray-950">Organic Compost</td>
-                    <td className="p-4 text-gray-800">250 kg / acre</td>
-                    <td className="p-4">Manual Root Zone Mounding</td>
-                    <td className="p-4">Once</td>
-                    <td className="p-4 text-primary font-bold pr-6">Week 1 (Basal base)</td>
+                    <td className="p-4 pl-6 font-extrabold text-gray-950">{t('recommendationscreen.organic_compost')}</td>
+                    <td className="p-4 text-gray-800">{t('recommendationscreen.250_kg_acre')}</td>
+                    <td className="p-4">{t('recommendationscreen.manual_root_zone_mounding')}</td>
+                    <td className="p-4">{t('recommendationscreen.once')}</td>
+                    <td className="p-4 text-primary font-bold pr-6">{t('recommendationscreen.week_1_basal_base')}</td>
                   </tr>
                   <tr>
-                    <td className="p-4 pl-6 font-extrabold text-gray-950">Micronutrient Spray</td>
-                    <td className="p-4 text-gray-800">2 L / acre</td>
-                    <td className="p-4">Foliar Canopy Misting</td>
-                    <td className="p-4">Every 14 Days</td>
-                    <td className="p-4 text-primary font-bold pr-6">Late Evening (Pre-sunset)</td>
+                    <td className="p-4 pl-6 font-extrabold text-gray-950">{t('recommendationscreen.micronutrient_spray')}</td>
+                    <td className="p-4 text-gray-800">{t('recommendationscreen.2_l_acre')}</td>
+                    <td className="p-4">{t('recommendationscreen.foliar_canopy_misting')}</td>
+                    <td className="p-4">{t('recommendationscreen.every_14_days')}</td>
+                    <td className="p-4 text-primary font-bold pr-6">{t('recommendationscreen.late_evening_pre_sunset')}</td>
                   </tr>
                 </tbody>
               </table>
@@ -274,7 +282,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
           {/* SECTION 4 — Why AI Generated This (AI Reasoning) */}
           <div className="space-y-4">
-            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest text-left">Model Explainability Reasoning</h4>
+            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest text-left">{t('recommendationscreen.model_explainability_reasoning')}</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Reason 1 */}
@@ -282,12 +290,13 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
                 <span className="p-2 bg-amber-50 text-amber-500 rounded-xl shrink-0"><AlertTriangle className="w-5 h-5" /></span>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center w-full">
-                    <h5 className="font-extrabold text-xs text-gray-900">Low Nitrogen Detected</h5>
-                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">98% Conf.</span>
+                    <h5 className="font-extrabold text-xs text-gray-900">{t('recommendationscreen.low_nitrogen_detected')}</h5>
+                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">{t('recommendationscreen.98_conf')}</span>
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed font-semibold">
-                    Current soil nitrogen levels are below the optimal vegetative threshold of 180 ppm, causing leaf yellowing.
-                  </p>
+                    
+                                                          {t('recommendationscreen.current_soil_nitrogen_levels_are_below_t')}
+                                                        </p>
                 </div>
               </div>
 
@@ -296,12 +305,13 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
                 <span className="p-2 bg-amber-50 text-amber-500 rounded-xl shrink-0"><AlertTriangle className="w-5 h-5" /></span>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center w-full">
-                    <h5 className="font-extrabold text-xs text-gray-900">Low Organic Carbon</h5>
-                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">94% Conf.</span>
+                    <h5 className="font-extrabold text-xs text-gray-900">{t('recommendationscreen.low_organic_carbon')}</h5>
+                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">{t('recommendationscreen.94_conf')}</span>
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed font-semibold">
-                    Organic matter density index is low, restricting soil retention of inorganic fertilizer nutrients.
-                  </p>
+                    
+                                                          {t('recommendationscreen.organic_matter_density_index_is_low_rest')}
+                                                        </p>
                 </div>
               </div>
 
@@ -310,12 +320,13 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
                 <span className="p-2 bg-blue-50 text-blue-500 rounded-xl shrink-0"><CloudRain className="w-5 h-5" /></span>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center w-full">
-                    <h5 className="font-extrabold text-xs text-gray-900">Rain Forecast Absorption</h5>
-                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">89% Conf.</span>
+                    <h5 className="font-extrabold text-xs text-gray-900">{t('recommendationscreen.rain_forecast_absorption')}</h5>
+                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">{t('recommendationscreen.89_conf')}</span>
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed font-semibold">
-                    Precipitation indices forecast rain in 48h, facilitating rapid dissolution and absorption of Urea.
-                  </p>
+                    
+                                                          {t('recommendationscreen.precipitation_indices_forecast_rain_in_4')}
+                                                        </p>
                 </div>
               </div>
 
@@ -324,12 +335,13 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
                 <span className="p-2 bg-emerald-50 text-primary rounded-xl shrink-0"><Bot className="w-5 h-5" /></span>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center w-full">
-                    <h5 className="font-extrabold text-xs text-gray-900">Digital Twin Prediction</h5>
-                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">96% Conf.</span>
+                    <h5 className="font-extrabold text-xs text-gray-900">{t('recommendationscreen.digital_twin_prediction')}</h5>
+                    <span className="text-[9px] font-bold text-gray-450 bg-gray-100 px-1.5 py-0.2 rounded-md">{t('recommendationscreen.96_conf')}</span>
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed font-semibold">
-                    Canopy simulation models predict fruit bundle size boost after 14-day vegetative nitrogen boost.
-                  </p>
+                    
+                                                          {t('recommendationscreen.canopy_simulation_models_predict_fruit_b')}
+                                                        </p>
                 </div>
               </div>
 
@@ -338,24 +350,24 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
           {/* SECTION 5 — Expected Improvements Comparisons */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-6">
-            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Projected Improvement Forecasts</h4>
+            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">{t('recommendationscreen.projected_improvement_forecasts')}</h4>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               
               {/* Yield comparison */}
               <div className="space-y-3.5 border-r border-gray-100 pr-5">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-xs font-extrabold text-gray-800">Fruit Bunch Yield</span>
-                  <span className="text-xs font-black text-primary bg-emerald-50 px-2 py-0.5 rounded-full">+18.2% Gain</span>
+                  <span className="text-xs font-extrabold text-gray-800">{t('recommendationscreen.fruit_bunch_yield')}</span>
+                  <span className="text-xs font-black text-primary bg-emerald-50 px-2 py-0.5 rounded-full">{t('recommendationscreen.18_2_gain')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                    <span className="block text-[8px] text-gray-400 uppercase">Current Yield</span>
-                    <span className="text-base font-black text-gray-700">3.8 Tons/ha</span>
+                    <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.current_yield')}</span>
+                    <span className="text-base font-black text-gray-700">{t('recommendationscreen.3_8_tons_ha')}</span>
                   </div>
                   <div className="bg-emerald-50/50 border border-emerald-250/20 p-2.5 rounded-xl">
-                    <span className="block text-[8px] text-primary uppercase">Predicted Yield</span>
-                    <span className="text-base font-black text-primary">4.5 Tons/ha</span>
+                    <span className="block text-[8px] text-primary uppercase">{t('recommendationscreen.predicted_yield')}</span>
+                    <span className="text-base font-black text-primary">{t('recommendationscreen.4_5_tons_ha')}</span>
                   </div>
                 </div>
               </div>
@@ -363,17 +375,17 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
               {/* Soil Health comparison */}
               <div className="space-y-3.5">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-xs font-extrabold text-gray-800">Soil Health Score</span>
-                  <span className="text-xs font-black text-primary bg-emerald-50 px-2 py-0.5 rounded-full">+12.0% Gain</span>
+                  <span className="text-xs font-extrabold text-gray-800">{t('recommendationscreen.soil_health_score')}</span>
+                  <span className="text-xs font-black text-primary bg-emerald-50 px-2 py-0.5 rounded-full">{t('recommendationscreen.12_0_gain')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl">
-                    <span className="block text-[8px] text-gray-400 uppercase">Current Soil</span>
-                    <span className="text-base font-black text-gray-700">76% Vigor</span>
+                    <span className="block text-[8px] text-gray-400 uppercase">{t('recommendationscreen.current_soil')}</span>
+                    <span className="text-base font-black text-gray-700">{t('recommendationscreen.76_vigor')}</span>
                   </div>
                   <div className="bg-emerald-50/50 border border-emerald-250/20 p-2.5 rounded-xl">
-                    <span className="block text-[8px] text-primary uppercase">Predicted Soil</span>
-                    <span className="text-base font-black text-primary">88% Vigor</span>
+                    <span className="block text-[8px] text-primary uppercase">{t('recommendationscreen.predicted_soil')}</span>
+                    <span className="text-base font-black text-primary">{t('recommendationscreen.88_vigor')}</span>
                   </div>
                 </div>
               </div>
@@ -384,8 +396,8 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-3 border-t border-gray-100 text-xs">
               <div className="space-y-1 font-semibold">
                 <div className="flex justify-between font-bold">
-                  <span>Water Usage Reduction</span>
-                  <span className="text-primary">-12% Saved</span>
+                  <span>{t('recommendationscreen.water_usage_reduction')}</span>
+                  <span className="text-primary">{t('recommendationscreen.12_saved')}</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-primary" style={{ width: "12%" }} />
@@ -393,8 +405,8 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
               </div>
               <div className="space-y-1 font-semibold">
                 <div className="flex justify-between font-bold">
-                  <span>Fertilizer Absorption Efficiency</span>
-                  <span className="text-primary">+15% Gain</span>
+                  <span>{t('recommendationscreen.fertilizer_absorption_efficiency')}</span>
+                  <span className="text-primary">{t('recommendationscreen.15_gain')}</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-primary" style={{ width: "15%" }} />
@@ -409,35 +421,35 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             {/* Cost & ROI card */}
             <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-xs text-left space-y-4">
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4 text-primary" /> Cost-Benefit Valuation
-              </h4>
+                <DollarSign className="w-4 h-4 text-primary" />  {t('recommendationscreen.cost_benefit_valuation')}
+                                            </h4>
               <div className="space-y-2.5 text-xs text-gray-700 font-semibold">
                 <div className="flex justify-between">
-                  <span>Estimated Fertilizer Cost</span>
-                  <span className="text-gray-900">$185</span>
+                  <span>{t('recommendationscreen.estimated_fertilizer_cost')}</span>
+                  <span className="text-gray-900">{t('recommendationscreen.185')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Estimated Labor Cost</span>
-                  <span className="text-gray-900">$40</span>
+                  <span>{t('recommendationscreen.estimated_labor_cost')}</span>
+                  <span className="text-gray-900">{t('recommendationscreen.40')}</span>
                 </div>
                 <div className="flex justify-between py-1 border-t border-gray-50 font-bold">
-                  <span>Total Capital Outlay</span>
-                  <span className="text-gray-950 font-black">$225</span>
+                  <span>{t('recommendationscreen.total_capital_outlay')}</span>
+                  <span className="text-gray-950 font-black">{t('recommendationscreen.225')}</span>
                 </div>
                 <div className="flex justify-between font-bold">
-                  <span>Expected Gross Revenue Increase</span>
-                  <span className="text-primary font-black">+$540</span>
+                  <span>{t('recommendationscreen.expected_gross_revenue_increase')}</span>
+                  <span className="text-primary font-black">{t('recommendationscreen.540')}</span>
                 </div>
                 
                 {/* ROI Badge */}
                 <div className="bg-emerald-50 border border-emerald-150/40 p-3 rounded-2xl flex justify-between items-center text-xs mt-2">
-                  <span className="font-extrabold text-emerald-850">Estimated ROI Rate</span>
-                  <span className="text-lg font-black text-primary">140% ROI</span>
+                  <span className="font-extrabold text-emerald-850">{t('recommendationscreen.estimated_roi_rate')}</span>
+                  <span className="text-lg font-black text-primary">{t('recommendationscreen.140_roi')}</span>
                 </div>
 
                 <div className="flex justify-between text-[10px] pt-1 text-gray-400 font-black uppercase">
-                  <span>Break-even Period: 28 Days</span>
-                  <span>Confidence: 96%</span>
+                  <span>{t('recommendationscreen.break_even_period_28_days')}</span>
+                  <span>{t('recommendationscreen.confidence_96')}</span>
                 </div>
               </div>
             </div>
@@ -445,34 +457,35 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             {/* Environmental Impact card */}
             <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-xs text-left space-y-4">
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2 flex items-center gap-1.5">
-                <Leaf className="w-4 h-4 text-primary" /> Eco-sustainability Metrics
-              </h4>
+                <Leaf className="w-4 h-4 text-primary" />  {t('recommendationscreen.eco_sustainability_metrics')}
+                                            </h4>
               <div className="space-y-2.5 text-xs text-gray-700 font-semibold">
                 <div className="flex justify-between">
-                  <span>Water Footprint Saved</span>
+                  <span>{t('recommendationscreen.water_footprint_saved')}</span>
                   <span className="text-primary font-bold">12%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>CO₂ Soil Footprint Reduced</span>
+                  <span>{t('recommendationscreen.co_soil_footprint_reduced')}</span>
                   <span className="text-primary font-bold">8%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Organic Humus Density Gain</span>
+                  <span>{t('recommendationscreen.organic_humus_density_gain')}</span>
                   <span className="text-primary font-bold">15%</span>
                 </div>
                 
                 <div className="flex justify-between py-1 border-t border-gray-50">
-                  <span>Soil Bio-Sustainability Index</span>
-                  <span className="text-primary font-bold">Excellent</span>
+                  <span>{t('recommendationscreen.soil_bio_sustainability_index')}</span>
+                  <span className="text-primary font-bold">{t('recommendationscreen.excellent')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Chemical Runoff Risk</span>
-                  <span className="text-emerald-650 font-black">Low</span>
+                  <span>{t('recommendationscreen.chemical_runoff_risk')}</span>
+                  <span className="text-emerald-650 font-black">{t('recommendationscreen.low')}</span>
                 </div>
 
                 <div className="bg-emerald-50 border border-emerald-150/40 p-3.5 rounded-2xl text-[9px] text-emerald-850 leading-relaxed font-semibold">
-                  Custom mix uses organic compost bindings that anchor chemical nutrients to soil structures, reducing groundwater leaching risk by 96%.
-                </div>
+                  
+                                                    {t('recommendationscreen.custom_mix_uses_organic_compost_bindings')}
+                                                  </div>
               </div>
             </div>
 
@@ -480,7 +493,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
           {/* SECTION 6 — Horizontal Timeline */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-6 overflow-hidden">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Implementation Timeline Roadmap</h4>
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('recommendationscreen.implementation_timeline_roadmap')}</h4>
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative pt-2 text-xs">
               <div className="absolute left-[20px] right-[20px] top-[14px] h-0.5 bg-gray-100 -z-10 hidden md:block" />
@@ -488,48 +501,48 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
               <div className="flex items-center gap-3 md:flex-col md:gap-0 md:text-center">
                 <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">01</div>
                 <div className="md:mt-2 text-left md:text-center">
-                  <p className="font-extrabold text-gray-900">Today</p>
-                  <p className="text-[9px] text-gray-450">Prescription Compiled</p>
+                  <p className="font-extrabold text-gray-900">{t('recommendationscreen.today')}</p>
+                  <p className="text-[9px] text-gray-450">{t('recommendationscreen.prescription_compiled')}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 md:flex-col md:gap-0 md:text-center">
                 <div className="w-8 h-8 rounded-full bg-emerald-50 border border-primary text-primary flex items-center justify-center font-bold text-xs shrink-0">02</div>
                 <div className="md:mt-2 text-left md:text-center">
-                  <p className="font-extrabold text-gray-950">Day 1</p>
-                  <p className="text-[9px] text-gray-450">Apply Compost Base</p>
+                  <p className="font-extrabold text-gray-950">{t('recommendationscreen.day_1')}</p>
+                  <p className="text-[9px] text-gray-450">{t('recommendationscreen.apply_compost_base')}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 md:flex-col md:gap-0 md:text-center">
                 <div className="w-8 h-8 rounded-full bg-emerald-50 border border-primary text-primary flex items-center justify-center font-bold text-xs shrink-0">03</div>
                 <div className="md:mt-2 text-left md:text-center">
-                  <p className="font-extrabold text-gray-950">Day 3</p>
-                  <p className="text-[9px] text-gray-450">Ring Apply NPK</p>
+                  <p className="font-extrabold text-gray-950">{t('recommendationscreen.day_3')}</p>
+                  <p className="text-[9px] text-gray-450">{t('recommendationscreen.ring_apply_npk')}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 md:flex-col md:gap-0 md:text-center">
                 <div className="w-8 h-8 rounded-full bg-emerald-50 border border-primary text-primary flex items-center justify-center font-bold text-xs shrink-0">04</div>
                 <div className="md:mt-2 text-left md:text-center">
-                  <p className="font-extrabold text-gray-950">Day 10</p>
-                  <p className="text-[9px] text-gray-450">IoT Sensor Audit</p>
+                  <p className="font-extrabold text-gray-950">{t('recommendationscreen.day_10')}</p>
+                  <p className="text-[9px] text-gray-450">{t('recommendationscreen.iot_sensor_audit')}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 md:flex-col md:gap-0 md:text-center">
                 <div className="w-8 h-8 rounded-full bg-emerald-50 border border-primary text-primary flex items-center justify-center font-bold text-xs shrink-0">05</div>
                 <div className="md:mt-2 text-left md:text-center">
-                  <p className="font-extrabold text-gray-950">Day 20</p>
-                  <p className="text-[9px] text-gray-450">NDVI Canopy Scan</p>
+                  <p className="font-extrabold text-gray-950">{t('recommendationscreen.day_20')}</p>
+                  <p className="text-[9px] text-gray-450">{t('recommendationscreen.ndvi_canopy_scan')}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 md:flex-col md:gap-0 md:text-center">
                 <div className="w-8 h-8 rounded-full bg-white border border-gray-250 text-gray-400 flex items-center justify-center font-bold text-xs shrink-0">06</div>
                 <div className="md:mt-2 text-left md:text-center">
-                  <p className="font-extrabold text-gray-300">Day 45</p>
-                  <p className="text-[9px] text-gray-300">Yield Calibrations</p>
+                  <p className="font-extrabold text-gray-300">{t('recommendationscreen.day_45')}</p>
+                  <p className="text-[9px] text-gray-300">{t('recommendationscreen.yield_calibrations')}</p>
                 </div>
               </div>
             </div>
@@ -543,14 +556,14 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
           {/* SECTION 9 — AI Confidence Breakdown */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
             <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-widest">AI Confidence Matrices</h4>
-              <span className="text-[10px] font-black text-emerald-650">96% Overall</span>
+              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-widest">{t('recommendationscreen.ai_confidence_matrices')}</h4>
+              <span className="text-[10px] font-black text-emerald-650">{t('recommendationscreen.96_overall')}</span>
             </div>
 
             <div className="space-y-3.5 text-xs text-gray-700 font-semibold">
               <div className="space-y-1">
                 <div className="flex justify-between font-bold">
-                  <span>Soil Diagnostics Report data</span>
+                  <span>{t('recommendationscreen.soil_diagnostics_report_data')}</span>
                   <span>98%</span>
                 </div>
                 <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -560,7 +573,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
               <div className="space-y-1">
                 <div className="flex justify-between font-bold">
-                  <span>Weather Forecast Telemetry data</span>
+                  <span>{t('recommendationscreen.weather_forecast_telemetry_data')}</span>
                   <span>94%</span>
                 </div>
                 <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -570,7 +583,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
               <div className="space-y-1">
                 <div className="flex justify-between font-bold">
-                  <span>Biophysical Digital Twin simulations</span>
+                  <span>{t('recommendationscreen.biophysical_digital_twin_simulations')}</span>
                   <span>96%</span>
                 </div>
                 <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -580,7 +593,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
               <div className="space-y-1">
                 <div className="flex justify-between font-bold">
-                  <span>In-situ IoT Telemetry variables</span>
+                  <span>{t('recommendationscreen.in_situ_iot_telemetry_variables')}</span>
                   <span>91%</span>
                 </div>
                 <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -590,7 +603,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
               <div className="space-y-1">
                 <div className="flex justify-between font-bold">
-                  <span>Regional Crop yield datasets</span>
+                  <span>{t('recommendationscreen.regional_crop_yield_datasets')}</span>
                   <span>95%</span>
                 </div>
                 <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -603,65 +616,73 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
           {/* SECTION 10 — Action Buttons */}
           <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-xs text-left space-y-2.5">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
-              Advisory Actions Suite
-            </h4>
+              
+                                        {t('recommendationscreen.advisory_actions_suite')}
+                                      </h4>
             
             <button
               onClick={() => triggerToast("Recommendation scheduled and synced with agronomist logs.", "success")}
               className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 border-0 cursor-pointer animate-pulse"
             >
               <ClipboardCheck className="w-4 h-4" />
-              Accept Recommendation
-            </button>
+              
+                                        {t('recommendationscreen.accept_recommendation')}
+                                      </button>
 
             <button
               onClick={() => triggerToast("Redirecting to prescription modifier form...", "info")}
               className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              Modify Recommendation
-            </button>
+              
+                                        {t('recommendationscreen.modify_recommendation')}
+                                      </button>
 
             <button
               onClick={() => triggerToast("Synced scheduled fertilization triggers.", "success")}
               className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Calendar className="w-4 h-4 text-primary" />
-              Schedule Application
-            </button>
+              
+                                        {t('recommendationscreen.schedule_application')}
+                                      </button>
 
             <button
               onClick={() => triggerToast("Generating NPK recommendations PDF report...", "info")}
               className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3 rounded-xl transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Download className="w-4 h-4 text-primary" />
-              Download Advisory PDF
-            </button>
+              
+                                        {t('recommendationscreen.download_advisory_pdf')}
+                                      </button>
           </div>
 
           {/* SECTION 11 — Recommendation History */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
             <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-widest border-b border-gray-100 pb-2">
-              Prescription History Logs
-            </h4>
+              
+                                        {t('recommendationscreen.prescription_history_logs')}
+                                      </h4>
 
             <div className="space-y-4">
               <div className="flex items-start gap-2.5 text-xs text-gray-700 font-semibold leading-relaxed">
                 <span className="text-emerald-500 mt-0.5">✓</span>
                 <div className="flex-grow space-y-0.5">
-                  <p className="text-gray-900 font-bold">12 Jul: NPK Mix-B Broadcast</p>
+                  <p className="text-gray-900 font-bold">{t('recommendationscreen.12_jul_npk_mix_b_broadcast')}</p>
                   <p className="text-[10px] text-gray-500 leading-normal">
-                    Status: <strong className="text-emerald-650 font-extrabold">Completed</strong> • Result: <strong>+9% Yield</strong> • Conf. 95%
-                  </p>
+                    
+                                                          {t('recommendationscreen.status')} <strong className="text-emerald-650 font-extrabold">{t('recommendationscreen.completed')}</strong>  {t('recommendationscreen.result')} <strong>{t('recommendationscreen.9_yield')}</strong>  {t('recommendationscreen.conf_95')}
+                                                        </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5 text-xs text-gray-700 font-semibold leading-relaxed border-t border-gray-50 pt-3">
                 <span className="text-emerald-500 mt-0.5">✓</span>
                 <div className="flex-grow space-y-0.5">
-                  <p className="text-gray-900 font-bold">28 Jun: Organic Compost Layer</p>
+                  <p className="text-gray-900 font-bold">{t('recommendationscreen.28_jun_organic_compost_layer')}</p>
                   <p className="text-[10px] text-gray-500 leading-normal">
-                    Status: <strong className="text-emerald-650 font-extrabold">Completed</strong> • Result: <strong>Soil humus gain</strong> • Conf. 97%
-                  </p>
+                    
+                                                          {t('recommendationscreen.status')} <strong className="text-emerald-650 font-extrabold">{t('recommendationscreen.completed')}</strong>  {t('recommendationscreen.result')} <strong>{t('recommendationscreen.soil_humus_gain')}</strong>  {t('recommendationscreen.conf_97')}
+                                                        </p>
                 </div>
               </div>
             </div>

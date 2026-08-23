@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Layers, MapPin, Sprout, ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
@@ -8,6 +9,7 @@ interface AddFarmerScreenProps {
 }
 
 export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCancel }) => {
+    const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -88,16 +90,18 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
         <div className="w-16 h-16 bg-emerald-50 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-10 h-10" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Farmer Profile Created Successfully</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">{t('addfarmerscreen.farmer_profile_created_successfully')}</h2>
         <p className="text-sm text-gray-500 mb-8 max-w-sm mx-auto">
-          The landholder database and spatial map overlay are active. Digital twin calibration will start automatically in 24 hours.
-        </p>
+          
+                          {t('addfarmerscreen.the_landholder_database_and_spatial_map_')}
+                        </p>
         <button
           onClick={onCancel}
           className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-[#235F26] text-white font-bold rounded-xl active:scale-95 shadow-md shadow-primary/10 transition-all text-sm cursor-pointer"
         >
-          Return to Database
-        </button>
+          
+                          {t('addfarmerscreen.return_to_database')}
+                        </button>
       </motion.div>
     );
   }
@@ -110,15 +114,15 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
           onClick={onCancel}
           className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-900 cursor-pointer bg-transparent border-0"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to List
-        </button>
-        <span className="text-xs text-gray-400 font-bold">Step {step} of 4</span>
+          <ArrowLeft className="w-4 h-4" />  {t('addfarmerscreen.back_to_list')}
+                          </button>
+        <span className="text-xs text-gray-400 font-bold">{t('addfarmerscreen.step')} {step}  {t('addfarmerscreen.of_4')}</span>
       </div>
 
       {/* Title */}
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Register New Farmer</h1>
-        <p className="text-sm text-gray-500 mt-1">Enroll farmer profiles into the Samruddhi Twin index</p>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('addfarmerscreen.register_new_farmer')}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t('addfarmerscreen.enroll_farmer_profiles_into_the_samruddh')}</p>
       </div>
 
       {/* Progress Tracker */}
@@ -180,52 +184,52 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                 exit="exit"
                 className="space-y-4"
               >
-                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">Personal Details</h3>
+                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">{t('addfarmerscreen.personal_details')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Farmer Name *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.farmer_name')}</label>
                     <input
                       required
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="e.g. Swaminathan Gowda"
+                      placeholder={t('addfarmerscreen.e_g_swaminathan_gowda')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Contact Number *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.contact_number')}</label>
                     <input
                       required
                       type="tel"
                       name="contact"
                       value={formData.contact}
                       onChange={handleChange}
-                      placeholder="e.g. +91 98765 43210"
+                      placeholder={t('addfarmerscreen.e_g_91_98765_43210')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Village *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.village')}</label>
                     <input
                       required
                       type="text"
                       name="village"
                       value={formData.village}
                       onChange={handleChange}
-                      placeholder="e.g. Hassan"
+                      placeholder={t('addfarmerscreen.e_g_hassan')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Email Address (Optional)</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.email_address_optional')}</label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="e.g. swami@samruddhi.org"
+                      placeholder={t('addfarmerscreen.e_g_swami_samruddhi_org')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
@@ -243,21 +247,21 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                 exit="exit"
                 className="space-y-4"
               >
-                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">Farm Specifications</h3>
+                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">{t('addfarmerscreen.farm_specifications')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Farm Name / Identifier</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.farm_name_identifier')}</label>
                     <input
                       type="text"
                       name="farmName"
                       value={formData.farmName}
                       onChange={handleChange}
-                      placeholder="e.g. Swamy North Plot"
+                      placeholder={t('addfarmerscreen.e_g_swamy_north_plot')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Total Farm Size (Acres) *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.total_farm_size_acres')}</label>
                     <input
                       required
                       type="number"
@@ -265,36 +269,36 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                       name="area"
                       value={formData.area}
                       onChange={handleChange}
-                      placeholder="e.g. 7.5"
+                      placeholder={t('addfarmerscreen.e_g_7_5')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Soil Texture / Profile</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.soil_texture_profile')}</label>
                     <select
                       name="soilType"
                       value={formData.soilType}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-sm focus:border-primary focus:outline-hidden transition-colors cursor-pointer"
                     >
-                      <option value="Loamy">Loamy Soil (Ideal)</option>
-                      <option value="Clayey">Clayey Red Soil</option>
-                      <option value="Sandy">Sandy Clay</option>
-                      <option value="Laterite">Laterite Soil</option>
+                      <option value="Loamy">{t('addfarmerscreen.loamy_soil_ideal')}</option>
+                      <option value="Clayey">{t('addfarmerscreen.clayey_red_soil')}</option>
+                      <option value="Sandy">{t('addfarmerscreen.sandy_clay')}</option>
+                      <option value="Laterite">{t('addfarmerscreen.laterite_soil')}</option>
                     </select>
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Irrigation infrastructure</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.irrigation_infrastructure')}</label>
                     <select
                       name="waterSource"
                       value={formData.waterSource}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-sm focus:border-primary focus:outline-hidden transition-colors cursor-pointer"
                     >
-                      <option value="Drip Irrigation">Precision Drip</option>
-                      <option value="Sprinklers">Micro Sprinklers</option>
-                      <option value="Canal Feed">Canal / Surface Feed</option>
-                      <option value="Rainfed">Monsoon Dependent (Rainfed)</option>
+                      <option value="Drip Irrigation">{t('addfarmerscreen.precision_drip')}</option>
+                      <option value="Sprinklers">{t('addfarmerscreen.micro_sprinklers')}</option>
+                      <option value="Canal Feed">{t('addfarmerscreen.canal_surface_feed')}</option>
+                      <option value="Rainfed">{t('addfarmerscreen.monsoon_dependent_rainfed')}</option>
                     </select>
                   </div>
                 </div>
@@ -311,34 +315,34 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                 exit="exit"
                 className="space-y-4"
               >
-                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">GPS Location Boundaries</h3>
+                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">{t('addfarmerscreen.gps_location_boundaries')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">GPS Latitude *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.gps_latitude')}</label>
                     <input
                       required
                       type="text"
                       name="latitude"
                       value={formData.latitude}
                       onChange={handleChange}
-                      placeholder="e.g. 17.3850"
+                      placeholder={t('addfarmerscreen.e_g_17_3850')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">GPS Longitude *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.gps_longitude')}</label>
                     <input
                       required
                       type="text"
                       name="longitude"
                       value={formData.longitude}
                       onChange={handleChange}
-                      placeholder="e.g. 78.4867"
+                      placeholder={t('addfarmerscreen.e_g_78_4867')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">District</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.district')}</label>
                     <input
                       type="text"
                       name="district"
@@ -348,7 +352,7 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">State / Region</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.state_region')}</label>
                     <input
                       type="text"
                       name="state"
@@ -359,8 +363,9 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                   </div>
                 </div>
                 <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100 text-[10px] text-primary font-medium text-left">
-                  Note: Latitude/Longitude coordinates are automatically matched with Sentinel-2 satellite grids for real-time NDVI NDVI calibration.
-                </div>
+                  
+                                                    {t('addfarmerscreen.note_latitude_longitude_coordinates_are_')}
+                                                  </div>
               </motion.div>
             )}
 
@@ -374,47 +379,47 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
                 exit="exit"
                 className="space-y-4"
               >
-                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">Crop Cultivation Details</h3>
+                <h3 className="font-bold text-gray-800 text-sm mb-4 border-b border-gray-100 pb-2">{t('addfarmerscreen.crop_cultivation_details')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Cultivated Crop *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.cultivated_crop')}</label>
                     <select
                       name="crop"
                       value={formData.crop}
                       onChange={handleChange}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-sm focus:border-primary focus:outline-hidden transition-colors cursor-pointer"
                     >
-                      <option value="Oil Palm">Oil Palm (Standard)</option>
-                      <option value="Coconut">Coconut Palm</option>
-                      <option value="Cocoa">Cocoa Plantation</option>
-                      <option value="Coffee">Robusta/Arabica Coffee</option>
+                      <option value="Oil Palm">{t('addfarmerscreen.oil_palm_standard')}</option>
+                      <option value="Coconut">{t('addfarmerscreen.coconut_palm')}</option>
+                      <option value="Cocoa">{t('addfarmerscreen.cocoa_plantation')}</option>
+                      <option value="Coffee">{t('addfarmerscreen.robusta_arabica_coffee')}</option>
                     </select>
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Variety / Cultivar</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.variety_cultivar')}</label>
                     <input
                       type="text"
                       name="variety"
                       value={formData.variety}
                       onChange={handleChange}
-                      placeholder="e.g. Tenera DxP"
+                      placeholder={t('addfarmerscreen.e_g_tenera_dxp')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Average Tree/Plant Age (Years) *</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.average_tree_plant_age_years')}</label>
                     <input
                       required
                       type="number"
                       name="treeAge"
                       value={formData.treeAge}
                       onChange={handleChange}
-                      placeholder="e.g. 5"
+                      placeholder={t('addfarmerscreen.e_g_5')}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-gray-50 focus:bg-white text-sm focus:border-primary focus:outline-hidden transition-colors"
                     />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <label className="text-xs font-semibold text-gray-600">Planting Density (Plants/Acre)</label>
+                    <label className="text-xs font-semibold text-gray-600">{t('addfarmerscreen.planting_density_plants_acre')}</label>
                     <input
                       type="number"
                       name="plantingDensity"
@@ -439,8 +444,8 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
               step === 1 ? "opacity-50 pointer-events-none" : ""
             }`}
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Previous
-          </button>
+            <ArrowLeft className="w-3.5 h-3.5" />  {t('addfarmerscreen.previous')}
+                                </button>
 
           {step < 4 ? (
             <button
@@ -451,15 +456,16 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
               }
               className="inline-flex items-center gap-1 text-xs font-bold text-white bg-primary hover:bg-[#235F26] px-5 py-2.5 rounded-lg active:scale-95 shadow-md shadow-primary/10 transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
             >
-              Continue <ArrowRight className="w-3.5 h-3.5" />
+              
+                                        {t('addfarmerscreen.continue')} <ArrowRight className="w-3.5 h-3.5" />
             </button>
           ) : (
             <button
               type="submit"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-[#235F26] px-6 py-2.5 rounded-lg active:scale-95 shadow-md shadow-primary/10 transition-all cursor-pointer"
             >
-              <Save className="w-3.5 h-3.5" /> Save Farmer Profile
-            </button>
+              <Save className="w-3.5 h-3.5" />  {t('addfarmerscreen.save_farmer_profile')}
+                                          </button>
           )}
         </div>
       </form>

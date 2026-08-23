@@ -1,23 +1,8 @@
-﻿/**
- * plots.ts -- Single source of truth for all farm plot data.
- *
- * Uses a module-level external store so FarmPlotScreen and DigitalTwinScreen
- * stay in sync without needing a shared React Context provider in PrototypeApp.
- *
- * Shared contract for Auth / Soil Report / Recommendation modules:
- *   - Key off `plot.id`  (UUID from Supabase, or "plot-1" ... "plot-5" for seed data)
- *   - Set `plot.soilReportAttached = true` when soil report is uploaded
- *   - `plot.geoJSON` holds the real GeoJSON polygon once mapped
- *
- * Supabase wiring (Phase 6):
- *   - Fetch runs once per auth session, non-blocking -- seed data renders first
- *   - addPlot() -> Supabase insert; visible toast on local-only fallback (not silent)
- *   - updatePlot() -> Supabase update; graceful local-only fallback
- *   - Auth state listener: SIGNED_IN -> re-fetch; SIGNED_OUT -> reset to seed data
- */
+
 
 import { useSyncExternalStore } from "react";
 import { supabase } from "../lib/supabaseClient";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -489,7 +474,7 @@ async function _fetchFromDb(userId: string) {
 // Auth state listener -- re-fetch on sign-in, reset on sign-out
 // ---------------------------------------------------------------------------
 
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
   if (event === "SIGNED_IN" && session?.user) {
     _fetchInitiated = true;
     _fetchFromDb(session.user.id);
@@ -502,7 +487,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 // Also check current session on module load (handles page refresh while logged in)
-supabase.auth.getSession().then(({ data }) => {
+supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
   if (!_fetchInitiated && data?.session?.user) {
     _fetchInitiated = true;
     _fetchFromDb(data.session.user.id);
