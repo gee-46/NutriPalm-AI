@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useEffect, useState, useRef } from "react";
 import { useInView, motion } from "framer-motion";
 import { Brain, Layers3, TestTube, TreePine } from "lucide-react";
@@ -40,6 +41,7 @@ const AnimatedCounter: React.FC<CounterProps> = ({ value, duration = 1.5, suffix
 };
 
 export const WhyNutriPalm: React.FC = () => {
+    const { t } = useTranslation();
   const stats = [
     {
       icon: <Brain className="w-5 h-5 text-[#2E7D32]" />,
@@ -82,7 +84,7 @@ export const WhyNutriPalm: React.FC = () => {
         <div className="mb-16 flex justify-center">
           <SectionHeading
             eyebrow="By the Numbers"
-            title="Why NutriPalm AI?"
+            title={t('whynutripalm.why_nutripalm_ai')}
             description="We merge software efficiency with agricultural expertise to build measurable improvements in yield, sustainability, and profit."
           />
         </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useState, useEffect } from "react";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +8,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
+    const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -75,17 +77,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden border border-gray-200/50 shadow-xs shrink-0 bg-white">
             <img
               src="/samruddhi-logo.jpeg"
-              alt="Samruddhi Organics Logo"
+              alt={t('navbar.samruddhi_organics_logo')}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
           <div className="flex flex-col justify-center text-left">
             <span className="text-sm font-extrabold tracking-tight text-gray-950 group-hover:text-primary transition-colors leading-tight">
-              NutriPalm <span className="text-primary">AI</span>
+              
+                                        {t('navbar.nutripalm')} <span className="text-primary">{t('navbar.ai')}</span>
             </span>
             <span className="text-[8px] font-semibold text-gray-500 mt-1 leading-none tracking-wider">
-              by Samruddhi Organics
-            </span>
+              
+                                        {t('navbar.by_samruddhi_organics')}
+                                      </span>
           </div>
         </a>
 
@@ -117,12 +121,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
             {isInitializing ? (
               <>
                 <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                Initializing NutriPalm AI...
-              </>
+                
+                                              {t('navbar.initializing_nutripalm_ai')}
+                                            </>
             ) : (
               <>
-                Explore Prototype
-                <ArrowUpRight className="w-4 h-4" />
+                
+                                                  {t('navbar.explore_prototype')}
+                                                  <ArrowUpRight className="w-4 h-4" />
               </>
             )}
           </button>
@@ -184,12 +190,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
                 {isInitializing ? (
                   <>
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                    Initializing NutriPalm AI...
-                  </>
+                    
+                                                          {t('navbar.initializing_nutripalm_ai')}
+                                                        </>
                 ) : (
                   <>
-                    Explore Prototype
-                    <ArrowUpRight className="w-5 h-5" />
+                    
+                                                              {t('navbar.explore_prototype')}
+                                                              <ArrowUpRight className="w-5 h-5" />
                   </>
                 )}
               </button>

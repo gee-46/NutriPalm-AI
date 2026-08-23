@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -72,6 +73,7 @@ interface DashboardScreenProps {
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavigate, onStartDemo }) => {
+    const { t } = useTranslation();
   const [isAssistantExpanded, setIsAssistantExpanded] = useState(false);
   
   // Selected plot state for spatial map
@@ -184,12 +186,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200/50 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none">
-            NutriPalm <span className="text-primary font-black">AI</span> Control Center
-          </h1>
+            
+                                  {t('dashboardscreen.nutripalm')} <span className="text-primary font-black">{t('dashboardscreen.ai')}</span>  {t('dashboardscreen.control_center')}
+                                </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-primary" />
-            by Samruddhi Organics • Real-time Agritech Sensor Telemetry Console
-          </p>
+            
+                                  {t('dashboardscreen.by_samruddhi_organics_real_time_agritech')}
+                                </p>
         </div>
         <div className="flex items-center gap-3">
           {onStartDemo && (
@@ -198,12 +202,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               className="bg-indigo-600 hover:bg-indigo-750 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all border-0 shadow-md shadow-indigo-650/10 cursor-pointer animate-pulse shrink-0"
             >
               <Sparkles className="w-4 h-4 fill-indigo-100" />
-              Start Guided Demo
-            </button>
+              
+                                        {t('dashboardscreen.start_guided_demo')}
+                                      </button>
           )}
           <div className="flex items-center gap-2 text-xs font-bold bg-white border border-gray-250 px-4 py-2.5 rounded-xl shadow-xs text-gray-650">
             <Calendar className="w-4 h-4 text-primary" />
-            <span>Telemetry: Online & Synced</span>
+            <span>{t('dashboardscreen.telemetry_online_synced')}</span>
           </div>
         </div>
       </div>
@@ -214,27 +219,32 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         className="bg-emerald-50/40 border border-emerald-500/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-semibold text-gray-700"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-extrabold text-gray-900">Good Morning, Dr. L. Ramana</span>
+          <span className="text-sm font-extrabold text-gray-900">{t('dashboardscreen.good_morning_dr_l_ramana')}</span>
           <span className="text-2xs text-primary bg-primary/10 border border-primary/10 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
-            Lead Agronomist
-          </span>
+            
+                                  {t('dashboardscreen.lead_agronomist')}
+                                </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            4 farms monitored today
-          </span>
+            
+                                  {t('dashboardscreen.4_farms_monitored_today')}
+                                </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            18 sensors online
-          </span>
+            
+                                  {t('dashboardscreen.18_sensors_online')}
+                                </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            AI Engine Active
-          </span>
+            
+                                  {t('dashboardscreen.ai_engine_active')}
+                                </span>
           <span className="flex items-center gap-1.5 text-gray-450 font-mono text-[11px]">
-            Last Sync: 2 mins ago
-          </span>
+            
+                                  {t('dashboardscreen.last_sync_2_mins_ago')}
+                                </span>
         </div>
       </motion.div>
 
@@ -243,7 +253,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         {/* KPI 1 */}
         <motion.div 
           variants={itemVariants} 
-          title="Last Updated: 2 mins ago"
+          title={t('dashboardscreen.last_updated_2_mins_ago')}
           className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between"
         >
           <div>
@@ -251,9 +261,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div className="p-3 bg-primary/10 text-primary rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Users className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">+12% MoM</span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{t('dashboardscreen.12_mom')}</span>
             </div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Registered Farmers</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.registered_farmers')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
               <AnimatedCounter value={stats.totalFarmers} />
             </p>
@@ -272,7 +282,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         {/* KPI 2 */}
         <motion.div 
           variants={itemVariants} 
-          title="Last Updated: 2 mins ago"
+          title={t('dashboardscreen.last_updated_2_mins_ago')}
           className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between"
         >
           <div>
@@ -280,9 +290,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div className="p-3 bg-emerald-50 text-[#2E7D32] rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Layers3 className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">GIS Active</span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{t('dashboardscreen.gis_active')}</span>
             </div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Mapped Plots</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.mapped_plots')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
               <AnimatedCounter value={stats.totalFarms} />
             </p>
@@ -301,7 +311,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         {/* KPI 3 */}
         <motion.div 
           variants={itemVariants} 
-          title="Last Updated: 2 mins ago"
+          title={t('dashboardscreen.last_updated_2_mins_ago')}
           className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between"
         >
           <div>
@@ -311,7 +321,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               </div>
               <span className="text-[10px] font-bold text-[#2E7D32] bg-[#A5D6A7]/25 px-2.5 py-0.5 rounded-full border border-emerald-100/50">99.8%</span>
             </div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Digital Twins</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.digital_twins')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
               <AnimatedCounter value={stats.activeTwins} />
             </p>
@@ -330,7 +340,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         {/* KPI 4 */}
         <motion.div 
           variants={itemVariants} 
-          title="Last Updated: 2 mins ago"
+          title={t('dashboardscreen.last_updated_2_mins_ago')}
           className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between"
         >
           <div>
@@ -338,9 +348,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Sparkles className="w-5 h-5 fill-indigo-50" />
               </div>
-              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full">AI Advisories</span>
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full">{t('dashboardscreen.ai_advisories')}</span>
             </div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Advisories Built</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.advisories_built')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
               <AnimatedCounter value={stats.recommendations} />
             </p>
@@ -359,7 +369,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         {/* KPI 5: Soil Health Dial */}
         <motion.div 
           variants={itemVariants} 
-          title="Last Updated: 2 mins ago"
+          title={t('dashboardscreen.last_updated_2_mins_ago')}
           className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between"
         >
           <div className="flex justify-between items-start">
@@ -391,8 +401,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-[10px] font-bold text-gray-450 uppercase tracking-wider">Avg Soil Index</p>
-            <p className="text-sm font-extrabold text-emerald-700 mt-0.5">Optimal Range</p>
+            <p className="text-[10px] font-bold text-gray-450 uppercase tracking-wider">{t('dashboardscreen.avg_soil_index')}</p>
+            <p className="text-sm font-extrabold text-emerald-700 mt-0.5">{t('dashboardscreen.optimal_range')}</p>
           </div>
         </motion.div>
       </motion.div>
@@ -410,38 +420,39 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
             <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left flex flex-col justify-between">
               <div>
                 <span className="text-[9px] font-bold text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full">
-                  Plantation Summary
-                </span>
-                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">Farm Overview Profile</h3>
+                  
+                                                    {t('dashboardscreen.plantation_summary')}
+                                                  </span>
+                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">{t('dashboardscreen.farm_overview_profile')}</h3>
                 
                 <div className="space-y-2.5 text-xs text-gray-700">
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-450 font-semibold">Total Mapped Land</span>
+                    <span className="text-gray-450 font-semibold">{t('dashboardscreen.total_mapped_land')}</span>
                     <span className="font-bold text-gray-850">
                       <AnimatedCounter value={33.5} decimals={1} suffix=" Acres" />
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-450 font-semibold">Crop Variety</span>
-                    <span className="font-bold text-gray-850">Oil Palm (85%) / Mixed</span>
+                    <span className="text-gray-450 font-semibold">{t('dashboardscreen.crop_variety')}</span>
+                    <span className="font-bold text-gray-850">{t('dashboardscreen.oil_palm_85_mixed')}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-450 font-semibold">IoT Telemetry Nodes</span>
-                    <span className="font-bold text-primary">18 Sensors Active</span>
+                    <span className="text-gray-450 font-semibold">{t('dashboardscreen.iot_telemetry_nodes')}</span>
+                    <span className="font-bold text-primary">{t('dashboardscreen.18_sensors_active')}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-450 font-semibold">Irrigation Type</span>
-                    <span className="font-bold text-gray-850">Precision Drip (94%)</span>
+                    <span className="text-gray-450 font-semibold">{t('dashboardscreen.irrigation_type')}</span>
+                    <span className="font-bold text-gray-850">{t('dashboardscreen.precision_drip_94')}</span>
                   </div>
                 </div>
 
                 {/* 3. Farm Health Section */}
                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-450 font-semibold">Farm Health Score</span>
+                    <span className="text-gray-450 font-semibold">{t('dashboardscreen.farm_health_score')}</span>
                     <div className="flex items-center gap-1.5">
                       <span className="text-primary font-bold">84%</span>
-                      <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-md uppercase">Healthy</span>
+                      <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-md uppercase">{t('dashboardscreen.healthy')}</span>
                     </div>
                   </div>
                   <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -456,17 +467,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
 
                 {/* 3. Crop Growth Stage Section */}
                 <div className="mt-4 space-y-2 text-xs">
-                  <span className="text-gray-450 font-semibold block">Crop Growth Stage</span>
+                  <span className="text-gray-450 font-semibold block">{t('dashboardscreen.crop_growth_stage')}</span>
                   <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-black">
                     <div className="py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500">
-                      Vegetative
-                    </div>
+                      
+                                                                {t('dashboardscreen.vegetative')}
+                                                              </div>
                     <div className="py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                      Flowering
-                    </div>
+                      
+                                                                {t('dashboardscreen.flowering')}
+                                                              </div>
                     <div className="py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500">
-                      Fruiting
-                    </div>
+                      
+                                                                {t('dashboardscreen.fruiting')}
+                                                              </div>
                   </div>
                 </div>
 
@@ -475,7 +489,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                 onClick={() => onNavigate("Farm Plots")}
                 className="mt-6 w-full flex items-center justify-between text-xs font-bold text-primary hover:text-[#235F26] p-2 bg-emerald-50/50 rounded-xl hover:bg-emerald-50 transition-all border-0 cursor-pointer"
               >
-                <span>Manage Farm Boundaries</span>
+                <span>{t('dashboardscreen.manage_farm_boundaries')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>
@@ -487,9 +501,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div>
                 <span className="text-[9px] font-bold text-indigo-700 uppercase tracking-widest bg-indigo-50 border border-indigo-100/50 px-2.5 py-1 rounded-full flex items-center gap-1 w-max">
                   <Bot className="w-3.5 h-3.5" />
-                  Samruddhi AI core
-                </span>
-                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4">Real-time Observations</h3>
+                  
+                                                    {t('dashboardscreen.samruddhi_ai_core')}
+                                                  </span>
+                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4">{t('dashboardscreen.real_time_observations')}</h3>
                 
                 {/* 4. Grouped Observations by Severity */}
                 <div className="space-y-3.5 text-xs text-gray-700">
@@ -498,12 +513,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                     <div className="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-rose-700 text-[9.5px] uppercase tracking-wider">Critical</span>
-                        <span className="text-[9px] font-mono text-gray-400">2 mins ago</span>
+                        <span className="font-extrabold text-rose-700 text-[9.5px] uppercase tracking-wider">{t('dashboardscreen.critical')}</span>
+                        <span className="text-[9px] font-mono text-gray-400">{t('dashboardscreen.2_mins_ago')}</span>
                       </div>
                       <p className="text-gray-700 leading-normal mt-0.5">
-                        Potassium deficiency detected in Plot 2A. LOW NPK index.
-                      </p>
+                        
+                                                                      {t('dashboardscreen.potassium_deficiency_detected_in_plot_2a')}
+                                                                    </p>
                     </div>
                   </div>
 
@@ -512,12 +528,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                     <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0 animate-pulse" />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-amber-700 text-[9.5px] uppercase tracking-wider">Attention</span>
-                        <span className="text-[9px] font-mono text-gray-400">10 mins ago</span>
+                        <span className="font-extrabold text-amber-700 text-[9.5px] uppercase tracking-wider">{t('dashboardscreen.attention')}</span>
+                        <span className="text-[9px] font-mono text-gray-400">{t('dashboardscreen.10_mins_ago')}</span>
                       </div>
                       <p className="text-gray-700 leading-normal mt-0.5">
-                        Rainfall may reduce irrigation demand tomorrow.
-                      </p>
+                        
+                                                                      {t('dashboardscreen.rainfall_may_reduce_irrigation_demand_to')}
+                                                                    </p>
                     </div>
                   </div>
 
@@ -526,12 +543,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                     <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-emerald-700 text-[9.5px] uppercase tracking-wider">Healthy</span>
-                        <span className="text-[9px] font-mono text-gray-400">1 hour ago</span>
+                        <span className="font-extrabold text-emerald-700 text-[9.5px] uppercase tracking-wider">{t('dashboardscreen.healthy')}</span>
+                        <span className="text-[9px] font-mono text-gray-400">{t('dashboardscreen.1_hour_ago')}</span>
                       </div>
                       <p className="text-gray-700 leading-normal mt-0.5">
-                        NDVI canopy index above regional average.
-                      </p>
+                        
+                                                                      {t('dashboardscreen.ndvi_canopy_index_above_regional_average')}
+                                                                    </p>
                     </div>
                   </div>
                 </div>
@@ -540,7 +558,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                 onClick={() => onNavigate("Recommendations")}
                 className="mt-6 w-full flex items-center justify-between text-xs font-bold text-indigo-700 hover:text-indigo-850 p-2 bg-indigo-50/50 rounded-xl hover:bg-indigo-50 transition-all border-0 cursor-pointer"
               >
-                <span>Open Advisory Console</span>
+                <span>{t('dashboardscreen.open_advisory_console')}</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
             </motion.div>
@@ -556,9 +574,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                   <div>
                     <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
                       <Compass className="w-4.5 h-4.5 text-primary" />
-                      GIS Plot Boundary Overview
-                    </h3>
-                    <p className="text-[11px] text-gray-450 mt-0.5">Click on plots for detailed diagnostic overlays</p>
+                      
+                                                                {t('dashboardscreen.gis_plot_boundary_overview')}
+                                                              </h3>
+                    <p className="text-[11px] text-gray-450 mt-0.5">{t('dashboardscreen.click_on_plots_for_detailed_diagnostic_o')}</p>
                   </div>
                 </div>
                 
@@ -607,8 +626,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                         <div className="flex justify-between items-center border-b border-slate-800/80 pb-2 mb-2">
                           <span className="font-extrabold text-[12px] flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            {selectedPlot.id} Diagnostic HUD
-                          </span>
+                            {selectedPlot.id}  {t('dashboardscreen.diagnostic_hud')}
+                                                                                </span>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -620,12 +639,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-gray-300 text-[11px] font-sans">
-                          <p><span className="text-gray-500 font-bold">Farmer:</span> {selectedPlot.farmer}</p>
-                          <p><span className="text-gray-500 font-bold">Crop:</span> {selectedPlot.crop}</p>
-                          <p><span className="text-gray-500 font-bold">Soil Health:</span> {selectedPlot.soilHealth}</p>
-                          <p><span className="text-gray-500 font-bold">Inspection:</span> {selectedPlot.lastInspection}</p>
+                          <p><span className="text-gray-500 font-bold">{t('dashboardscreen.farmer')}</span> {selectedPlot.farmer}</p>
+                          <p><span className="text-gray-500 font-bold">{t('dashboardscreen.crop')}</span> {selectedPlot.crop}</p>
+                          <p><span className="text-gray-500 font-bold">{t('dashboardscreen.soil_health')}</span> {selectedPlot.soilHealth}</p>
+                          <p><span className="text-gray-500 font-bold">{t('dashboardscreen.inspection')}</span> {selectedPlot.lastInspection}</p>
                           <p className="col-span-2 border-t border-slate-850 pt-1.5 mt-1">
-                            <span className="text-primary font-extrabold">AI Recommendation:</span> {selectedPlot.recommendation}
+                            <span className="text-primary font-extrabold">{t('dashboardscreen.ai_recommendation')}</span> {selectedPlot.recommendation}
                           </p>
                         </div>
                       </motion.div>
@@ -633,8 +652,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                   </AnimatePresence>
 
                   <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-800 text-[9px] font-mono text-emerald-400 shadow-sm">
-                    Spatial Coordinates: EPSG:4326 | Zone 44N
-                  </div>
+                    
+                                                          {t('dashboardscreen.spatial_coordinates_epsg_4326_zone_44n')}
+                                                        </div>
                 </div>
               </div>
               
@@ -642,7 +662,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                 onClick={() => onNavigate("Farm Plots")}
                 className="w-full flex items-center justify-between text-xs font-bold text-primary hover:text-[#235F26] p-4 bg-linear-to-r from-gray-50 to-white hover:bg-gray-100/50 transition-all border-0 border-t border-gray-100 cursor-pointer"
               >
-                <span>Launch Interactive Map Viewer</span>
+                <span>{t('dashboardscreen.launch_interactive_map_viewer')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </motion.div>
@@ -652,44 +672,45 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div>
                 <span className="text-[9px] font-bold text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full flex items-center gap-1 w-max">
                   <Cpu className="w-3.5 h-3.5" />
-                  Ecosystem Analytics
-                </span>
-                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">AI Insights</h3>
+                  
+                                                    {t('dashboardscreen.ecosystem_analytics')}
+                                                  </span>
+                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">{t('dashboardscreen.ai_insights')}</h3>
                 
                 <div className="space-y-3.5 text-xs text-gray-700">
                   <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
                     <span className="text-rose-500 font-bold shrink-0 mt-0.5">⚠️</span>
                     <div>
-                      <p className="font-bold">Nitrogen deficiency detected</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">Confidence: 94% • 2 farms flagged</p>
+                      <p className="font-bold">{t('dashboardscreen.nitrogen_deficiency_detected')}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_94_2_farms_flagged')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
                     <span className="text-sky-500 font-bold shrink-0 mt-0.5">🌧️</span>
                     <div>
-                      <p className="font-bold">Precipitation expected tomorrow</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">Confidence: 88% • Telangana Cluster</p>
+                      <p className="font-bold">{t('dashboardscreen.precipitation_expected_tomorrow')}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_88_telangana_cluster')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
                     <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
                     <div>
-                      <p className="font-bold">Soil moisture levels optimal</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">Confidence: 96% • Eastern clusters</p>
+                      <p className="font-bold">{t('dashboardscreen.soil_moisture_levels_optimal')}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_96_eastern_clusters')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
                     <span className="text-emerald-500 font-bold shrink-0 mt-0.5">📈</span>
                     <div>
-                      <p className="font-bold">Yield projection calibrated +9%</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">Confidence: 91% • Digital Twin forecast</p>
+                      <p className="font-bold">{t('dashboardscreen.yield_projection_calibrated_9')}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_91_digital_twin_forecast')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
                     <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
                     <div>
-                      <p className="font-bold">No pest outbreaks detected</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">Confidence: 98% • Satellite surveillance</p>
+                      <p className="font-bold">{t('dashboardscreen.no_pest_outbreaks_detected')}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_98_satellite_surveillance')}</p>
                     </div>
                   </div>
                 </div>
@@ -710,28 +731,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
             <div className="relative z-10 space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-bold text-emerald-250 uppercase tracking-widest">Regional Microclimate</p>
-                  <h4 className="text-lg font-extrabold mt-1">Telangana Cluster</h4>
+                  <p className="text-[10px] font-bold text-emerald-250 uppercase tracking-widest">{t('dashboardscreen.regional_microclimate')}</p>
+                  <h4 className="text-lg font-extrabold mt-1">{t('dashboardscreen.telangana_cluster')}</h4>
                 </div>
                 <Sun className="w-10 h-10 text-amber-300 animate-spin-slow" />
               </div>
 
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-black tracking-tight">32°C</span>
-                <span className="text-xs text-emerald-200">Light wind • Sunny</span>
+                <span className="text-xs text-emerald-200">{t('dashboardscreen.light_wind_sunny')}</span>
               </div>
 
               <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 text-center text-xs">
                 <div>
-                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">Humid</p>
+                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">{t('dashboardscreen.humid')}</p>
                   <p className="font-extrabold mt-0.5">62%</p>
                 </div>
                 <div>
-                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">Wind</p>
+                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">{t('dashboardscreen.wind')}</p>
                   <p className="font-extrabold mt-0.5">11 km/h</p>
                 </div>
                 <div>
-                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">Rain %</p>
+                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">{t('dashboardscreen.rain')}</p>
                   <p className="font-extrabold mt-0.5">15%</p>
                 </div>
               </div>
@@ -739,30 +760,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               {/* 5. Detailed weather updates grid */}
               <div className="grid grid-cols-2 gap-x-2 gap-y-2 py-1 text-center text-xs text-emerald-100">
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">UV Index</span>
+                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.uv_index')}</span>
                   <span className="font-extrabold">2.4</span>
                 </div>
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">Solar Rad</span>
-                  <span className="font-extrabold text-[10px]">340 W/m²</span>
+                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.solar_rad')}</span>
+                  <span className="font-extrabold text-[10px]">{t('dashboardscreen.340_w_m')}</span>
                 </div>
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">Evapotrans</span>
-                  <span className="font-extrabold text-[10px]">4.8 mm/d</span>
+                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.evapotrans')}</span>
+                  <span className="font-extrabold text-[10px]">{t('dashboardscreen.4_8_mm_d')}</span>
                 </div>
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">Air Press</span>
+                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.air_press')}</span>
                   <span className="font-extrabold text-[10px]">1008 hPa</span>
                 </div>
                 <div className="col-span-2 flex justify-between items-center px-1 pt-1.5 border-t border-white/5">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">Cloud Coverage</span>
+                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.cloud_coverage')}</span>
                   <span className="font-extrabold">22%</span>
                 </div>
               </div>
 
               {/* 5-day crop relative forecast */}
               <div className="space-y-2.5 pt-2 border-t border-white/10">
-                <p className="text-[9px] font-bold text-emerald-250 uppercase tracking-widest mb-2">5-Day Agricultural Forecast</p>
+                <p className="text-[9px] font-bold text-emerald-250 uppercase tracking-widest mb-2">{t('dashboardscreen.5_day_agricultural_forecast')}</p>
                 {weatherForecast.map((fc, i) => (
                   <div key={i} className="flex justify-between items-center text-xs">
                     <span className="w-16 text-emerald-100 font-semibold">{fc.day}</span>
@@ -778,8 +799,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
           <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left">
             <h3 className="font-extrabold text-gray-900 text-sm mb-6 flex items-center gap-1.5">
               <Activity className="w-4.5 h-4.5 text-primary" />
-              Recent Activity Timeline
-            </h3>
+              
+                                        {t('dashboardscreen.recent_activity_timeline')}
+                                      </h3>
             
             <div className="relative pl-8 border-l border-gray-100 space-y-6">
               {timelineActivities.map((act) => (
@@ -820,8 +842,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
                   <Bot className="w-4 h-4" />
-                  NutriPalm AI Assistant
-                </span>
+                  
+                                                    {t('dashboardscreen.nutripalm_ai_assistant')}
+                                                  </span>
                 <button 
                   onClick={() => setIsAssistantExpanded(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer p-1 rounded-full hover:bg-gray-50 border-0 bg-transparent"
@@ -833,33 +856,38 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               <div className="space-y-4 text-xs">
                 {/* Today's Insights */}
                 <div className="space-y-1.5">
-                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">Today's Insights</h4>
+                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">{t('dashboardscreen.today_s_insights')}</h4>
                   <p className="text-gray-700 leading-normal bg-gray-50 border border-gray-100 p-2.5 rounded-xl font-medium">
-                    • 3 farms require potassium/nitrogen calibration.<br />
-                    • Vegetation leaf rate up +14.2% in Plot 2A.
-                  </p>
+                    
+                                                          {t('dashboardscreen.3_farms_require_potassium_nitrogen_calib')}<br />
+                    
+                                                          {t('dashboardscreen.vegetation_leaf_rate_up_14_2_in_plot_2a')}
+                                                        </p>
                 </div>
 
                 {/* Pending Recommendations */}
                 <div className="space-y-1.5">
-                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">Pending Recommendations</h4>
+                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">{t('dashboardscreen.pending_recommendations')}</h4>
                   <p className="text-gray-700 leading-normal bg-gray-50 border border-gray-100 p-2.5 rounded-xl font-medium">
-                    • Formulate potash supplement recipe for Plot B.<br />
-                    • Approve Slow-Release NPK-A prescription for Plot C.
-                  </p>
+                    
+                                                          {t('dashboardscreen.formulate_potash_supplement_recipe_for_p')}<br />
+                    
+                                                          {t('dashboardscreen.approve_slow_release_npk_a_prescription_')}
+                                                        </p>
                 </div>
 
                 {/* Weather Alerts */}
                 <div className="space-y-1.5">
-                  <h4 className="font-extrabold text-gray-455 uppercase text-[10px] tracking-wider">Weather Alerts</h4>
+                  <h4 className="font-extrabold text-gray-455 uppercase text-[10px] tracking-wider">{t('dashboardscreen.weather_alerts')}</h4>
                   <p className="text-gray-700 leading-normal bg-amber-50/50 border border-amber-100 p-2.5 rounded-xl text-amber-900 font-medium">
-                    • Rainfall expected tomorrow. Irrigation cycle can be safely paused to conserve water.
-                  </p>
+                    
+                                                          {t('dashboardscreen.rainfall_expected_tomorrow_irrigation_cy')}
+                                                        </p>
                 </div>
 
                 {/* Quick Actions */}
                 <div className="space-y-2 pt-1">
-                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">Quick Actions</h4>
+                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">{t('dashboardscreen.quick_actions')}</h4>
                   <div className="grid grid-cols-2 gap-2 text-center font-bold">
                     <button 
                       onClick={() => {
@@ -868,8 +896,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                       }}
                       className="py-2.5 bg-primary hover:bg-[#235F26] text-white rounded-xl text-[10px] transition-colors border-0 cursor-pointer"
                     >
-                      AI Advisories
-                    </button>
+                      
+                                                                {t('dashboardscreen.ai_advisories')}
+                                                              </button>
                     <button 
                       onClick={() => {
                         onNavigate("Soil Reports");
@@ -877,8 +906,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                       }}
                       className="py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-250 rounded-xl text-[10px] transition-colors cursor-pointer"
                     >
-                      Soil Scans
-                    </button>
+                      
+                                                                {t('dashboardscreen.soil_scans')}
+                                                              </button>
                   </div>
                 </div>
               </div>
@@ -895,11 +925,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               </div>
               <div className="text-left">
                 <p className="font-black text-gray-950 flex items-center gap-1">
-                  🤖 NutriPalm AI
-                </p>
-                <p className="text-gray-500 font-bold mt-0.5">3 farms require attention today.</p>
+                  
+                                                        {t('dashboardscreen.nutripalm_ai')}
+                                                      </p>
+                <p className="text-gray-500 font-bold mt-0.5">{t('dashboardscreen.3_farms_require_attention_today')}</p>
                 <p className="text-[10px] text-primary font-black mt-1 uppercase tracking-wider flex items-center gap-0.5">
-                  View Summary <ArrowRight className="w-3 h-3" />
+                  
+                                                        {t('dashboardscreen.view_summary')} <ArrowRight className="w-3 h-3" />
                 </p>
               </div>
             </motion.div>

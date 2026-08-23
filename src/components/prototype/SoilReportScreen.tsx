@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -25,6 +26,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   onUploadSuccess,
   showToast
 }) => {
+    const { t } = useTranslation();
   const [stage, setStage] = useState<ScreenStage>("upload");
   const [file, setFile] = useState<{ name: string; size: string; time: string } | null>(null);
   
@@ -153,11 +155,13 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-none flex items-center gap-2.5">
             <FileText className="w-8 h-8 text-primary" />
-            AI Soil Report Diagnostic
-          </h1>
+            
+                                  {t('soilreportscreen.ai_soil_report_diagnostic')}
+                                </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
-            Upload lab soil reports to extract telemetry indices and generate NPK formulas.
-          </p>
+            
+                                  {t('soilreportscreen.upload_lab_soil_reports_to_extract_telem')}
+                                </p>
         </div>
       </div>
 
@@ -183,12 +187,13 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   <UploadCloud className="w-8 h-8" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-gray-800">Drag & drop soil report PDF here</p>
-                  <p className="text-xs text-gray-400 mt-1.5">Supports PDF, JPG, PNG up to 10MB</p>
+                  <p className="text-sm font-bold text-gray-800">{t('soilreportscreen.drag_drop_soil_report_pdf_here')}</p>
+                  <p className="text-xs text-gray-400 mt-1.5">{t('soilreportscreen.supports_pdf_jpg_png_up_to_10mb')}</p>
                 </div>
                 <span className="text-[10px] font-bold text-primary px-3 py-1 bg-emerald-50 rounded-lg group-hover:bg-emerald-100/50 transition-colors">
-                  Browse Files
-                </span>
+                  
+                                                    {t('soilreportscreen.browse_files')}
+                                                  </span>
               </div>
 
               {/* Demo Sandbox Quick Link */}
@@ -196,18 +201,20 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <div className="flex gap-2.5 items-start">
                   <FileText className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-extrabold">Don't have a report PDF handy?</p>
+                    <p className="font-extrabold">{t('soilreportscreen.don_t_have_a_report_pdf_handy')}</p>
                     <p className="text-[11px] text-indigo-700/80 mt-1">
-                      Click below to load a realistic sample soil report from our diagnostic laboratory database.
-                    </p>
+                      
+                                                                {t('soilreportscreen.click_below_to_load_a_realistic_sample_s')}
+                                                              </p>
                   </div>
                 </div>
                 <button
                   onClick={handleUpload}
                   className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-2 rounded-lg cursor-pointer transition-all border-0 shadow-xs shrink-0"
                 >
-                  Load Sample Report
-                </button>
+                  
+                                                    {t('soilreportscreen.load_sample_report')}
+                                                  </button>
               </div>
 
             </div>
@@ -230,8 +237,9 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-bold text-primary flex items-center gap-1.5">
                     <Activity className="w-4 h-4 animate-pulse" />
-                    AI Soil Diagnostic Pipeline
-                  </span>
+                    
+                                                          {t('soilreportscreen.ai_soil_diagnostic_pipeline')}
+                                                        </span>
                   <span className="text-xs font-black text-gray-800">{progress}%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -269,7 +277,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <FileText className="w-10 h-10 text-primary shrink-0 animate-bounce" />
                 <div className="text-xs flex-1">
                   <p className="font-extrabold text-gray-800">{file?.name}</p>
-                  <p className="text-gray-400 mt-0.5">{file?.size} • Document Parser Active</p>
+                  <p className="text-gray-400 mt-0.5">{file?.size}  {t('soilreportscreen.document_parser_active')}</p>
                 </div>
                 {/* Glowing Laser Scan Bar */}
                 <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/5 to-transparent pointer-events-none animate-pulse" />
@@ -278,8 +286,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
               {/* Linux Terminal-style Logs Console */}
               <div className="bg-slate-950 rounded-2xl p-4 border border-slate-900 shadow-inner">
                 <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2 mb-3">
-                  <span>TELEMETRY DIAGNOSTIC CORE</span>
-                  <span className="animate-pulse text-emerald-400 font-mono">LIVE FEED</span>
+                  <span>{t('soilreportscreen.telemetry_diagnostic_core')}</span>
+                  <span className="animate-pulse text-emerald-400 font-mono">{t('soilreportscreen.live_feed')}</span>
                 </div>
                 <div className="h-36 overflow-y-auto font-mono text-[10px] text-slate-300 space-y-1.5 text-left custom-scrollbar">
                   {logs.map((log, i) => (
@@ -312,11 +320,12 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   <Check className="w-6 h-6 stroke-[3]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-gray-900">AI Diagnostic Complete</h3>
+                  <h3 className="text-base font-extrabold text-gray-900">{t('soilreportscreen.ai_diagnostic_complete')}</h3>
                   <p className="text-xs font-semibold text-emerald-700 mt-1 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Source: {file?.name} • Extracted successfully
-                  </p>
+                    
+                                                          {t('soilreportscreen.source')} {file?.name}  {t('soilreportscreen.extracted_successfully')}
+                                                        </p>
                 </div>
               </div>
 
@@ -325,14 +334,16 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   onClick={resetScanner}
                   className="flex-1 md:flex-initial px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-250 rounded-xl text-xs font-bold text-gray-650 cursor-pointer transition-colors shadow-xs"
                 >
-                  Upload Another Report
-                </button>
+                  
+                                                    {t('soilreportscreen.upload_another_report')}
+                                                  </button>
                 <button
                   onClick={onRecommendationClick}
                   className="flex-1 md:flex-initial px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors border-0 cursor-pointer shadow-md shadow-primary/10"
                 >
-                  Generate AI Recommendation
-                  <ArrowRight className="w-4 h-4" />
+                  
+                                                    {t('soilreportscreen.generate_ai_recommendation')}
+                                                    <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -348,7 +359,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   
                   {/* Health score gauge card (1/3) */}
                   <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs flex flex-col items-center justify-center text-center space-y-3">
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Soil Vitality</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('soilreportscreen.soil_vitality')}</span>
                     
                     <div className="relative w-28 h-28 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90">
@@ -360,30 +371,32 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </svg>
                       <div className="absolute">
                         <span className="block text-2xl font-black text-gray-950">84%</span>
-                        <span className="text-[9px] font-black text-emerald-650 uppercase">Healthy</span>
+                        <span className="text-[9px] font-black text-emerald-650 uppercase">{t('soilreportscreen.healthy')}</span>
                       </div>
                     </div>
                     
-                    <h4 className="font-extrabold text-sm text-gray-900 leading-tight">Overall Soil Health</h4>
+                    <h4 className="font-extrabold text-sm text-gray-900 leading-tight">{t('soilreportscreen.overall_soil_health')}</h4>
                   </div>
 
                   {/* Summary Card (2/3) */}
                   <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4 md:col-span-2 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-center">
-                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">AI Summary</h4>
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('soilreportscreen.ai_summary')}</h4>
                         <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                          98% Confidence
-                        </span>
+                          
+                                                                            {t('soilreportscreen.98_confidence')}
+                                                                          </span>
                       </div>
                       <p className="text-xs text-gray-700 leading-relaxed font-semibold mt-3">
-                        The uploaded soil sample indicates healthy organic carbon levels and adequate phosphorus availability. Nitrogen levels are slightly below the recommended threshold for optimal oil palm growth. Moisture retention is satisfactory, and the soil pH falls within the ideal cultivation range.
-                      </p>
+                        
+                                                                      {t('soilreportscreen.the_uploaded_soil_sample_indicates_healt')}
+                                                                    </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 text-[10px] text-gray-450 uppercase font-black">
-                      <div>Analysis completed: <span className="text-gray-700 font-bold">Just Now</span></div>
-                      <div className="text-right">Processing Time: <span className="text-gray-700 font-bold">12.5 Sec</span></div>
+                      <div>{t('soilreportscreen.analysis_completed')} <span className="text-gray-700 font-bold">{t('soilreportscreen.just_now')}</span></div>
+                      <div className="text-right">{t('soilreportscreen.processing_time')} <span className="text-gray-700 font-bold">{t('soilreportscreen.12_5_sec')}</span></div>
                     </div>
                   </div>
 
@@ -391,13 +404,13 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
                 {/* 7. Nutrient Breakdown Chart */}
                 <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Nutrient Density Breakdown</h4>
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">{t('soilreportscreen.nutrient_density_breakdown')}</h4>
                   
                   <div className="space-y-3.5 text-xs text-gray-700 font-semibold">
                     <div>
                       <div className="flex justify-between mb-1.5">
-                        <span>Nitrogen (N)</span>
-                        <span className="text-amber-600 font-bold">135 mg/kg (Moderate)</span>
+                        <span>{t('soilreportscreen.nitrogen_n')}</span>
+                        <span className="text-amber-600 font-bold">{t('soilreportscreen.135_mg_kg_moderate')}</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: "75%" }} />
@@ -405,8 +418,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
-                        <span>Phosphorus (P)</span>
-                        <span className="text-emerald-700 font-bold">24 mg/kg (Optimal)</span>
+                        <span>{t('soilreportscreen.phosphorus_p')}</span>
+                        <span className="text-emerald-700 font-bold">{t('soilreportscreen.24_mg_kg_optimal')}</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 rounded-full" style={{ width: "68%" }} />
@@ -414,8 +427,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
-                        <span>Potassium (K)</span>
-                        <span className="text-rose-600 font-bold">160 mg/kg (Low)</span>
+                        <span>{t('soilreportscreen.potassium_k')}</span>
+                        <span className="text-rose-600 font-bold">{t('soilreportscreen.160_mg_kg_low')}</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-rose-500 rounded-full" style={{ width: "57%" }} />
@@ -423,8 +436,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
-                        <span>Organic Carbon (C)</span>
-                        <span className="text-emerald-700 font-bold">1.82% (Optimal)</span>
+                        <span>{t('soilreportscreen.organic_carbon_c')}</span>
+                        <span className="text-emerald-700 font-bold">{t('soilreportscreen.1_82_optimal')}</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "91%" }} />
@@ -432,8 +445,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
-                        <span>Moisture Index</span>
-                        <span className="text-emerald-700 font-bold">42% (Optimal)</span>
+                        <span>{t('soilreportscreen.moisture_index')}</span>
+                        <span className="text-emerald-700 font-bold">{t('soilreportscreen.42_optimal')}</span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full bg-primary rounded-full" style={{ width: "84%" }} />
@@ -448,36 +461,36 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   {/* pH */}
                   <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs text-left flex flex-col justify-between min-h-[120px]">
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">Optimal</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">Healthy Range: 5.5-6.5</span>
+                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{t('soilreportscreen.optimal')}</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">{t('soilreportscreen.healthy_range_5_5_6_5')}</span>
                     </div>
                     <div className="mt-4">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Acidity pH</span>
-                      <span className="text-lg font-black text-gray-950 mt-0.5">5.85 pH</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.acidity_ph')}</span>
+                      <span className="text-lg font-black text-gray-950 mt-0.5">{t('soilreportscreen.5_85_ph')}</span>
                     </div>
                   </div>
 
                   {/* EC */}
                   <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs text-left flex flex-col justify-between min-h-[120px]">
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">Optimal</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">Healthy Range: 0.2-0.5</span>
+                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{t('soilreportscreen.optimal')}</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">{t('soilreportscreen.healthy_range_0_2_0_5')}</span>
                     </div>
                     <div className="mt-4">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Electrical Conductivity</span>
-                      <span className="text-lg font-black text-gray-950 mt-0.5">0.28 dS/m</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.electrical_conductivity')}</span>
+                      <span className="text-lg font-black text-gray-950 mt-0.5">{t('soilreportscreen.0_28_ds_m')}</span>
                     </div>
                   </div>
 
                   {/* Zinc */}
                   <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs text-left flex flex-col justify-between min-h-[120px]">
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">Optimal</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">Healthy Range: 2.0-5.0</span>
+                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{t('soilreportscreen.optimal')}</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">{t('soilreportscreen.healthy_range_2_0_5_0')}</span>
                     </div>
                     <div className="mt-4">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Zinc (Zn)</span>
-                      <span className="text-lg font-black text-gray-950 mt-0.5">4.5 ppm</span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.zinc_zn')}</span>
+                      <span className="text-lg font-black text-gray-950 mt-0.5">{t('soilreportscreen.4_5_ppm')}</span>
                     </div>
                   </div>
 
@@ -492,60 +505,60 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
                   <div className="border-b border-gray-100 pb-3">
                     <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-                      <Sparkles className="w-4.5 h-4.5 text-primary" /> Soil Treatment Advice
-                    </h4>
-                    <p className="text-[10px] text-gray-450 mt-1">Recommended chemical corrections.</p>
+                      <Sparkles className="w-4.5 h-4.5 text-primary" />  {t('soilreportscreen.soil_treatment_advice')}
+                                                              </h4>
+                    <p className="text-[10px] text-gray-450 mt-1">{t('soilreportscreen.recommended_chemical_corrections')}</p>
                   </div>
 
                   <div className="space-y-4">
                     {/* Nitrogen Advice */}
                     <div className="space-y-2 border-b border-gray-50 pb-3">
                       <div className="flex justify-between text-xs">
-                        <span className="font-extrabold text-gray-800">Nitrogen correction</span>
-                        <span className="text-[10px] font-bold text-amber-600">Priority: Medium</span>
+                        <span className="font-extrabold text-gray-800">{t('soilreportscreen.nitrogen_correction')}</span>
+                        <span className="text-[10px] font-bold text-amber-600">{t('soilreportscreen.priority_medium')}</span>
                       </div>
                       <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                        <p className="font-bold text-gray-900">Apply Urea</p>
+                        <p className="font-bold text-gray-900">{t('soilreportscreen.apply_urea')}</p>
                         <p className="text-[10px] text-gray-500 leading-normal">
-                          <strong>Quantity:</strong> 1.5 kg / palm tree.<br/>
-                          <strong>Reason:</strong> Compensates for slight nitrogen depletion scanned in foliar maps.
-                        </p>
+                          <strong>{t('soilreportscreen.quantity')}</strong>  {t('soilreportscreen.1_5_kg_palm_tree')}<br/>
+                          <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.compensates_for_slight_nitrogen_depletio')}
+                                                                          </p>
                       </div>
                     </div>
 
                     {/* Potassium Advice */}
                     <div className="space-y-2 border-b border-gray-50 pb-3">
                       <div className="flex justify-between text-xs">
-                        <span className="font-extrabold text-gray-800">Potassium correction</span>
-                        <span className="text-[10px] font-bold text-rose-600 animate-pulse">Priority: Critical</span>
+                        <span className="font-extrabold text-gray-800">{t('soilreportscreen.potassium_correction')}</span>
+                        <span className="text-[10px] font-bold text-rose-600 animate-pulse">{t('soilreportscreen.priority_critical')}</span>
                       </div>
                       <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                        <p className="font-bold text-gray-900">Apply Muriate of Potash (MOP)</p>
+                        <p className="font-bold text-gray-900">{t('soilreportscreen.apply_muriate_of_potash_mop')}</p>
                         <p className="text-[10px] text-gray-500 leading-normal">
-                          <strong>Quantity:</strong> 2.2 kg / palm tree.<br/>
-                          <strong>Reason:</strong> Extreme deficit identified. Vital to prevent bunch aborts.
-                        </p>
+                          <strong>{t('soilreportscreen.quantity')}</strong>  {t('soilreportscreen.2_2_kg_palm_tree')}<br/>
+                          <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.extreme_deficit_identified_vital_to_prev')}
+                                                                          </p>
                       </div>
                     </div>
 
                     {/* Water Advice */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
-                        <span className="font-extrabold text-gray-800">Water schedule</span>
-                        <span className="text-[10px] font-bold text-gray-500">Priority: Low</span>
+                        <span className="font-extrabold text-gray-800">{t('soilreportscreen.water_schedule')}</span>
+                        <span className="text-[10px] font-bold text-gray-500">{t('soilreportscreen.priority_low')}</span>
                       </div>
                       <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                        <p className="font-bold text-gray-900">Reduce irrigation by 10%</p>
+                        <p className="font-bold text-gray-900">{t('soilreportscreen.reduce_irrigation_by_10')}</p>
                         <p className="text-[10px] text-gray-500 leading-normal">
-                          <strong>Reason:</strong> Matches weather predictions forecasting pre-monsoon precipitation.
-                        </p>
+                          <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.matches_weather_predictions_forecasting_')}
+                                                                          </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Summary metric */}
                   <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-[10px] text-emerald-800 flex justify-between font-black uppercase">
-                    <span>Expected Yield Improvement</span>
+                    <span>{t('soilreportscreen.expected_yield_improvement')}</span>
                     <span>+14.2%</span>
                   </div>
                 </div>
@@ -557,16 +570,18 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
-                    Generate AI Recommendation
-                  </button>
+                    
+                                                          {t('soilreportscreen.generate_ai_recommendation')}
+                                                        </button>
 
                   <button
                     onClick={() => triggerToast("Compiling complete laboratory diagnostic PDF...", "info")}
                     className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-primary" />
-                    Download Soil Analysis Report
-                  </button>
+                    
+                                                          {t('soilreportscreen.download_soil_analysis_report')}
+                                                        </button>
                 </div>
 
               </div>

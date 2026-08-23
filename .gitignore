@@ -36,3 +36,6 @@ env/
 
 # Test files
 test-*.js
+
+# Documentation
+PROJECT_CONTEXT.md

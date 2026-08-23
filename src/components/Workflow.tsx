@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { 
@@ -7,6 +8,7 @@ import {
 import { SectionHeading } from "./SectionHeading";
 
 export const Workflow: React.FC = () => {
+    const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Track scroll position of the timeline container
@@ -27,13 +29,13 @@ export const Workflow: React.FC = () => {
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-4 w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-green-50 border border-green-150 text-green-700 flex items-center justify-center font-bold text-xs">RK</div>
+            <div className="w-8 h-8 rounded-full bg-green-50 border border-green-150 text-green-700 flex items-center justify-center font-bold text-xs">{t('workflow.rk')}</div>
             <div className="flex flex-col text-left">
-              <span className="text-xs font-bold text-gray-800">Rajesh Kumar</span>
-              <span className="text-[10px] text-gray-400">dakshina-kannada-09</span>
+              <span className="text-xs font-bold text-gray-800">{t('workflow.rajesh_kumar')}</span>
+              <span className="text-[10px] text-gray-400">{t('workflow.dakshina_kannada_09')}</span>
             </div>
           </div>
-          <span className="text-[9px] font-bold text-[#2E7D32] bg-[#2E7D32]/10 border border-[#2E7D32]/20 px-2 py-0.5 rounded-full">Onboarded</span>
+          <span className="text-[9px] font-bold text-[#2E7D32] bg-[#2E7D32]/10 border border-[#2E7D32]/20 px-2 py-0.5 rounded-full">{t('workflow.onboarded')}</span>
         </div>
       )
     },
@@ -51,7 +53,7 @@ export const Workflow: React.FC = () => {
             <circle cx="80" cy="85" r="3.5" fill="currentColor" />
             <circle cx="20" cy="70" r="3.5" fill="currentColor" />
           </svg>
-          <span className="absolute bottom-2 left-2 text-[8px] font-black text-gray-450 uppercase tracking-widest">Plot Coordinate Matrix</span>
+          <span className="absolute bottom-2 left-2 text-[8px] font-black text-gray-450 uppercase tracking-widest">{t('workflow.plot_coordinate_matrix')}</span>
         </div>
       )
     },
@@ -63,10 +65,10 @@ export const Workflow: React.FC = () => {
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex flex-col gap-2 justify-center">
           <div className="h-4 rounded bg-indigo-500/10 border border-indigo-150 text-[9px] font-bold text-indigo-700 px-3 flex items-center justify-between">
-            <span>Terrain Model</span> <span>320m Slopes</span>
+            <span>{t('workflow.terrain_model')}</span> <span>{t('workflow.320m_slopes')}</span>
           </div>
           <div className="h-4 rounded bg-green-500/10 border border-green-150 text-[9px] font-bold text-green-700 px-3 flex items-center justify-between">
-            <span>NDVI Vegetation</span> <span>0.72 Growth</span>
+            <span>{t('workflow.ndvi_vegetation')}</span> <span>{t('workflow.0_72_growth')}</span>
           </div>
         </div>
       )
@@ -83,11 +85,11 @@ export const Workflow: React.FC = () => {
               <FileUp className="w-4 h-4" />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-xs font-bold text-gray-800">soil_report_RK09.pdf</span>
-              <span className="text-[9px] text-gray-400">Chemistry Sheet • 1.2 MB</span>
+              <span className="text-xs font-bold text-gray-800">{t('workflow.soil_report_rk09_pdf')}</span>
+              <span className="text-[9px] text-gray-400">{t('workflow.chemistry_sheet_1_2_mb')}</span>
             </div>
           </div>
-          <span className="text-[9px] font-bold text-green-700">100% Uploaded</span>
+          <span className="text-[9px] font-bold text-green-700">{t('workflow.100_uploaded')}</span>
         </div>
       )
     },
@@ -123,10 +125,10 @@ export const Workflow: React.FC = () => {
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex items-center justify-between">
           <div className="text-left flex flex-col">
-            <span className="text-[9px] font-bold text-gray-400 uppercase">Personalized prescription</span>
-            <span className="text-xs font-bold text-gray-800 mt-0.5">Apply NPK 19-19-19 target: 45kg/acre</span>
+            <span className="text-[9px] font-bold text-gray-400 uppercase">{t('workflow.personalized_prescription')}</span>
+            <span className="text-xs font-bold text-gray-800 mt-0.5">{t('workflow.apply_npk_19_19_19_target_45kg_acre')}</span>
           </div>
-          <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-150">AI Target</span>
+          <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-150">{t('workflow.ai_target')}</span>
         </div>
       )
     },
@@ -138,7 +140,7 @@ export const Workflow: React.FC = () => {
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex flex-col justify-between h-20">
           <div className="flex justify-between text-[9px] font-bold text-gray-400">
-            <span>YIELD ESTIMATE</span>
+            <span>{t('workflow.yield_estimate')}</span>
             <span className="text-green-700">+12%</span>
           </div>
           <svg className="w-full h-8 text-[#2E7D32]" viewBox="0 0 100 40">
@@ -161,7 +163,7 @@ export const Workflow: React.FC = () => {
         <div className="mb-24 flex justify-center">
           <SectionHeading
             eyebrow="Operational Flow"
-            title="How NutriPalm AI Works"
+            title={t('workflow.how_nutripalm_ai_works')}
             description="Our step-by-step digital process guides growers from registration all the way to precision dashboard analytics."
           />
         </div>

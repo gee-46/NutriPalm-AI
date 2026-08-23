@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, AlertCircle, Sparkles, ArrowRight, ArrowLeft, X, Sprout, BarChart3, MapPin, FlaskConical, Cpu, Globe } from "lucide-react";
@@ -30,6 +31,7 @@ const SatelliteIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onBackToLanding }) => {
+    const { t } = useTranslation();
   const [phase, setPhase] = useState<"loading" | "login">("loading");
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -352,7 +354,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                 >
                   <img
                     src="/samruddhi-logo.jpeg"
-                    alt="Samruddhi Organics"
+                    alt={t('prototypeauth.samruddhi_organics')}
                     className="w-full h-full object-cover rounded-xl"
                   />
                   <div className="absolute inset-0 border border-primary/20 rounded-xl" />
@@ -362,12 +364,14 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
               {/* Title & Description */}
               <div className="space-y-2">
                 <h2 className="text-2xl font-extrabold tracking-tight text-gray-955">
-                  NutriPalm <span className="text-primary font-black">AI</span>
+                  
+                                                    {t('prototypeauth.nutripalm')} <span className="text-primary font-black">{t('prototypeauth.ai')}</span>
                 </h2>
                 <p className="text-2xs text-[#2E7D32] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
                   <Sparkles className="w-3 h-3" />
-                  AI Powered Precision Agriculture Platform
-                </p>
+                  
+                                                    {t('prototypeauth.ai_powered_precision_agriculture_platfor')}
+                                                  </p>
               </div>
 
               {/* Step checklist stack */}
@@ -405,7 +409,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
               {/* Progress bar container */}
               <div className="w-full max-w-md space-y-2.5">
                 <div className="flex justify-between text-[10px] font-black text-gray-450 tracking-wider">
-                  <span>BOOTING ECOSYSTEM</span>
+                  <span>{t('prototypeauth.booting_ecosystem')}</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden relative">
@@ -440,8 +444,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                 className="fixed z-50 top-6 left-6 md:top-8 md:left-8 h-[40px] md:h-[46px] px-[16px] md:px-[22px] flex items-center gap-2 text-xs md:text-sm font-medium text-gray-700 bg-white/70 backdrop-blur-md border border-primary/20 rounded-full shadow-md hover:shadow-lg hover:text-primary hover:border-primary/60 hover:bg-emerald-50/40 transition-all duration-[250ms] ease-in-out cursor-pointer hover:-translate-y-[2px] active:scale-95 group"
               >
                 <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-250 ease-in-out group-hover:-translate-x-[3px]" />
-                Back to Home
-              </motion.button>
+                
+                                                  {t('prototypeauth.back_to_home')}
+                                                </motion.button>
 
               {/* Login Card Panel (15% larger: max-w-[490px], higher opacity, thicker borders) */}
               <div className="w-full max-w-[490px] bg-white/95 border-2 border-gray-200/80 rounded-[32px] p-10 md:p-12 shadow-2xl relative overflow-visible text-left">
@@ -452,12 +457,13 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                   <div className="w-10 h-10 rounded-xl overflow-hidden border border-emerald-500/20 bg-white p-0.5">
                     <img
                       src="/samruddhi-logo.jpeg"
-                      alt="Logo"
+                      alt={t('prototypeauth.logo')}
                       className="w-full h-full object-cover rounded-lg"
                     />
                   </div>
                   <span className="text-base font-extrabold tracking-tight text-gray-955">
-                    NutriPalm <span className="text-primary font-black">AI</span>
+                    
+                                                              {t('prototypeauth.nutripalm')} <span className="text-primary font-black">{t('prototypeauth.ai')}</span>
                   </span>
                 </div>
 
@@ -490,8 +496,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                           : "border-transparent text-gray-400 hover:text-gray-600"
                       }`}
                     >
-                      Sign In
-                    </button>
+                      
+                                                                    {t('prototypeauth.sign_in')}
+                                                                  </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -505,8 +512,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                           : "border-transparent text-gray-400 hover:text-gray-600"
                       }`}
                     >
-                      Sign Up
-                    </button>
+                      
+                                                                    {t('prototypeauth.sign_up')}
+                                                                  </button>
                   </div>
                 )}
 
@@ -520,14 +528,14 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                 <form onSubmit={handleAuthSubmit} className="space-y-4">
                   {authMode === "signup" && (
                     <div className="space-y-1.5">
-                      <label htmlFor="auth-fullname" className="block text-[10px] font-black text-gray-700 uppercase tracking-wider">Full Name</label>
+                      <label htmlFor="auth-fullname" className="block text-[10px] font-black text-gray-700 uppercase tracking-wider">{t('prototypeauth.full_name')}</label>
                       <input
                         type="text"
                         id="auth-fullname"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Dr. L. Ramana"
+                        placeholder={t('prototypeauth.dr_l_ramana')}
                         className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-3 focus:ring-primary/10 focus:border-primary transition-all text-xs text-gray-950 placeholder-gray-400 font-semibold"
                       />
                     </div>
@@ -535,7 +543,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
 
                   {authMode !== "reset" && (
                     <div className="space-y-1.5">
-                      <label htmlFor="auth-email" className="block text-[10px] font-black text-gray-700 uppercase tracking-wider">Email Address</label>
+                      <label htmlFor="auth-email" className="block text-[10px] font-black text-gray-700 uppercase tracking-wider">{t('prototypeauth.email_address')}</label>
                       <input
                         ref={emailInputRef}
                         type="email"
@@ -543,7 +551,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="e.g. agronomist@samruddhiorganics.in"
+                        placeholder={t('prototypeauth.e_g_agronomist_samruddhiorganics_in')}
                         className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-3 focus:ring-primary/10 focus:border-primary transition-all text-xs text-gray-955 placeholder-gray-400 font-semibold"
                       />
                     </div>
@@ -571,8 +579,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                     <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 font-semibold">
                       <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" defaultChecked className="rounded border-gray-300 text-primary focus:ring-primary/20" />
-                        Remember me
-                      </label>
+                        
+                                                                          {t('prototypeauth.remember_me')}
+                                                                        </label>
                       <button
                         type="button"
                         onClick={() => {
@@ -582,8 +591,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                         }}
                         className="text-primary hover:underline font-bold bg-transparent border-0 cursor-pointer p-0"
                       >
-                        Forgot password?
-                      </button>
+                        
+                                                                          {t('prototypeauth.forgot_password')}
+                                                                        </button>
                     </div>
                   )}
 
@@ -599,8 +609,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                         }}
                         className="text-primary text-[11px] hover:underline font-bold bg-transparent border-0 cursor-pointer p-0"
                       >
-                        Back to Sign In
-                      </button>
+                        
+                                                                          {t('prototypeauth.back_to_sign_in')}
+                                                                        </button>
                     </div>
                   )}
 
@@ -613,8 +624,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                     {isSubmitting ? (
                       <>
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
-                        Processing...
-                      </>
+                        
+                                                                          {t('prototypeauth.processing')}
+                                                                        </>
                     ) : (
                       <>
                         {authMode === "login" && "Launch Console"}
@@ -631,7 +643,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                     <div className="space-y-3 pt-2">
                       <div className="relative flex py-2 items-center">
                         <div className="flex-grow border-t border-gray-200"></div>
-                        <span className="flex-shrink mx-4 text-gray-400 text-[10px] font-bold tracking-wider">OR</span>
+                        <span className="flex-shrink mx-4 text-gray-400 text-[10px] font-bold tracking-wider">{t('prototypeauth.or')}</span>
                         <div className="flex-grow border-t border-gray-200"></div>
                       </div>
 
@@ -660,8 +672,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                           />
                         </svg>
-                        Continue with Google
-                      </button>
+                        
+                                                                          {t('prototypeauth.continue_with_google')}
+                                                                        </button>
 
                       {/* Demo Account button */}
                       <button
@@ -670,8 +683,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                         disabled={isSubmitting}
                         className="w-full bg-gray-50 hover:bg-gray-100 text-gray-800 font-extrabold px-6 py-3.5 rounded-xl border border-gray-250 hover:border-gray-350 active:scale-[0.99] transition-all duration-300 text-xs flex items-center justify-center gap-2 cursor-pointer pt-3.5 pb-3.5"
                       >
-                        Continue with Demo Account
-                      </button>
+                        
+                                                                          {t('prototypeauth.continue_with_demo_account')}
+                                                                        </button>
                     </div>
                   )}
                 </form>
@@ -681,14 +695,17 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
               {/* Refined Footer Note */}
               <div className="text-center space-y-1 text-gray-500 select-none max-w-sm leading-normal">
                 <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest text-gray-800">
-                  Prototype Demonstration
-                </p>
+                  
+                                                        {t('prototypeauth.prototype_demonstration')}
+                                                      </p>
                 <p className="text-[10px] font-semibold text-gray-650">
-                  Built exclusively for startup incubation and product showcase.
-                </p>
+                  
+                                                        {t('prototypeauth.built_exclusively_for_startup_incubation')}
+                                                      </p>
                 <p className="text-[9.5px] text-gray-400 font-normal">
-                  This prototype simulates the NutriPalm AI experience using demonstration data.
-                </p>
+                  
+                                                        {t('prototypeauth.this_prototype_simulates_the_nutripalm_a')}
+                                                      </p>
               </div>
             </motion.div>
           )}
@@ -711,8 +728,9 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
             </div>
             <div className="flex-grow">
               <p className="text-xs font-extrabold uppercase tracking-wider mb-1 text-red-600">
-                Authentication Error
-              </p>
+                
+                                              {t('prototypeauth.authentication_error')}
+                                            </p>
               <p className="text-[11.5px] font-normal leading-relaxed text-gray-700">
                 {errorMessage}
               </p>

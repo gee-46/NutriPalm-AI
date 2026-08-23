@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React from "react";
 import { motion } from "framer-motion";
 import { 
@@ -7,6 +8,7 @@ import {
 import { SectionHeading } from "./SectionHeading";
 
 export const JourneyAndRoadmap: React.FC = () => {
+    const { t } = useTranslation();
   
   // Section 1: Journey Timeline data
   const journeyTimeline = [
@@ -124,7 +126,7 @@ export const JourneyAndRoadmap: React.FC = () => {
           <div className="mb-20 flex justify-center">
             <SectionHeading
               eyebrow="The Story"
-              title="Our Journey"
+              title={t('journeyandroadmap.our_journey')}
               description="Trace the developmental milestone milestones of Samruddhi Organics, mapping agronomic research into software execution."
             />
           </div>
@@ -144,7 +146,8 @@ export const JourneyAndRoadmap: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-[10px] font-extrabold text-[#2E7D32] bg-[#2E7D32]/10 px-3 py-1 rounded-full uppercase tracking-wider">
-                      Phase {item.step}
+                      
+                                                      {t('journeyandroadmap.phase')} {item.step}
                     </span>
                     <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" /> {item.date}
@@ -171,7 +174,7 @@ export const JourneyAndRoadmap: React.FC = () => {
           <div className="mb-20 flex justify-center">
             <SectionHeading
               eyebrow="The Future"
-              title="Future Roadmap"
+              title={t('journeyandroadmap.future_roadmap')}
               description="Our product scaling direction, expanding from core recommendation Twins to full geospatial automated diagnostics."
             />
           </div>

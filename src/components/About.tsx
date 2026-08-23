@@ -1,3 +1,4 @@
+import { useTranslation } from "../translation/useTranslation";
 import React, { useRef, useState, useEffect } from "react";
 import { ShieldCheck, ArrowRight, HelpCircle, EyeOff, LayoutGrid, BarChart3 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
@@ -78,6 +79,7 @@ const teamMembers = [
 ];
 
 export const About: React.FC = () => {
+    const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.35 });
   const [hasEntered, setHasEntered] = useState(false);
@@ -184,7 +186,7 @@ export const About: React.FC = () => {
             >
               <img 
                 src="/samruddhi-logo.jpeg" 
-                alt="Samruddhi Organics Logo"
+                alt={t('about.samruddhi_organics_logo')}
                 className="w-full h-full object-contain"
               />
             </motion.div>
@@ -199,19 +201,23 @@ export const About: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] as any }}
           >
             <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] mb-4">
-              Venture Overview
-            </span>
+              
+                                        {t('about.venture_overview')}
+                                      </span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-gray-950 tracking-tight leading-tight mb-6">
-              About Samruddhi Organics
-            </h2>
+              
+                                        {t('about.about_samruddhi_organics')}
+                                      </h2>
             
             <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-6 font-normal">
-              Samruddhi Organics is an AgriTech startup focused on improving farm productivity through scientific soil analysis, customized nutrient recommendations, precision agriculture, and sustainable farming practices.
-            </p>
+              
+                                        {t('about.samruddhi_organics_is_an_agritech_startu')}
+                                      </p>
 
             <p className="text-base md:text-lg text-gray-600 leading-relaxed font-normal">
-              Our mission is to make data-driven agriculture simple, affordable, and accessible for every farmer.
-            </p>
+              
+                                        {t('about.our_mission_is_to_make_data_driven_agric')}
+                                      </p>
           </motion.div>
 
         </div>
@@ -219,8 +225,8 @@ export const About: React.FC = () => {
         {/* SECTION 2: OUR JOURNEY */}
         <div className="mb-28">
           <div className="text-center mb-16">
-            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">Milestones</span>
-            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">Our Journey So Far</h3>
+            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">{t('about.milestones')}</span>
+            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">{t('about.our_journey_so_far')}</h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-left">
@@ -251,8 +257,8 @@ export const About: React.FC = () => {
         {/* SECTION: LEADERSHIP TEAM */}
         <div ref={containerRef} className="mb-28 w-full overflow-hidden relative">
           <div className="text-center mb-16">
-            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">Leadership</span>
-            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">Our Leadership Team</h3>
+            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">{t('about.leadership')}</span>
+            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">{t('about.our_leadership_team')}</h3>
           </div>
 
           {/* Infinite Horizontal Marquee Carousel */}
@@ -357,8 +363,8 @@ export const About: React.FC = () => {
         {/* SECTION 3: SECTION TRANSITION */}
         <div className="mb-28">
           <div className="text-center mb-12">
-            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-widest block mb-2">Evolution Path</span>
-            <h3 className="text-2xl font-extrabold text-gray-950 tracking-tight">From Experience to Innovation</h3>
+            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-widest block mb-2">{t('about.evolution_path')}</span>
+            <h3 className="text-2xl font-extrabold text-gray-950 tracking-tight">{t('about.from_experience_to_innovation')}</h3>
           </div>
 
           {/* Connect Diagram */}
@@ -405,24 +411,28 @@ export const About: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as any }}
           >
-            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] mb-4">The Solution Engine</span>
+            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] mb-4">{t('about.the_solution_engine')}</span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-gray-950 tracking-tight leading-tight mb-6">
-              Why NutriPalm AI?
-            </h2>
+              
+                                        {t('about.why_nutripalm_ai')}
+                                      </h2>
             
             <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-6 font-normal">
-              While working directly with farmers, Samruddhi Organics observed recurring agricultural bottlenecks that hindered productivity.
-            </p>
+              
+                                        {t('about.while_working_directly_with_farmers_samr')}
+                                      </p>
 
             <p className="text-sm md:text-base text-gray-600 leading-relaxed font-normal mb-8">
-              These direct insights inspired the creation of **NutriPalm AI**—an AI-powered Digital Agronomist that creates a Digital Twin for every farm plot and delivers personalized recommendations.
-            </p>
+              
+                                        {t('about.these_direct_insights_inspired_the_creat')}
+                                      </p>
 
             <div className="p-4 rounded-xl border border-green-150/40 bg-gradient-to-r from-green-50/50 to-green-100/10 flex items-start gap-3">
               <ShieldCheck className="w-5 h-5 text-[#2E7D32] flex-shrink-0 mt-0.5" />
               <p className="text-xs text-[#2E7D32] font-semibold leading-relaxed">
-                By building a digital profile for each field, we ensure that science-backed decision support is accessible to every grower.
-              </p>
+                
+                                              {t('about.by_building_a_digital_profile_for_each_f')}
+                                            </p>
             </div>
           </motion.div>
 
@@ -430,26 +440,26 @@ export const About: React.FC = () => {
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-5 rounded-2xl border border-gray-150 bg-white">
               <HelpCircle className="w-5 h-5 text-amber-500 mb-4" />
-              <h4 className="text-sm font-bold text-gray-900 mb-2">Generic Recommendations</h4>
-              <p className="text-[11px] text-gray-500 leading-relaxed">Standard regional fertilizer calculations fail to address specific plot micro-climates.</p>
+              <h4 className="text-sm font-bold text-gray-900 mb-2">{t('about.generic_recommendations')}</h4>
+              <p className="text-[11px] text-gray-500 leading-relaxed">{t('about.standard_regional_fertilizer_calculation')}</p>
             </div>
 
             <div className="p-5 rounded-2xl border border-gray-150 bg-white">
               <EyeOff className="w-5 h-5 text-[#2E7D32] mb-4" />
-              <h4 className="text-sm font-bold text-gray-900 mb-2">Unclear Soil Reports</h4>
-              <p className="text-[11px] text-gray-500 leading-relaxed">Laboratory PDF reports present raw values and chemistry jargon without actionable guides.</p>
+              <h4 className="text-sm font-bold text-gray-900 mb-2">{t('about.unclear_soil_reports')}</h4>
+              <p className="text-[11px] text-gray-500 leading-relaxed">{t('about.laboratory_pdf_reports_present_raw_value')}</p>
             </div>
 
             <div className="p-5 rounded-2xl border border-gray-150 bg-white">
               <LayoutGrid className="w-5 h-5 text-sky-500 mb-4" />
-              <h4 className="text-sm font-bold text-gray-900 mb-2">No Digital Records</h4>
-              <p className="text-[11px] text-gray-500 leading-relaxed">Critical logs of historical crop rotations and fertilizer inputs are lost or scattered.</p>
+              <h4 className="text-sm font-bold text-gray-900 mb-2">{t('about.no_digital_records')}</h4>
+              <p className="text-[11px] text-gray-500 leading-relaxed">{t('about.critical_logs_of_historical_crop_rotatio')}</p>
             </div>
 
             <div className="p-5 rounded-2xl border border-gray-150 bg-white">
               <BarChart3 className="w-5 h-5 text-purple-500 mb-4" />
-              <h4 className="text-sm font-bold text-gray-900 mb-2">Static Decision Support</h4>
-              <p className="text-[11px] text-gray-500 leading-relaxed">Growers operate blindly without real-time tracking, moisture charts, or agronomic feedback loops.</p>
+              <h4 className="text-sm font-bold text-gray-900 mb-2">{t('about.static_decision_support')}</h4>
+              <p className="text-[11px] text-gray-500 leading-relaxed">{t('about.growers_operate_blindly_without_real_tim')}</p>
             </div>
           </div>
 
@@ -458,8 +468,8 @@ export const About: React.FC = () => {
         {/* SECTION 5: VISUAL TIMELINE */}
         <div className="mb-28">
           <div className="text-center mb-16">
-            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">Milestone Progress</span>
-            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">Visual Timeline</h3>
+            <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-3">{t('about.milestone_progress')}</span>
+            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">{t('about.visual_timeline')}</h3>
           </div>
 
           <div className="relative max-w-6xl mx-auto">
@@ -502,19 +512,22 @@ export const About: React.FC = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] block mb-4">The Impact Goal</span>
+          <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] block mb-4">{t('about.the_impact_goal')}</span>
           <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 mb-4">
-            Transforming Agriculture Through Intelligence
-          </h3>
+            
+                                  {t('about.transforming_agriculture_through_intelli')}
+                                </h3>
           <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-8 max-w-xl mx-auto">
-            Ready to explore how NutriPalm AI scales these customized nutrient frameworks into real-time digital agricultural profiles?
-          </p>
+            
+                                  {t('about.ready_to_explore_how_nutripalm_ai_scales')}
+                                </p>
           <button
             onClick={() => handleScrollTo("#dashboard")}
             className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-[#235F26] active:scale-95 shadow-md shadow-primary/10 transition-all duration-200"
           >
-            Explore NutriPalm AI Prototype
-            <ArrowRight className="w-4 h-4" />
+            
+                                  {t('about.explore_nutripalm_ai_prototype')}
+                                  <ArrowRight className="w-4 h-4" />
           </button>
         </motion.div>
 

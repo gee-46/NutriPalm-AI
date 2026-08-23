@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -130,6 +131,7 @@ const generateHeatmapPlots = () => {
 const heatmapPlots = generateHeatmapPlots();
 
 export const AnalyticsScreen: React.FC = () => {
+    const { t } = useTranslation();
   const [lastUpdated] = useState("Just Now");
   const [cropFilter, setCropFilter] = useState("All Crops");
   const [dateFilter, setDateFilter] = useState("Last 30 Days");
@@ -290,18 +292,20 @@ export const AnalyticsScreen: React.FC = () => {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none flex items-center gap-2.5">
             <BarChart3 className="w-8 h-8 text-emerald-600" />
-            AI Farm Analytics
-          </h1>
+            
+                                  {t('analyticsscreen.ai_farm_analytics')}
+                                </h1>
           <p className="text-sm font-semibold text-slate-500 mt-2">
-            Monitor agricultural performance, AI recommendations, and operational insights across all managed farms.
-          </p>
+            
+                                  {t('analyticsscreen.monitor_agricultural_performance_ai_reco')}
+                                </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-mono font-bold text-emerald-800 leading-none">Core Online</span>
-            <span className="text-[9px] font-mono text-emerald-600 border-l border-emerald-250/60 pl-2 leading-none">Updated: {lastUpdated}</span>
+            <span className="text-[10px] font-mono font-bold text-emerald-800 leading-none">{t('analyticsscreen.core_online')}</span>
+            <span className="text-[9px] font-mono text-emerald-600 border-l border-emerald-250/60 pl-2 leading-none">{t('analyticsscreen.updated')} {lastUpdated}</span>
           </div>
 
           {/* Quick Filters */}
@@ -311,11 +315,11 @@ export const AnalyticsScreen: React.FC = () => {
               onChange={(e) => setCropFilter(e.target.value)}
               className="px-3 py-2 text-xs font-extrabold text-slate-600 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all h-9"
             >
-              <option value="All Crops">Crop: All</option>
-              <option value="Oil Palm">Oil Palm</option>
-              <option value="Rice">Rice</option>
-              <option value="Sugarcane">Sugarcane</option>
-              <option value="Cocoa / Banana">Cocoa / Banana</option>
+              <option value="All Crops">{t('analyticsscreen.crop_all')}</option>
+              <option value="Oil Palm">{t('analyticsscreen.oil_palm')}</option>
+              <option value="Rice">{t('analyticsscreen.rice')}</option>
+              <option value="Sugarcane">{t('analyticsscreen.sugarcane')}</option>
+              <option value="Cocoa / Banana">{t('analyticsscreen.cocoa_banana')}</option>
             </select>
 
             <select
@@ -323,10 +327,10 @@ export const AnalyticsScreen: React.FC = () => {
               onChange={(e) => setDateFilter(e.target.value)}
               className="px-3 py-2 text-xs font-extrabold text-slate-600 bg-white border border-slate-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent cursor-pointer transition-all h-9"
             >
-              <option value="Last 30 Days">Last 30 Days</option>
-              <option value="This Season">This Season</option>
-              <option value="Last 6 Months">Last 6 Months</option>
-              <option value="This Year">This Year</option>
+              <option value="Last 30 Days">{t('analyticsscreen.last_30_days')}</option>
+              <option value="This Season">{t('analyticsscreen.this_season')}</option>
+              <option value="Last 6 Months">{t('analyticsscreen.last_6_months')}</option>
+              <option value="This Year">{t('analyticsscreen.this_year')}</option>
             </select>
           </div>
         </div>
@@ -398,8 +402,9 @@ export const AnalyticsScreen: React.FC = () => {
         <div className="bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col h-full">
           <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5 shrink-0">
             <Users className="w-4.5 h-4.5 text-emerald-600" />
-            Farmer Registration Growth
-          </h3>
+            
+                                  {t('analyticsscreen.farmer_registration_growth')}
+                                </h3>
           
           <div className="w-full relative bg-slate-50/50 border border-slate-100 rounded-xl p-3 select-none flex-grow flex items-center justify-center">
             <svg className="w-full h-full" viewBox="0 0 350 200">
@@ -443,8 +448,8 @@ export const AnalyticsScreen: React.FC = () => {
                   exit={{ opacity: 0, y: 5 }}
                   className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md z-10"
                 >
-                  <span className="block font-bold text-emerald-400">Total Registered</span>
-                  <span className="block mt-0.5">{farmerGrowth[hoveredFarmerPoint].month}: {farmerGrowth[hoveredFarmerPoint].count} Farmers</span>
+                  <span className="block font-bold text-emerald-400">{t('analyticsscreen.total_registered')}</span>
+                  <span className="block mt-0.5">{farmerGrowth[hoveredFarmerPoint].month}: {farmerGrowth[hoveredFarmerPoint].count}  {t('analyticsscreen.farmers')}</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -456,8 +461,9 @@ export const AnalyticsScreen: React.FC = () => {
           <div>
             <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
               <PieChart className="w-4.5 h-4.5 text-emerald-600" />
-              Crop Distribution
-            </h3>
+              
+                                        {t('analyticsscreen.crop_distribution')}
+                                      </h3>
             
             <div className="w-full min-h-[220px] sm:min-h-[260px] relative flex items-center justify-center bg-slate-50/50 border border-slate-100 rounded-xl p-3 select-none flex-grow">
               <svg className="w-52 h-52 transform -rotate-90" viewBox="0 0 220 220">
@@ -497,8 +503,8 @@ export const AnalyticsScreen: React.FC = () => {
                       {preparedSlices[hoveredPieIndex].name}
                     </span>
                     <span className="text-base font-black text-slate-900 block mt-1">
-                      {preparedSlices[hoveredPieIndex].acres} Acres
-                    </span>
+                      {preparedSlices[hoveredPieIndex].acres}  {t('analyticsscreen.acres')}
+                                                              </span>
                     <span className="text-[10px] font-bold text-slate-550 block">
                       ({preparedSlices[hoveredPieIndex].pct}%)
                     </span>
@@ -506,11 +512,13 @@ export const AnalyticsScreen: React.FC = () => {
                 ) : (
                   <>
                     <span className="text-xs font-mono text-slate-400 block uppercase font-bold tracking-wider">
-                      TOTAL AREA
-                    </span>
+                      
+                                                                    {t('analyticsscreen.total_area')}
+                                                                  </span>
                     <span className="text-lg font-black text-slate-900 block mt-1">
-                      39.5 Acres
-                    </span>
+                      
+                                                                    {t('analyticsscreen.39_5_acres')}
+                                                                  </span>
                   </>
                 )}
               </div>
@@ -532,7 +540,7 @@ export const AnalyticsScreen: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                 <div className="flex flex-col text-left">
                   <span className="text-slate-900 font-extrabold leading-tight text-xs">{s.name}</span>
-                  <span className="text-[10px] text-slate-500 font-semibold mt-0.5">{s.acres} Ac ({s.pct}%)</span>
+                  <span className="text-[10px] text-slate-500 font-semibold mt-0.5">{s.acres}  {t('analyticsscreen.ac')}{s.pct}%)</span>
                 </div>
               </div>
             ))}
@@ -549,8 +557,9 @@ export const AnalyticsScreen: React.FC = () => {
           <div>
             <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
               <Bot className="w-4.5 h-4.5 text-emerald-600" />
-              AI Recommendation Trends
-            </h3>
+              
+                                        {t('analyticsscreen.ai_recommendation_trends')}
+                                      </h3>
             
             <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 350 140">
@@ -599,9 +608,9 @@ export const AnalyticsScreen: React.FC = () => {
                     exit={{ opacity: 0, y: 5 }}
                     className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md z-10"
                   >
-                    <span className="block font-bold text-emerald-400">{recTrends[hoveredRecPoint].month} Metrics</span>
-                    <span className="block mt-0.5">Generated: {recTrends[hoveredRecPoint].gen} | Accepted: {recTrends[hoveredRecPoint].acc}</span>
-                    <span className="block text-[9px] text-gray-400">Completed: {recTrends[hoveredRecPoint].comp} | Pending: {recTrends[hoveredRecPoint].pen}</span>
+                    <span className="block font-bold text-emerald-400">{recTrends[hoveredRecPoint].month}  {t('analyticsscreen.metrics')}</span>
+                    <span className="block mt-0.5">{t('analyticsscreen.generated')} {recTrends[hoveredRecPoint].gen}  {t('analyticsscreen.accepted')} {recTrends[hoveredRecPoint].acc}</span>
+                    <span className="block text-[9px] text-gray-400">{t('analyticsscreen.completed')} {recTrends[hoveredRecPoint].comp}  {t('analyticsscreen.pending')} {recTrends[hoveredRecPoint].pen}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -614,8 +623,9 @@ export const AnalyticsScreen: React.FC = () => {
           <div>
             <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
               <Activity className="w-4.5 h-4.5 text-emerald-600" />
-              Soil Health Trends (12 Months)
-            </h3>
+              
+                                        {t('analyticsscreen.soil_health_trends_12_months')}
+                                      </h3>
             
             <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 300 140">
@@ -635,9 +645,9 @@ export const AnalyticsScreen: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-2 text-[9px] font-bold mt-2">
-            <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">Nitrogen (N)</span>
-            <span className="text-emerald-700 bg-emerald-55 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">Phosphorus (P)</span>
-            <span className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">Potassium (K)</span>
+            <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">{t('analyticsscreen.nitrogen_n')}</span>
+            <span className="text-emerald-700 bg-emerald-55 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">{t('analyticsscreen.phosphorus_p')}</span>
+            <span className="text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">{t('analyticsscreen.potassium_k')}</span>
           </div>
         </div>
 
@@ -651,8 +661,9 @@ export const AnalyticsScreen: React.FC = () => {
           <div>
             <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
               <BarChart3 className="w-4.5 h-4.5 text-emerald-600" />
-              Monthly Yield Predictions (Tons/ha)
-            </h3>
+              
+                                        {t('analyticsscreen.monthly_yield_predictions_tons_ha')}
+                                      </h3>
             
             <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 350 140">
@@ -703,9 +714,9 @@ export const AnalyticsScreen: React.FC = () => {
                     exit={{ opacity: 0, y: 5 }}
                     className="absolute top-2 left-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[10px] text-white font-mono shadow-md z-10"
                   >
-                    <span className="block font-bold text-emerald-400">{monthlyYield[hoveredYieldBar].label} Yields</span>
-                    <span className="block mt-0.5">Expected: {monthlyYield[hoveredYieldBar].exp} t/ha</span>
-                    <span className="block">Actual: {monthlyYield[hoveredYieldBar].act} t/ha</span>
+                    <span className="block font-bold text-emerald-400">{monthlyYield[hoveredYieldBar].label}  {t('analyticsscreen.yields')}</span>
+                    <span className="block mt-0.5">{t('analyticsscreen.expected')} {monthlyYield[hoveredYieldBar].exp}  {t('analyticsscreen.t_ha')}</span>
+                    <span className="block">{t('analyticsscreen.actual')} {monthlyYield[hoveredYieldBar].act}  {t('analyticsscreen.t_ha')}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -718,8 +729,9 @@ export const AnalyticsScreen: React.FC = () => {
           <div>
             <h3 className="font-extrabold text-slate-800 text-sm mb-4 flex items-center gap-1.5">
               <Droplets className="w-4.5 h-4.5 text-blue-500" />
-              Water Usage Analytics (L/acre)
-            </h3>
+              
+                                        {t('analyticsscreen.water_usage_analytics_l_acre')}
+                                      </h3>
             
             <div className="h-44 relative bg-slate-50/50 border border-slate-100 rounded-xl p-2 select-none">
               <svg className="w-full h-full" viewBox="0 0 350 140">
@@ -737,8 +749,8 @@ export const AnalyticsScreen: React.FC = () => {
           </div>
 
           <div className="flex justify-between items-center text-[10px] font-bold text-slate-450 uppercase mt-2 pt-2 border-t border-slate-100">
-            <span>Optimized savings</span>
-            <span className="text-blue-600 font-extrabold">-12.8% Saved</span>
+            <span>{t('analyticsscreen.optimized_savings')}</span>
+            <span className="text-blue-600 font-extrabold">{t('analyticsscreen.12_8_saved')}</span>
           </div>
         </div>
 
@@ -751,15 +763,16 @@ export const AnalyticsScreen: React.FC = () => {
         <div className="lg:col-span-5 bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 text-left space-y-4">
           <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
             <Cpu className="w-4.5 h-4.5 text-emerald-600" />
-            Sensor Online Reliability
-          </h3>
+            
+                                  {t('analyticsscreen.sensor_online_reliability')}
+                                </h3>
           
           <div className="space-y-3.5 text-xs text-slate-700 font-semibold">
             {sensors.map((s, i) => (
               <div key={i} className="space-y-1">
                 <div className="flex justify-between font-bold">
                   <span>{s.label}</span>
-                  <span className="text-slate-950">{s.pct}% Online</span>
+                  <span className="text-slate-950">{s.pct}{t('analyticsscreen.online')}</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500" style={{ width: `${s.pct}%` }} />
@@ -776,21 +789,24 @@ export const AnalyticsScreen: React.FC = () => {
               <div>
                 <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
                   <LayoutGrid className="w-4.5 h-4.5 text-emerald-600" />
-                  Farm Health Heatmap Status
-                </h3>
+                  
+                                                    {t('analyticsscreen.farm_health_heatmap_status')}
+                                                  </h3>
                 <p className="text-[10px] font-bold text-slate-400 mt-0.5">
-                  Real-time health status of 45 plots
-                </p>
+                  
+                                                    {t('analyticsscreen.real_time_health_status_of_45_plots')}
+                                                  </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold text-slate-500">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500" /> 80%+</span>
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-amber-400" /> 60-79%</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-500" /> &lt;60%</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-rose-500" />  {t('analyticsscreen.lt_60')}</span>
               </div>
             </div>
             
             <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-9 xl:grid-cols-11 gap-2 relative">
               {heatmapPlots.map((plot, i) => {
+
                 const isHovered = hoveredHeatmapIndex === i;
                 const isDimmed = cropFilter !== "All Crops" && plot.crop !== cropFilter;
                 
@@ -826,9 +842,9 @@ export const AnalyticsScreen: React.FC = () => {
                             <span className="font-bold text-white bg-white/15 px-1.5 py-0.5 rounded">{plot.score}%</span>
                           </div>
                           <div className="space-y-1 text-gray-300 font-semibold font-mono leading-tight">
-                            <div>Farmer: <span className="text-white font-bold block text-[11px]">{plot.farmer}</span></div>
-                            <div>Crop: <span className="text-white font-bold block text-[11px]">{plot.crop}</span></div>
-                            <div>Village: <span className="text-white font-bold block text-[11px]">{plot.village}</span></div>
+                            <div>{t('analyticsscreen.farmer')} <span className="text-white font-bold block text-[11px]">{plot.farmer}</span></div>
+                            <div>{t('analyticsscreen.crop')} <span className="text-white font-bold block text-[11px]">{plot.crop}</span></div>
+                            <div>{t('analyticsscreen.village')} <span className="text-white font-bold block text-[11px]">{plot.village}</span></div>
                           </div>
                         </motion.div>
                       )}
@@ -844,23 +860,23 @@ export const AnalyticsScreen: React.FC = () => {
             {hoveredHeatmapIndex !== null ? (
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full font-mono text-slate-500 leading-tight">
                 <div>
-                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Plot ID</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">{t('analyticsscreen.plot_id')}</span>
                   <span className="font-extrabold text-slate-900">{heatmapPlots[hoveredHeatmapIndex].id}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Farmer</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">{t('analyticsscreen.farmer_1')}</span>
                   <span className="font-extrabold text-slate-900 truncate block max-w-[100px]">{heatmapPlots[hoveredHeatmapIndex].farmer}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Crop</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">{t('analyticsscreen.crop_1')}</span>
                   <span className="font-extrabold text-slate-900">{heatmapPlots[hoveredHeatmapIndex].crop}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Village</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">{t('analyticsscreen.village_1')}</span>
                   <span className="font-extrabold text-slate-900">{heatmapPlots[hoveredHeatmapIndex].village}</span>
                 </div>
                 <div>
-                  <span className="block text-[8px] text-slate-400 font-bold uppercase">Health</span>
+                  <span className="block text-[8px] text-slate-400 font-bold uppercase">{t('analyticsscreen.health')}</span>
                   <span className={`font-black ${
                     heatmapPlots[hoveredHeatmapIndex].score >= 80 ? "text-emerald-600" :
                     heatmapPlots[hoveredHeatmapIndex].score >= 60 ? "text-amber-600" : "text-rose-650"
@@ -885,11 +901,12 @@ export const AnalyticsScreen: React.FC = () => {
       <div className="bg-white/95 border border-slate-200/80 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 text-left space-y-5">
         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
           <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-            <Bot className="w-4.5 h-4.5 text-emerald-600" /> AI Agronomy Insights
-          </h4>
+            <Bot className="w-4.5 h-4.5 text-emerald-600" />  {t('analyticsscreen.ai_agronomy_insights')}
+                                </h4>
           <span className="text-[10px] font-black text-emerald-750 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-            Real-time recommendations
-          </span>
+            
+                                  {t('analyticsscreen.real_time_recommendations')}
+                                </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -923,9 +940,10 @@ export const AnalyticsScreen: React.FC = () => {
           <div>
             <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
               <Calendar className="w-4.5 h-4.5 text-emerald-600" />
-              Generated Analytical Reports
-            </h3>
-            <p className="text-[11px] text-slate-450 mt-0.5">Telemetry reports compiled for cooperatives</p>
+              
+                                        {t('analyticsscreen.generated_analytical_reports')}
+                                      </h3>
+            <p className="text-[11px] text-slate-450 mt-0.5">{t('analyticsscreen.telemetry_reports_compiled_for_cooperati')}</p>
           </div>
         </div>
 
@@ -933,11 +951,11 @@ export const AnalyticsScreen: React.FC = () => {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-200 text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                <th className="py-3.5 px-6">Report Title</th>
-                <th className="py-3.5 px-6">Landholder</th>
-                <th className="py-3.5 px-6">Compiled Date</th>
-                <th className="py-3.5 px-6">Status</th>
-                <th className="py-3.5 px-6 text-right pr-6">Download Link</th>
+                <th className="py-3.5 px-6">{t('analyticsscreen.report_title')}</th>
+                <th className="py-3.5 px-6">{t('analyticsscreen.landholder')}</th>
+                <th className="py-3.5 px-6">{t('analyticsscreen.compiled_date')}</th>
+                <th className="py-3.5 px-6">{t('analyticsscreen.status')}</th>
+                <th className="py-3.5 px-6 text-right pr-6">{t('analyticsscreen.download_link')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -953,7 +971,8 @@ export const AnalyticsScreen: React.FC = () => {
                   </td>
                   <td className="py-4 px-6 text-right pr-6">
                     <button className="text-emerald-700 hover:text-emerald-800 bg-transparent border-0 cursor-pointer font-extrabold inline-flex items-center gap-0.5">
-                      Download PDF <ArrowUpRight className="w-3.5 h-3.5" />
+                      
+                                                    {t('analyticsscreen.download_pdf')} <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
                   </td>
                 </tr>
@@ -965,35 +984,36 @@ export const AnalyticsScreen: React.FC = () => {
 
       {/* ================= 13. EXPORT ACTIONS SECTION ================= */}
       <div className="flex flex-wrap gap-3 items-center justify-start bg-slate-50 border border-slate-200 p-4 rounded-2xl text-xs font-bold text-slate-800">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-2 pr-4">Global actions:</span>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-2 pr-4">{t('analyticsscreen.global_actions')}</span>
         
         <button
           onClick={() => alert("Downloading analytical payload...")}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          <Download className="w-4 h-4 text-slate-500" /> Export PDF Report
-        </button>
+          <Download className="w-4 h-4 text-slate-500" />  {t('analyticsscreen.export_pdf_report')}
+                          </button>
 
         <button
           onClick={() => alert("Exported database records to CSV.")}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          Export CSV Records
-        </button>
+          
+                            {t('analyticsscreen.export_csv_records')}
+                          </button>
 
         <button
           onClick={() => alert("Dashboard share payload copied.")}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          <Share2 className="w-4 h-4 text-slate-500" /> Share Dashboard
-        </button>
+          <Share2 className="w-4 h-4 text-slate-500" />  {t('analyticsscreen.share_dashboard')}
+                          </button>
 
         <button
           onClick={() => window.print()}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
-          <Printer className="w-4 h-4 text-slate-500" /> Print Summary
-        </button>
+          <Printer className="w-4 h-4 text-slate-500" />  {t('analyticsscreen.print_summary')}
+                          </button>
       </div>
 
     </motion.div>
