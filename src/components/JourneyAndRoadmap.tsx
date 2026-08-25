@@ -14,44 +14,44 @@ export const JourneyAndRoadmap: React.FC = () => {
   const journeyTimeline = [
     {
       step: "01",
-      phase: "Research",
-      title: "Soil Chemistry Base",
-      description: "Conducted initial agronomic analysis of Arecanut cropping patterns and NPK soil depletion models.",
+      phase: t('journey.p1_phase'),
+      title: t('journey.p1_title'),
+      description: t('journey.p1_desc'),
       date: "Q3 2024"
     },
     {
       step: "02",
-      phase: "Farmer Interactions",
-      title: "Dakshina Kannada Audits",
-      description: "Directly interviewed 50+ regional growers to catalog fertilization schedules and field records.",
+      phase: t('journey.p2_phase'),
+      title: t('journey.p2_title'),
+      description: t('journey.p2_desc'),
       date: "Q4 2024"
     },
     {
       step: "03",
-      phase: "Problem Discovery",
-      title: "Data Gap Pinpointing",
-      description: "Identified core pain points: region-wide generic suggestions and unintelligible chemistry lab sheets.",
+      phase: t('journey.p3_phase'),
+      title: t('journey.p3_title'),
+      description: t('journey.p3_desc'),
       date: "Q1 2025"
     },
     {
       step: "04",
-      phase: "Product Planning",
-      title: "Digital Twin Specs",
-      description: "Defined functional templates for building plot-level digital profiles and NPK recommendation scripts.",
+      phase: t('journey.p4_phase'),
+      title: t('journey.p4_title'),
+      description: t('journey.p4_desc'),
       date: "Q2 2025"
     },
     {
       step: "05",
-      phase: "Prototype",
-      title: "Vite Console Release",
-      description: "Built the interactive digital twin prototype and custom chart telemetry console.",
+      phase: t('journey.p5_phase'),
+      title: t('journey.p5_title'),
+      description: t('journey.p5_desc'),
       date: "Q3 2025"
     },
     {
       step: "06",
-      phase: "Incubation",
-      title: "Incubation Centre Pitch",
-      description: "Presenting the verified software mockup to the Incubation Centre to secure initial seed funding.",
+      phase: t('journey.p6_phase'),
+      title: t('journey.p6_title'),
+      description: t('journey.p6_desc'),
       date: "Present"
     }
   ];
@@ -60,58 +60,58 @@ export const JourneyAndRoadmap: React.FC = () => {
   const roadmapItems = [
     {
       icon: <Cpu className="w-5 h-5" />,
-      title: "AI Agronomist Core",
-      desc: "Our neural NPK prescription recommendation models mapping soil cores to fertilizer recipes.",
-      status: "completed",
+      title: t('roadmap.r1_title'),
+      desc: t('roadmap.r1_desc'),
+      statusLabel: t('roadmap.completed'),
       badgeColor: "bg-green-50 text-green-700 border-green-150"
     },
     {
       icon: <TrendingUp className="w-5 h-5" />,
-      title: "Yield Prediction",
-      desc: "Calculate harvest weight forecasts based on current NDVI indices and moisture trends.",
-      status: "completed",
+      title: t('roadmap.r2_title'),
+      desc: t('roadmap.r2_desc'),
+      statusLabel: t('roadmap.completed'),
       badgeColor: "bg-green-50 text-green-700 border-green-150"
     },
     {
       icon: <Orbit className="w-5 h-5" />,
-      title: "Satellite Monitoring",
-      desc: "Integrate high-revisit multi-spectral satellite telemetry to scan canopy biomass.",
-      status: "in-progress",
+      title: t('roadmap.r3_title'),
+      desc: t('roadmap.r3_desc'),
+      statusLabel: t('roadmap.in_progress'),
       badgeColor: "bg-amber-50 text-amber-700 border-amber-150"
     },
     {
       icon: <CloudSun className="w-5 h-5" />,
-      title: "Weather Intelligence",
-      desc: "Connect local micro-climate forecast nodes to alert growers of frost and heavy rain anomalies.",
-      status: "in-progress",
+      title: t('roadmap.r4_title'),
+      desc: t('roadmap.r4_desc'),
+      statusLabel: t('roadmap.in_progress'),
       badgeColor: "bg-amber-50 text-amber-700 border-amber-150"
     },
     {
       icon: <Eye className="w-5 h-5" />,
-      title: "Computer Vision SCAN",
-      desc: "Enable mobile camera scanning of crop leaves to analyze visual chlorophyll health.",
-      status: "coming-soon",
+      title: t('roadmap.r5_title'),
+      desc: t('roadmap.r5_desc'),
+      statusLabel: t('roadmap.coming_soon'),
       badgeColor: "bg-purple-50 text-purple-700 border-purple-150"
     },
     {
       icon: <AlertTriangle className="w-5 h-5" />,
-      title: "Disease Detection",
-      desc: "Deploy neural networks trained to scan leaf spotting and rust indices before spreading.",
-      status: "coming-soon",
+      title: t('roadmap.r6_title'),
+      desc: t('roadmap.r6_desc'),
+      statusLabel: t('roadmap.coming_soon'),
       badgeColor: "bg-purple-50 text-purple-700 border-purple-150"
     },
     {
       icon: <Radio className="w-5 h-5" />,
-      title: "IoT Soil Sensors",
-      desc: "In-field telemetry nodes measuring nitrogen diffusion and volumetric water content real-time.",
-      status: "coming-soon",
+      title: t('roadmap.r7_title'),
+      desc: t('roadmap.r7_desc'),
+      statusLabel: t('roadmap.coming_soon'),
       badgeColor: "bg-purple-50 text-purple-700 border-purple-150"
     },
     {
       icon: <Plane className="w-5 h-5" />,
-      title: "Drone Analytics",
-      desc: "Orchestrate automated thermal mapping sweeps for large-scale operations.",
-      status: "coming-soon",
+      title: t('roadmap.r8_title'),
+      desc: t('roadmap.r8_desc'),
+      statusLabel: t('roadmap.coming_soon'),
       badgeColor: "bg-purple-50 text-purple-700 border-purple-150"
     }
   ];
@@ -125,9 +125,9 @@ export const JourneyAndRoadmap: React.FC = () => {
           
           <div className="mb-20 flex justify-center">
             <SectionHeading
-              eyebrow="The Story"
-              title={t('journeyandroadmap.our_journey')}
-              description="Trace the developmental milestone milestones of Samruddhi Organics, mapping agronomic research into software execution."
+              eyebrow={t('journey.eyebrow')}
+              title={t('journey.title')}
+              description={t('journey.subtitle')}
             />
           </div>
 
@@ -173,9 +173,9 @@ export const JourneyAndRoadmap: React.FC = () => {
           
           <div className="mb-20 flex justify-center">
             <SectionHeading
-              eyebrow="The Future"
-              title={t('journeyandroadmap.future_roadmap')}
-              description="Our product scaling direction, expanding from core recommendation Twins to full geospatial automated diagnostics."
+              eyebrow={t('roadmap.eyebrow')}
+              title={t('roadmap.title')}
+              description={t('roadmap.subtitle')}
             />
           </div>
 
@@ -201,7 +201,7 @@ export const JourneyAndRoadmap: React.FC = () => {
                     </div>
                     {/* Status Badge */}
                     <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded-md border uppercase tracking-wider ${item.badgeColor}`}>
-                      {item.status.replace("-", " ")}
+                      {item.statusLabel}
                     </span>
                   </div>
                   

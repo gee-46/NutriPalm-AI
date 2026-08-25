@@ -145,20 +145,20 @@ export const AnalyticsScreen: React.FC = () => {
 
   // 1. KPI Cards Data
   const kpiCards = [
-    { label: "Registered Farmers", val: 142, trend: "+12%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Users className="w-5 h-5" />, spark: [30, 42, 58, 80, 110, 142] },
-    { label: "Active Farm Plots", val: 39, trend: "+8%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <LayoutGrid className="w-5 h-5" />, spark: [12, 18, 22, 28, 35, 39] },
-    { label: "AI Recommendations", val: 185, trend: "+24%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Bot className="w-5 h-5" />, spark: [40, 75, 110, 130, 160, 185] },
-    { label: "Average Soil Health", val: 84, suffix: "%", trend: "+4%", color: "text-emerald-650", bg: "bg-emerald-50", icon: <Activity className="w-5 h-5" />, spark: [78, 80, 81, 83, 82, 84] },
-    { label: "Yield Improvement", val: 18.2, suffix: "%", trend: "+14%", color: "text-emerald-605", bg: "bg-emerald-50", icon: <TrendingUp className="w-5 h-5" />, spark: [10, 12, 14, 15, 17, 18.2] },
-    { label: "Active IoT Sensors", val: 118, trend: "Online", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Cpu className="w-5 h-5" />, spark: [90, 102, 108, 112, 116, 118] }
+    { label: t('farmerscreen.registered_farmers'), val: 142, trend: "+12%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Users className="w-5 h-5" />, spark: [30, 42, 58, 80, 110, 142] },
+    { label: t('farmerscreen.active_farms'), val: 39, trend: "+8%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <LayoutGrid className="w-5 h-5" />, spark: [12, 18, 22, 28, 35, 39] },
+    { label: t('recommendationscreen.ai_crop_recommendation_engine'), val: 185, trend: "+24%", color: "text-emerald-600", bg: "bg-emerald-50", icon: <Bot className="w-5 h-5" />, spark: [40, 75, 110, 130, 160, 185] },
+    { label: t('farmerscreen.average_soil_health'), val: 84, suffix: "%", trend: "+4%", color: "text-emerald-650", bg: "bg-emerald-50", icon: <Activity className="w-5 h-5" />, spark: [78, 80, 81, 83, 82, 84] },
+    { label: t('recommendationscreen.yield_increase'), val: 18.2, suffix: "%", trend: "+14%", color: "text-emerald-605", bg: "bg-emerald-50", icon: <TrendingUp className="w-5 h-5" />, spark: [10, 12, 14, 15, 17, 18.2] },
+    { label: t('analyticsscreen.active_iot_sensors'), val: 118, trend: t('analyticsscreen.online'), color: "text-emerald-600", bg: "bg-emerald-50", icon: <Cpu className="w-5 h-5" />, spark: [90, 102, 108, 112, 116, 118] }
   ];
 
   // 2. Crop Distribution Doughnut Chart Data
   const cropSlices = [
-    { name: "Oil Palm", pct: 40, color: "#10b981", acres: 15.8 },
-    { name: "Rice", pct: 25, color: "#3b82f6", acres: 9.9 },
-    { name: "Sugarcane", pct: 20, color: "#f59e0b", acres: 7.9 },
-    { name: "Cocoa / Banana", pct: 15, color: "#8b5cf6", acres: 5.9 }
+    { name: t('analyticsscreen.oil_palm'), pct: 40, color: "#10b981", acres: 15.8 },
+    { name: t('analyticsscreen.rice'), pct: 25, color: "#3b82f6", acres: 9.9 },
+    { name: t('analyticsscreen.sugarcane'), pct: 20, color: "#f59e0b", acres: 7.9 },
+    { name: t('analyticsscreen.cocoa_banana'), pct: 15, color: "#8b5cf6", acres: 5.9 }
   ];
 
   const radius = 54;
@@ -263,19 +263,19 @@ export const AnalyticsScreen: React.FC = () => {
 
   // 10. AI Insights List
   const aiInsights = [
-    { text: "AI detected increasing nitrogen deficiency in 3 farms.", score: "94% Conf", time: "10m ago", icon: <AlertTriangle className="w-4.5 h-4.5 text-amber-500" />, severity: "Warning" },
-    { text: "Yield expected to improve by 18.2% this harvesting cycle.", score: "96% Conf", time: "2h ago", icon: <TrendingUp className="w-4.5 h-4.5 text-primary" />, severity: "Optimal" },
-    { text: "Monsoon precipitation will decrease active irrigation output needs next week.", score: "89% Conf", time: "4h ago", icon: <Droplets className="w-4.5 h-4.5 text-blue-500" />, severity: "Info" },
-    { text: "No biological pests or fungal leaf infections detected in Sentinel-2 scan.", score: "98% Conf", time: "1d ago", icon: <CheckCircle className="w-4.5 h-4.5 text-primary" />, severity: "Optimal" },
-    { text: "Average farm health index increased by 8.4% across Dakshina district.", score: "95% Conf", time: "2d ago", icon: <Sparkles className="w-4.5 h-4.5 text-primary" />, severity: "Optimal" }
+    { text: t('analyticsscreen.ai_detected_increasing_nitrogen'), score: "94% Conf", time: "10m ago", icon: <AlertTriangle className="w-4.5 h-4.5 text-amber-500" />, severity: t('analyticsscreen.warning') },
+    { text: t('analyticsscreen.yield_expected_to_improve'), score: "96% Conf", time: "2h ago", icon: <TrendingUp className="w-4.5 h-4.5 text-primary" />, severity: t('analyticsscreen.optimal') },
+    { text: t('analyticsscreen.monsoon_precipitation_will_decrease'), score: "89% Conf", time: "4h ago", icon: <Droplets className="w-4.5 h-4.5 text-blue-500" />, severity: t('analyticsscreen.info') },
+    { text: t('analyticsscreen.no_biological_pests_or'), score: "98% Conf", time: "1d ago", icon: <CheckCircle className="w-4.5 h-4.5 text-primary" />, severity: t('analyticsscreen.optimal') },
+    { text: t('analyticsscreen.average_farm_health_index'), score: "95% Conf", time: "2d ago", icon: <Sparkles className="w-4.5 h-4.5 text-primary" />, severity: t('analyticsscreen.optimal') }
   ];
 
   // 11. Reports List Table
   const reportsList = [
-    { name: "Soil Chemistry Analysis Report", farmer: "Swaminathan Gowda", date: "Jul 25, 2026", status: "Completed", color: "bg-emerald-50 text-primary border-emerald-150" },
-    { name: "Quarterly Yield Prediction Forecast", farmer: "K. Ramachandra Rao", date: "Jul 22, 2026", status: "Completed", color: "bg-emerald-50 text-primary border-emerald-150" },
-    { name: "NPK Custom Fertilizer Advisor", farmer: "M. Devamma", date: "Jul 20, 2026", status: "Processing", color: "bg-amber-50 text-amber-600 border-amber-150 animate-pulse" },
-    { name: "Water Schedule Optimization Grid", farmer: "Rajesh Kumar", date: "Jul 18, 2026", status: "Pending", color: "bg-gray-50 text-gray-500 border-gray-150" }
+    { name: t('analyticsscreen.soil_chemistry_analysis_report'), farmer: "Swaminathan Gowda", date: "Jul 25, 2026", status: t('analyticsscreen.completed_1'), color: "bg-emerald-50 text-primary border-emerald-150" },
+    { name: t('analyticsscreen.quarterly_yield_prediction_forecast'), farmer: "K. Ramachandra Rao", date: "Jul 22, 2026", status: t('analyticsscreen.completed_1'), color: "bg-emerald-50 text-primary border-emerald-150" },
+    { name: t('analyticsscreen.npk_custom_fertilizer_advisor'), farmer: "M. Devamma", date: "Jul 20, 2026", status: t('analyticsscreen.processing'), color: "bg-amber-50 text-amber-600 border-amber-150 animate-pulse" },
+    { name: t('analyticsscreen.water_schedule_optimization_grid'), farmer: "Rajesh Kumar", date: "Jul 18, 2026", status: t('analyticsscreen.pending_1'), color: "bg-gray-50 text-gray-500 border-gray-150" }
   ];
 
 
@@ -987,14 +987,14 @@ export const AnalyticsScreen: React.FC = () => {
         <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-2 pr-4">{t('analyticsscreen.global_actions')}</span>
         
         <button
-          onClick={() => alert("Downloading analytical payload...")}
+          onClick={() => alert('analyticsscreen.downloading_analytical_payload')}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
           <Download className="w-4 h-4 text-slate-500" />  {t('analyticsscreen.export_pdf_report')}
                           </button>
 
         <button
-          onClick={() => alert("Exported database records to CSV.")}
+          onClick={() => alert('analyticsscreen.exported_database_records_to')}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
           
@@ -1002,7 +1002,7 @@ export const AnalyticsScreen: React.FC = () => {
                           </button>
 
         <button
-          onClick={() => alert("Dashboard share payload copied.")}
+          onClick={() => alert('analyticsscreen.dashboard_share_payload_copied')}
           className="px-4 py-2.5 bg-white border border-slate-250 hover:bg-slate-55 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl cursor-pointer inline-flex items-center gap-1.5"
         >
           <Share2 className="w-4 h-4 text-slate-500" />  {t('analyticsscreen.share_dashboard')}

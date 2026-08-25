@@ -35,9 +35,9 @@ export const Features: React.FC = () => {
         {/* Section Heading */}
         <div className="mb-20 flex justify-center">
           <SectionHeading
-            eyebrow="The Console Suite"
-            title={t('features.unified_agritech_infrastructure')}
-            description="NutriPalm AI bundles six premium modules into a unified bento interface, giving operators complete oversight of their agricultural ecosystem."
+            eyebrow={t('features.eyebrow')}
+            title={t('features.title')}
+            description={t('features.desc')}
           />
         </div>
 

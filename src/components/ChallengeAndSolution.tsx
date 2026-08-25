@@ -12,37 +12,37 @@ export const ChallengeAndSolution: React.FC = () => {
   const problems = [
     {
       icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
-      title: "Generic Fertilizer Recommendations",
-      description: "Region-wide guidelines that ignore plot-specific soil conditions, leading to nutrient imbalances and wasted capital.",
-      badge: "Vague Input"
+      title: t('challenge.problem1_title'),
+      description: t('challenge.problem1_desc'),
+      badge: t('challenge.problem1_badge')
     },
     {
       icon: <FileText className="w-5 h-5 text-[#2E7D32]" />,
-      title: "Difficult Soil Reports",
-      description: "Complex laboratory reports filled with raw chemical values and abbreviations that are impossible for growers to decipher.",
-      badge: "Raw Chemistry"
+      title: t('challenge.problem2_title'),
+      description: t('challenge.problem2_desc'),
+      badge: t('challenge.problem2_badge')
     },
     {
       icon: <FolderSync className="w-5 h-5 text-sky-500" />,
-      title: "No Digital Farm History",
-      description: "Vital field logs, historic yields, and previous NPK inputs are scattered across papers or completely forgotten.",
-      badge: "Zero Records"
+      title: t('challenge.problem3_title'),
+      description: t('challenge.problem3_desc'),
+      badge: t('challenge.problem3_badge')
     },
     {
       icon: <BrainCircuit className="w-5 h-5 text-purple-500" />,
-      title: "Decisions Without Data",
-      description: "Growers manage water levels and fertilizer applications based on intuition rather than empirical agronomic metrics.",
-      badge: "Blind Farming"
+      title: t('challenge.problem4_title'),
+      description: t('challenge.problem4_desc'),
+      badge: t('challenge.problem4_badge')
     }
   ];
 
   const solutionFlow = [
-    { icon: <User className="w-5 h-5" />, label: "Farmer", desc: "Grower profile onboarding" },
-    { icon: <MapPin className="w-5 h-5" />, label: "Farm Mapping", desc: "GPS boundaries defined" },
-    { icon: <Layers className="w-5 h-5" />, label: "Digital Twin", desc: "Virtual replica mapped" },
-    { icon: <FlaskConical className="w-5 h-5" />, label: "Soil Intelligence", desc: "Chemical data uploaded" },
-    { icon: <Cpu className="w-5 h-5" />, label: "AI Recommendation", desc: "Target NPK recipes" },
-    { icon: <CheckCircle className="w-5 h-5" />, label: "Smarter Decisions", desc: "Optimal yield actions" }
+    { icon: <User className="w-5 h-5" />, label: t('challenge.flow_farmer'), desc: t('challenge.flow_farmer_desc') },
+    { icon: <MapPin className="w-5 h-5" />, label: t('challenge.flow_mapping'), desc: t('challenge.flow_mapping_desc') },
+    { icon: <Layers className="w-5 h-5" />, label: t('challenge.flow_twin'), desc: t('challenge.flow_twin_desc') },
+    { icon: <FlaskConical className="w-5 h-5" />, label: t('challenge.flow_soil'), desc: t('challenge.flow_soil_desc') },
+    { icon: <Cpu className="w-5 h-5" />, label: t('challenge.flow_ai'), desc: t('challenge.flow_ai_desc') },
+    { icon: <CheckCircle className="w-5 h-5" />, label: t('challenge.flow_decisions'), desc: t('challenge.flow_decisions_desc') }
   ];
 
   const containerVariants = {
@@ -71,9 +71,9 @@ export const ChallengeAndSolution: React.FC = () => {
           
           <div className="mb-20 flex justify-center">
             <SectionHeading
-              eyebrow="The Bottleneck"
-              title={t('challengeandsolution.the_challenge_in_modern_agriculture')}
-              description="Farming currently operates with critical information gaps, making it difficult to make precise agronomic choices."
+              eyebrow={t('challenge.eyebrow')}
+              title={t('challenge.title')}
+              description={t('challenge.desc')}
             />
           </div>
 
@@ -144,9 +144,9 @@ export const ChallengeAndSolution: React.FC = () => {
           
           <div className="mb-20 flex justify-center">
             <SectionHeading
-              eyebrow="The Innovation"
-              title={t('challengeandsolution.our_solution')}
-              description="NutriPalm AI exists to convert soil reports into live digital twins, delivering precise crop-nutrition guidelines straight to the farmer."
+              eyebrow={t('about.solution_eyebrow')}
+              title={t('challenge.solution_title')}
+              description={t('about.solution_p2')}
             />
           </div>
 

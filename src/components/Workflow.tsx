@@ -23,9 +23,9 @@ export const Workflow: React.FC = () => {
   const steps = [
     {
       icon: <UserPlus className="w-5 h-5" />,
-      title: "Register Farmer",
-      tag: "Step 01",
-      description: "Onboard the grower by registering regional coordinate indexes, farm size, and harvest records.",
+      title: t('workflow.steps.0.title'),
+      tag: t('workflow.steps.0.tag'),
+      description: t('workflow.steps.0.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-4 w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -41,9 +41,9 @@ export const Workflow: React.FC = () => {
     },
     {
       icon: <Compass className="w-5 h-5" />,
-      title: "Create Farm Plot",
-      tag: "Step 02",
-      description: "Input coordinates or draw boundary lines to map exactly where crops will grow.",
+      title: t('workflow.steps.1.title'),
+      tag: t('workflow.steps.1.tag'),
+      description: t('workflow.steps.1.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full h-20 relative overflow-hidden flex items-center justify-center">
           <svg className="w-14 h-14 text-[#2E7D32] drop-shadow-sm" viewBox="0 0 100 100" fill="none">
@@ -59,9 +59,9 @@ export const Workflow: React.FC = () => {
     },
     {
       icon: <Layers className="w-5 h-5" />,
-      title: "Generate Digital Twin",
-      tag: "Step 03",
-      description: "Overlay historical moisture models, slope elevations, and NDVI biomass sensors into a virtual replica.",
+      title: t('workflow.steps.2.title'),
+      tag: t('workflow.steps.2.tag'),
+      description: t('workflow.steps.2.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex flex-col gap-2 justify-center">
           <div className="h-4 rounded bg-indigo-500/10 border border-indigo-150 text-[9px] font-bold text-indigo-700 px-3 flex items-center justify-between">
@@ -75,9 +75,9 @@ export const Workflow: React.FC = () => {
     },
     {
       icon: <FileUp className="w-5 h-5" />,
-      title: "Upload Soil Report",
-      tag: "Step 04",
-      description: "Feed organic soil chemistry values (nitrogen, organic carbon, moisture levels, acidity pH) to our analyzer.",
+      title: t('workflow.steps.3.title'),
+      tag: t('workflow.steps.3.tag'),
+      description: t('workflow.steps.3.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -95,9 +95,9 @@ export const Workflow: React.FC = () => {
     },
     {
       icon: <Cpu className="w-5 h-5" />,
-      title: "AI Analysis",
-      tag: "Step 05",
-      description: "Compare soil metrics against thousands of regional matrices to identify chemical bottlenecks and soil depletion.",
+      title: t('workflow.steps.4.title'),
+      tag: t('workflow.steps.4.tag'),
+      description: t('workflow.steps.4.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full h-20 flex items-center justify-center overflow-hidden">
           <svg className="w-full h-12 text-[#2E7D32]" viewBox="0 0 100 40">
@@ -119,9 +119,9 @@ export const Workflow: React.FC = () => {
     },
     {
       icon: <ClipboardCheck className="w-5 h-5" />,
-      title: "Receive Personalized Recommendation",
-      tag: "Step 06",
-      description: "Access detailed fertilizer schedules, soil correction steps, and crop rotation advisories tailored for Dakshina Kannada.",
+      title: t('workflow.steps.5.title'),
+      tag: t('workflow.steps.5.tag'),
+      description: t('workflow.steps.5.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex items-center justify-between">
           <div className="text-left flex flex-col">
@@ -134,9 +134,9 @@ export const Workflow: React.FC = () => {
     },
     {
       icon: <LayoutDashboard className="w-5 h-5" />,
-      title: "Farm Dashboard",
-      tag: "Step 07",
-      description: "Open the console to monitor real-time weather feeds, NDVI moisture indexes, and upcoming yield alerts.",
+      title: t('workflow.steps.6.title'),
+      tag: t('workflow.steps.6.tag'),
+      description: t('workflow.steps.6.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full flex flex-col justify-between h-20">
           <div className="flex justify-between text-[9px] font-bold text-gray-400">
@@ -162,9 +162,9 @@ export const Workflow: React.FC = () => {
         {/* Section Heading */}
         <div className="mb-24 flex justify-center">
           <SectionHeading
-            eyebrow="Operational Flow"
-            title={t('workflow.how_nutripalm_ai_works')}
-            description="Our step-by-step digital process guides growers from registration all the way to precision dashboard analytics."
+            eyebrow={t('workflow.eyebrow')}
+            title={t('workflow.title')}
+            description={t('workflow.description')}
           />
         </div>
 

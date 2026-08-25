@@ -3,83 +3,86 @@ import React, { useRef, useState, useEffect } from "react";
 import { ShieldCheck, ArrowRight, HelpCircle, EyeOff, LayoutGrid, BarChart3 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 
-const teamMembers = [
-  {
-    id: "sathwik",
-    name: "Sathwik Krishna",
-    role: "Founder & CEO",
-    imgSrc: "/sathwik-krishna.jpg",
-    initials: "SK",
-    imgPos: "object-[center_20%]",
-    desc: "Founder & CEO of Samruddhi Organics, leading the company's vision of transforming agriculture through innovation, sustainability, and technology. Spearheading the development of NutriPalm AI to empower farmers with intelligent digital solutions and data-driven decision-making."
-  },
-  {
-    id: "dhanush",
-    name: "Dhanush",
-    role: "Managing Partner",
-    imgSrc: "/suhan.png",
-    initials: "D",
-    imgPos: "object-[center_16%]",
-    desc: "Oversees strategic operations, business growth initiatives, and organizational planning while supporting the execution of NutriPalm AI's vision."
-  },
-  {
-    id: "suhan",
-    name: "Suhan",
-    role: "Managing Partner",
-    imgSrc: "/dhanush.png",
-    initials: "S",
-    imgPos: "object-[center_12%]",
-    desc: "Leads strategic partnerships, operational coordination, and cross-functional collaboration to drive the growth and successful implementation of NutriPalm AI."
-  },
-  {
-    id: "samruddhi-pai",
-    name: "Samruddhi Pai",
-    role: "Marketing Head",
-    imgSrc: "/samruddhi-pai.png",
-    initials: "SP",
-    imgPos: "object-[center_18%]",
-    desc: "Leads the marketing initiatives for NutriPalm AI, focusing on brand strategy, campaign planning, community outreach, and creating impactful communication that connects innovation with the agricultural community."
-  },
-  {
-    id: "nihal",
-    name: "Nihal P K",
-    role: "Marketing Head",
-    imgSrc: "/nihal.jpg",
-    initials: "NP",
-    imgPos: "object-[center_18%]",
-    desc: "Drives marketing strategy and brand engagement for NutriPalm AI by planning campaigns, strengthening outreach initiatives, and promoting the platform's vision to farmers, partners, and the wider AgriTech ecosystem."
-  },
-  {
-    id: "bhumika",
-    name: "Bhumika Rao",
-    role: "Marketing Head",
-    imgSrc: "/bhumika.jpg",
-    initials: "BR",
-    imgPos: "object-[center_18%]",
-    desc: "Leads brand communication and marketing initiatives for NutriPalm AI, focusing on creative campaigns, community engagement, digital outreach, and strengthening the platform's presence across the AgriTech ecosystem."
-  },
-  {
-    id: "karthik",
-    name: "Karthik H V",
-    role: "Social Media Marketing",
-    imgSrc: "/karthik.jpg",
-    initials: "KH",
-    imgPos: "object-[center_18%]",
-    desc: "Leads NutriPalm AI's social media presence by creating engaging content, managing digital campaigns, strengthening community engagement, and increasing the platform's visibility across social media channels."
-  },
-  {
-    id: "gautam",
-    name: "Gautam N Chipkar",
-    role: "Technical Lead – AI & Platform Engineering",
-    imgSrc: "/gautam.png",
-    initials: "GC",
-    imgPos: "object-[center_40%]",
-    desc: "Leads the AI strategy, system architecture, and technical development of NutriPalm AI. Responsible for designing the platform, integrating Digital Twin concepts, developing intelligent workflows, and building scalable AI-powered solutions that enable data-driven precision agriculture."
-  }
-];
+
 
 export const About: React.FC = () => {
-    const { t } = useTranslation();
+  const { t } = useTranslation();
+  
+  const teamMembers = [
+    {
+      id: "sathwik",
+      name: "Sathwik Krishna",
+      role: t('about.roles.Founder & CEO'),
+      imgSrc: "/sathwik-krishna.jpg",
+      initials: "SK",
+      imgPos: "object-[center_20%]",
+      desc: t('about.team.sathwik')
+    },
+    {
+      id: "dhanush",
+      name: "Dhanush",
+      role: t('about.roles.Managing Partner'),
+      imgSrc: "/suhan.png",
+      initials: "D",
+      imgPos: "object-[center_16%]",
+      desc: t('about.team.dhanush')
+    },
+    {
+      id: "suhan",
+      name: "Suhan",
+      role: t('about.roles.Managing Partner'),
+      imgSrc: "/dhanush.png",
+      initials: "S",
+      imgPos: "object-[center_12%]",
+      desc: t('about.team.suhan')
+    },
+    {
+      id: "samruddhi-pai",
+      name: "Samruddhi Pai",
+      role: t('about.roles.Marketing Head'),
+      imgSrc: "/samruddhi-pai.png",
+      initials: "SP",
+      imgPos: "object-[center_18%]",
+      desc: t('about.team.samruddhi-pai')
+    },
+    {
+      id: "nihal",
+      name: "Nihal P K",
+      role: t('about.roles.Marketing Head'),
+      imgSrc: "/nihal.jpg",
+      initials: "NP",
+      imgPos: "object-[center_18%]",
+      desc: t('about.team.nihal')
+    },
+    {
+      id: "bhumika",
+      name: "Bhumika Rao",
+      role: t('about.roles.Marketing Head'),
+      imgSrc: "/bhumika.jpg",
+      initials: "BR",
+      imgPos: "object-[center_18%]",
+      desc: t('about.team.bhumika')
+    },
+    {
+      id: "karthik",
+      name: "Karthik H V",
+      role: t('about.roles.Social Media Marketing'),
+      imgSrc: "/karthik.jpg",
+      initials: "KH",
+      imgPos: "object-[center_18%]",
+      desc: t('about.team.karthik')
+    },
+    {
+      id: "gautam",
+      name: "Gautam N Chipkar",
+      role: t('about.roles.Technical Lead – AI & Platform Engineering'),
+      imgSrc: "/gautam.png",
+      initials: "GC",
+      imgPos: "object-[center_40%]",
+      desc: t('about.team.gautam')
+    }
+  ];
+
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.35 });
   const [hasEntered, setHasEntered] = useState(false);
@@ -96,43 +99,43 @@ export const About: React.FC = () => {
   const milestones = [
     {
       emoji: "🌱",
-      title: "Supported 50+ Farmers",
-      description: "Directly onboarded and guided growers across Dakshina Kannada, tailoring practices to their specific local environments."
+      title: t('about.ms1_title'),
+      description: t('about.ms1_desc')
     },
     {
       emoji: "🧪",
-      title: "Delivered Soil-Test Recommendations",
-      description: "Built fertilizer plans grounded in laboratory chemistry analysis rather than regional guesswork."
+      title: t('about.ms2_title'),
+      description: t('about.ms2_desc')
     },
     {
       emoji: "🌴",
-      title: "Precision Nutrient Recipes",
-      description: "Developed custom arecanut and crop nutrition recipes, balancing fertilizer applications and boosting yields."
+      title: t('about.ms3_title'),
+      description: t('about.ms3_desc')
     },
     {
       emoji: "📍",
-      title: "Soil Intelligence Leadership",
-      description: "Amassed deep field expertise in soil chemistry dynamics, water absorption capacities, and micro-nutrient profiles."
+      title: t('about.ms4_title'),
+      description: t('about.ms4_desc')
     }
   ];
 
   const transitionSteps = [
-    { label: "Samruddhi Organics", desc: "Sustainable Ag Initative" },
-    { label: "Farmer Interactions", desc: "Understanding field bottlenecks" },
-    { label: "Real Ag Problems", desc: "Chemical clutters & raw reports" },
-    { label: "Scientific Research", desc: "Soil mapping & custom recipes" },
-    { label: "NutriPalm AI", desc: "Platform concept creation" },
-    { label: "Digital Agronomist", desc: "AI-powered Digital Twin" }
+    { label: t('about.evolution.0.label'), desc: t('about.evolution.0.desc') },
+    { label: t('about.evolution.1.label'), desc: t('about.evolution.1.desc') },
+    { label: t('about.evolution.2.label'), desc: t('about.evolution.2.desc') },
+    { label: t('about.evolution.3.label'), desc: t('about.evolution.3.desc') },
+    { label: t('about.evolution.4.label'), desc: t('about.evolution.4.desc') },
+    { label: t('about.evolution.5.label'), desc: t('about.evolution.5.desc') }
   ];
 
   const timelineSteps = [
-    { phase: "Research", detail: "Agronomy analysis" },
-    { phase: "Farmer Feedback", detail: "Dakshina Kannada pilots" },
-    { phase: "Product Vision", detail: "Precision templates" },
-    { phase: "Digital Twin Concept", detail: "Layered farm maps" },
-    { phase: "Prototype", detail: "Vite/React twin builder" },
-    { phase: "Incubation Centre", detail: "Pitch validation" },
-    { phase: "Pilot Deployment", detail: "Grower release" }
+    { phase: t('about.timeline.0.phase'), detail: t('about.timeline.0.detail') },
+    { phase: t('about.timeline.1.phase'), detail: t('about.timeline.1.detail') },
+    { phase: t('about.timeline.2.phase'), detail: t('about.timeline.2.detail') },
+    { phase: t('about.timeline.3.phase'), detail: t('about.timeline.3.detail') },
+    { phase: t('about.timeline.4.phase'), detail: t('about.timeline.4.detail') },
+    { phase: t('about.timeline.5.phase'), detail: t('about.timeline.5.detail') },
+    { phase: t('about.timeline.6.phase'), detail: t('about.timeline.6.detail') }
   ];
 
   const handleScrollTo = (id: string) => {

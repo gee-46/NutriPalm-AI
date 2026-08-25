@@ -1,4 +1,5 @@
 import { useTranslation } from "../translation/useTranslation";
+import { LanguageToggle } from "../translation/LanguageToggle";
 import React, { useState, useEffect } from "react";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -109,6 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
+          <LanguageToggle />
           <button
             onClick={handleExploreClick}
             disabled={isInitializing}
@@ -175,6 +177,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
+              <div className="flex justify-center mb-6">
+                <LanguageToggle />
+              </div>
               <button
                 onClick={(e) => {
                   setIsMobileMenuOpen(false);
