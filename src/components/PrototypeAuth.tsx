@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, AlertCircle, Sparkles, ArrowRight, ArrowLeft, X, Sprout, BarChart3, MapPin, FlaskConical, Cpu, Globe } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { LanguageToggle } from "../translation/LanguageToggle";
 
 interface PrototypeAuthProps {
   onAuthSuccess: () => void;
@@ -44,13 +45,13 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
   const emailInputRef = useRef<HTMLInputElement>(null);
 
   const steps = [
-    "Loading Platform Resources...",
-    "Initializing Farmer Registry...",
-    "Preparing Digital Twin Engine...",
-    "Loading Soil Intelligence...",
-    "Configuring Recommendation Engine...",
-    "Preparing Analytics Dashboard...",
-    "Platform Ready"
+    t('auth.step_0'),
+    t('auth.step_1'),
+    t('auth.step_2'),
+    t('auth.step_3'),
+    t('auth.step_4'),
+    t('auth.step_5'),
+    t('auth.step_6')
   ];
 
   // Floating background cards: size 120-180px, opacity 15-20%
@@ -447,6 +448,10 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                 
                                                   {t('prototypeauth.back_to_home')}
                                                 </motion.button>
+                                                
+              <div className="fixed z-50 top-6 right-6 md:top-8 md:right-8">
+                <LanguageToggle />
+              </div>
 
               {/* Login Card Panel (15% larger: max-w-[490px], higher opacity, thicker borders) */}
               <div className="w-full max-w-[490px] bg-white/95 border-2 border-gray-200/80 rounded-[32px] p-10 md:p-12 shadow-2xl relative overflow-visible text-left">

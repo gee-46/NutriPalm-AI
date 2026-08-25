@@ -32,11 +32,11 @@ export const DashboardPreview: React.FC = () => {
   };
 
   const weatherForecast = [
-    { day: "Today", temp: "31°", icon: <Sun className="w-4 h-4 text-amber-500" />, pop: "10%" },
-    { day: "Sat", temp: "29°", icon: <CloudRain className="w-4 h-4 text-sky-500" />, pop: "80%" },
-    { day: "Sun", temp: "30°", icon: <CloudRain className="w-4 h-4 text-sky-400" />, pop: "40%" },
-    { day: "Mon", temp: "32°", icon: <Sun className="w-4 h-4 text-amber-500" />, pop: "0%" },
-    { day: "Tue", temp: "33°", icon: <Sun className="w-4 h-4 text-amber-500" />, pop: "0%" }
+    { day: t('dashboardpreview.today'), temp: "31°", icon: <Sun className="w-4 h-4 text-amber-500" />, pop: "10%" },
+    { day: t('dashboardpreview.sat'), temp: "29°", icon: <CloudRain className="w-4 h-4 text-sky-500" />, pop: "80%" },
+    { day: t('dashboardpreview.sun'), temp: "30°", icon: <CloudRain className="w-4 h-4 text-sky-400" />, pop: "40%" },
+    { day: t('dashboardpreview.mon'), temp: "32°", icon: <Sun className="w-4 h-4 text-amber-500" />, pop: "0%" },
+    { day: t('dashboardpreview.tue'), temp: "33°", icon: <Sun className="w-4 h-4 text-amber-500" />, pop: "0%" }
   ];
 
   return (
@@ -49,9 +49,9 @@ export const DashboardPreview: React.FC = () => {
         {/* Header */}
         <div className="mb-16 flex justify-center">
           <SectionHeading
-            eyebrow="Live Environment"
+            eyebrow={t('dashboardpreview.live_environment')}
             title={t('dashboardpreview.experience_the_farm_control_center')}
-            description="An intuitive digital twin control dashboard built for venture operators. Toggle parameters, track live soil sensors, and review crop health."
+            description={t('dashboardpreview.an_intuitive_digital_twin')}
           />
         </div>
 
@@ -122,7 +122,7 @@ export const DashboardPreview: React.FC = () => {
                     className="p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:scale-95 transition-all text-gray-600 flex items-center gap-1.5 text-xs font-semibold"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-                    {isSyncing ? "Syncing..." : "Sync Telemetry"}
+                    {isSyncing ? t('dashboardpreview.syncing') : t('dashboardpreview.sync_telemetry')}
                   </button>
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-150 px-3 py-1 rounded-full">
                     

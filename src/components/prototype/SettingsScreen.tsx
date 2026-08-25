@@ -166,11 +166,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
   };
 
   const tabs = [
-    { id: "Profile", label: "Profile Settings", icon: <User className="w-4 h-4" /> },
-    { id: "Theme", label: "UI Theme", icon: <Sun className="w-4 h-4" /> },
-    { id: "Notifications", label: "Notifications", icon: <Bell className="w-4 h-4" /> },
-    { id: "Language", label: "Language", icon: <Globe className="w-4 h-4" /> },
-    { id: "Organization", label: "Organization", icon: <Building className="w-4 h-4" /> }
+    { id: "Profile", label: t('settingsscreen.profile_details'), icon: <User className="w-4 h-4" /> },
+    { id: "Theme", label: t('settingsscreen.ui_theme_select'), icon: <Sun className="w-4 h-4" /> },
+    { id: "Notifications", label: t('settingsscreen.telemetry_warnings'), icon: <Bell className="w-4 h-4" /> },
+    { id: "Language", label: t('settingsscreen.language_preferences'), icon: <Globe className="w-4 h-4" /> },
+    { id: "Organization", label: t('settingsscreen.organization_licensing'), icon: <Building className="w-4 h-4" /> }
   ];
 
   return (
@@ -243,11 +243,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                     <>
                       <div className="flex items-center gap-4 py-2">
                         <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-primary text-primary flex items-center justify-center font-extrabold text-lg shadow-xs">
-                          {profile.name ? profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() : "LR"}
+                          {profile.name ? profile.name.split('settingsscreen.').map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() : "LR"}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-800">{profile.name || "Unnamed User"}</p>
-                          <p className="text-xs text-gray-400 font-semibold">{profile.role || "Agronomist"}</p>
+                          <p className="text-sm font-bold text-gray-800">{profile.name || t('settingsscreen.unnamed_user')}</p>
+                          <p className="text-xs text-gray-400 font-semibold">{profile.role || t('settingsscreen.agronomist')}</p>
                         </div>
                       </div>
 
@@ -258,21 +258,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.contact_number')}</span>
-                          <span className="text-xs font-semibold text-gray-800">{profile.phone || "Not Configured"}</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.phone || t('settingsscreen.not_configured')}</span>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.state_district')}</span>
                           <span className="text-xs font-semibold text-gray-800">
-                            {profile.state || profile.district ? `${profile.state || ""}, ${profile.district || ""}` : "Not Configured"}
+                            {profile.state || profile.district ? `${profile.state || ""}, ${profile.district || ""}` : t('settingsscreen.not_configured')}
                           </span>
                         </div>
                         <div className="border-b border-gray-100 pb-2">
                           <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.village_name')}</span>
-                          <span className="text-xs font-semibold text-gray-800">{profile.village || "Not Configured"}</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.village || t('settingsscreen.not_configured')}</span>
                         </div>
                         <div className="border-b border-gray-100 pb-2 col-span-1 sm:col-span-2">
                           <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">{t('settingsscreen.preferred_language')}</span>
-                          <span className="text-xs font-semibold text-gray-800">{profile.preferred_language || "English"}</span>
+                          <span className="text-xs font-semibold text-gray-800">{profile.preferred_language || t('settingsscreen.english')}</span>
                         </div>
                       </div>
                     </>

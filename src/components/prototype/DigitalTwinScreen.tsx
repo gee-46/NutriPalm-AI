@@ -1,3 +1,4 @@
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, ChevronRight, Bot, Cpu, RefreshCw, Download, X, Calendar } from "lucide-react";
@@ -26,6 +27,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   onNavigate, 
   showToast 
 }) => {
+  const { t } = useTranslation();
   const [activePlotId, setActivePlotId] = useState("plot-1");
   const [simMode, setSimMode] = useState<"Past" | "Current" | "Prediction">("Current");
   const [isSyncing, setIsSyncing] = useState(false);
@@ -165,12 +167,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   // Soil Nutrient horizontal values
   const soilNutrients = [
-    { label: "pH Score", val: "6.2", pct: 85, color: "bg-emerald-500", text: "Optimal (Slightly Acidic)" },
-    { label: "Nitrogen (N)", val: "72 ppm", pct: 72, color: "bg-emerald-500", text: "Optimal Concentration" },
-    { label: "Phosphorus (P)", val: "48 ppm", pct: 48, color: "bg-amber-500", text: "Deficient - Recommended Boost" },
-    { label: "Potassium (K)", val: "85 ppm", pct: 85, color: "bg-emerald-500", text: "Optimal Content" },
-    { label: "Organic Carbon", val: "1.4%", pct: 78, color: "bg-emerald-500", text: "Excellent Microbial Base" },
-    { label: "EC (Electrical Conductivity)", val: "0.28 dS/m", pct: 52, color: "bg-emerald-500", text: "Optimal Salinity" }
+    { label: t('digitaltwinscreen.ph_score'), val: "6.2", pct: 85, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_slightly_acidic') },
+    { label: t('digitaltwinscreen.nitrogen_n'), val: "72 ppm", pct: 72, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_concentration') },
+    { label: t('digitaltwinscreen.phosphorus_p'), val: "48 ppm", pct: 48, color: "bg-amber-500", text: t('digitaltwinscreen.deficient__recommended_boost') },
+    { label: t('digitaltwinscreen.potassium_k'), val: "85 ppm", pct: 85, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_content') },
+    { label: t('digitaltwinscreen.organic_carbon'), val: "1.4%", pct: 78, color: "bg-emerald-500", text: t('digitaltwinscreen.excellent_microbial_base') },
+    { label: t('digitaltwinscreen.ec_electrical_conductivity'), val: "0.28 dS/m", pct: 52, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_salinity') }
   ];
 
   // Custom Chart path generators based on selection
@@ -234,10 +236,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   {plot.name}
                 </button>
               ))}
-            </div>            Digital Twin Intelligence
+            </div>            {t('digitaltwinscreen.digital_twin_intelligence')}
           </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
-            Real-time AI-powered virtual representation of farm conditions, crop health, environmental telemetry, and predictive insights.
+            {t('digitaltwinscreen.virtual_biophysical_score_calibrated_acr')}
           </p>
         </div>
 
@@ -246,9 +248,9 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           <div className="flex flex-col items-end text-xs font-mono font-bold text-gray-400">
             <span className="flex items-center gap-1 text-primary">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-md shadow-emerald-500/50" />
-              AI Engine Status: Online
+              {t('digitaltwinscreen.ai_engine_status_online')}
             </span>
-            <span className="text-[10px] text-gray-450 mt-1">Last Synced: {lastSyncMinutes} mins ago</span>
+            <span className="text-[10px] text-gray-450 mt-1">{t('digitaltwinscreen.last_synced')} {lastSyncMinutes} {t('digitaltwinscreen.mins_ago')}</span>
           </div>
 
           <button
@@ -265,7 +267,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
           >
             <FlaskConical className="w-4 h-4" />
-            Generate AI Recommendation
+            {t('digitaltwinscreen.generate_ai_recommendation')}
           </button>
 
           <button
@@ -273,7 +275,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all text-xs cursor-pointer"
           >
             <Download className="w-4 h-4 text-gray-500" />
-            Export Report
+            {t('digitaltwinscreen.export_report')}
           </button>
         </div>
       </div>
@@ -283,7 +285,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         
         {/* Plot Selector Blocks */}
         <div className="space-y-1.5 w-full md:w-auto">
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Crop Twin Mappers</p>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t('digitaltwinscreen.active_crop_twin_mappers_1')}</p>
           <div className="flex flex-wrap gap-2.5">
             {plots.map((item) => {
               const isSelected = activePlotId === item.id;
@@ -307,7 +309,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
         {/* Time simulation segmented tab control */}
         <div className="space-y-1.5 w-full md:w-auto text-left md:text-right shrink-0">
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Digital Twin Timeline Mode</p>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t('digitaltwinscreen.digital_twin_timeline_mode_1')}</p>
           <div className="inline-flex bg-gray-50 border border-gray-200 rounded-2xl p-0.5">
             {(["Past", "Current", "Prediction"] as const).map((mode) => (
               <button
@@ -330,23 +332,23 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       {/* ================= Phase 3: Active Plot Status Indicators ================= */}
       {activePlot && (
         <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-wider">
-          <span className="text-gray-400">Plot Status:</span>
+          <span className="text-gray-400">{t('digitaltwinscreen.plot_status_1')}</span>
           {activePlot.boundaryMapped ? (
             <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
-              ✓ Boundary Mapped
+              ✓ {t('digitaltwinscreen.boundary_mapped_1')}
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 border border-gray-200">
-              Boundary Pending
+              {t('digitaltwinscreen.boundary_pending_1')}
             </span>
           )}
           {activePlot.soilReportAttached ? (
             <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
-              ✓ Soil Report Attached
+              ✓ {t('digitaltwinscreen.soil_report_attached_1')}
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 border border-gray-200">
-              Awaiting Soil Report
+              {t('digitaltwinscreen.awaiting_soil_report_1')}
             </span>
           )}
           {activePlot.area && (
@@ -414,13 +416,13 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <div className="space-y-1">
                   <span className="text-[9px] font-black text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    Biophysical Twin Layer ({activePlot.name})
+                    {t('digitaltwinscreen.biophysical_twin_layer_1')} ({activePlot.name})
                   </span>
-                  <h3 className="text-white font-extrabold text-lg">Vegetation Canopy Chamber</h3>
+                  <h3 className="text-white font-extrabold text-lg">{t('digitaltwinscreen.vegetation_canopy_chamber')}</h3>
                 </div>
               </div>
               <div className="text-right font-mono">
-                <span className="text-[9px] text-slate-500 block uppercase">NDVI Reflectance</span>
+                <span className="text-[9px] text-slate-500 block uppercase">{t('digitaltwinscreen.ndvi_reflectance_1')}</span>
                 <span className="text-white font-black text-sm">{chartData.val}</span>
               </div>
             </div>
@@ -665,7 +667,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           
           {/* 2. DIGITAL TWIN HEALTH SCORE */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Twin Health Indices</span>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">{t('digitaltwinscreen.twin_health_indices_1')}</span>
             
             <div className="flex items-center gap-6">
               <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
@@ -679,15 +681,15 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <div className="absolute text-center">
                   <span className="block text-2xl font-black text-gray-950">{overallTwinHealth}%</span>
                   <span className="text-[9px] font-black text-emerald-650 uppercase">
-                    {overallTwinHealth > 75 ? "Healthy" : overallTwinHealth > 40 ? "Moderate" : "Critical"}
+                    {overallTwinHealth > 75 ? t('digitaltwinscreen.healthy') : overallTwinHealth > 40 ? t('digitaltwinscreen.moderate') : t('digitaltwinscreen.critical')}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <h4 className="font-extrabold text-sm text-gray-900 leading-tight">Overall Twin Health</h4>
+                <h4 className="font-extrabold text-sm text-gray-900 leading-tight">{t('digitaltwinscreen.overall_twin_health')}</h4>
                 <p className="text-[10px] text-gray-400 leading-normal mt-1">
-                  Virtual biophysical score calibrated across moisture, chlorophyll indices, and diagnostic arrays.
+                  {t('digitaltwinscreen.virtual_biophysical_score_calibrated_acr')}
                 </p>
               </div>
             </div>
@@ -695,7 +697,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="space-y-3 pt-2 border-t border-gray-100">
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
-                  <span>Soil Quality</span>
+                  <span>{t('digitaltwinscreen.soil_quality')}</span>
                   <span className="text-primary"><AnimatedCounter value={activeSoilHealth} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -704,7 +706,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               </div>
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
-                  <span>Crop Health</span>
+                  <span>{t('digitaltwinscreen.crop_health')}</span>
                   <span className="text-primary"><AnimatedCounter value={Math.round(activeNDVI * 100)} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -713,7 +715,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               </div>
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
-                  <span>Water Status</span>
+                  <span>{t('digitaltwinscreen.water_status')}</span>
                   <span className="text-primary"><AnimatedCounter value={activeMoisture} />%</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -815,7 +817,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           {/* 4. SOIL HEALTH ANALYSIS */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
-              Soil Chemical Matrix
+              {t('digitaltwinscreen.soil_chemical_matrix')}
             </h4>
             
             <div className="space-y-3 text-xs">
@@ -838,22 +840,22 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-                <FlaskConical className="w-4.5 h-4.5 text-primary" /> AI Agronomy Advisory
+                <FlaskConical className="w-4.5 h-4.5 text-primary" /> {t('digitaltwinscreen.ai_agronomy_advisory')}
               </h4>
               <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                {activeConfidence ?? "—"}% Confidence
+                {activeConfidence ?? "—"}% {t('digitaltwinscreen.confidence_1')}
               </span>
             </div>
 
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
               {!activeRecommendedAction ? (
                 <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
-                  <p className="text-gray-900 font-black leading-snug">No AI analysis yet — attach a soil report to generate a recommendation.</p>
+                  <p className="text-gray-900 font-black leading-snug">{t('digitaltwinscreen.no_ai_analysis_yet')}</p>
                 </div>
               ) : (
                 <>
                   <div className="space-y-1.5 bg-gray-50 border border-gray-150 p-3 rounded-2xl">
-                    <p className="text-[9px] text-gray-400 uppercase tracking-wider">Recommended Action</p>
+                    <p className="text-[9px] text-gray-400 uppercase tracking-wider">{t('digitaltwinscreen.recommended_action')}</p>
                     <p className="text-gray-900 font-black leading-snug">
                       {activeRecommendedAction}
                     </p>
@@ -870,14 +872,14 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 onClick={() => onNavigate && onNavigate("Recommendations")}
                 className="flex-1 bg-primary hover:bg-[#235F26] text-white font-extrabold py-2.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 border-0 cursor-pointer"
               >
-                View Advisory
+                {t('digitaltwinscreen.view_advisory')}
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => triggerToast("Compiling PDF fertilizer advisory report...", "info")}
                 className="px-3.5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-250 rounded-xl text-xs font-bold text-gray-800 cursor-pointer"
               >
-                Download PDF
+                {t('digitaltwinscreen.download_pdf')}
               </button>
             </div>
           </div>
@@ -885,29 +887,29 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           {/* 4. SENSOR HEALTH PANEL */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
-              Sensor Operational Status
+              {t('digitaltwinscreen.sensor_operational_status')}
             </h4>
             
             <div className="grid grid-cols-1 gap-3.5 text-xs font-semibold text-gray-700">
               <div className="flex justify-between items-center">
-                <span>Sensors Connected</span>
+                <span>{t('digitaltwinscreen.sensors_connected')}</span>
                 <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 18 / 18</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Weather Feed</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Connected</span>
+                <span>{t('digitaltwinscreen.weather_feed')}</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500" /> {t('digitaltwinscreen.connected')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Satellite Feed</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Active (Sentinel-2)</span>
+                <span>{t('digitaltwinscreen.satellite_feed')}</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t('digitaltwinscreen.active_sentinel2')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Drone Sync</span>
-                <span className="inline-flex items-center gap-1.5 text-indigo-650"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Standby</span>
+                <span>{t('digitaltwinscreen.drone_sync')}</span>
+                <span className="inline-flex items-center gap-1.5 text-indigo-650"><span className="w-2 h-2 rounded-full bg-indigo-500" /> {t('digitaltwinscreen.standby')}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>AI Engine</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Running</span>
+                <span>{t('digitaltwinscreen.ai_engine')}</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t('digitaltwinscreen.running')}</span>
               </div>
             </div>
           </div>
@@ -941,42 +943,42 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <X className="w-5 h-5" />
               </button>
 
-              <h3 className="text-lg font-black text-gray-900 mb-2">Export Twin Diagnostics</h3>
+              <h3 className="text-lg font-black text-gray-900 mb-2">{t('digitaltwinscreen.export_twin_diagnostics')}</h3>
               <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                Compile virtual crop models and spatial sensor telemetry into shareable reports.
+                {t('digitaltwinscreen.compile_virtual_crop_models')}
               </p>
 
               {isExportLoading ? (
                 <div className="text-center py-8 space-y-4">
                   <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-                  <p className="text-xs font-bold text-gray-600">Compiling database payloads & plots maps...</p>
+                  <p className="text-xs font-bold text-gray-600">{t('digitaltwinscreen.compiling_database_payloads_')}</p>
                 </div>
               ) : (
                 <form onSubmit={handleExportSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Select Report Format</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">{t('digitaltwinscreen.select_report_format')}</label>
                     <div className="grid grid-cols-2 gap-3">
                       <label className="border border-gray-250 p-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-gray-50">
                         <input type="radio" name="format" defaultChecked />
-                        <span className="text-xs font-bold text-gray-800">Export PDF</span>
+                        <span className="text-xs font-bold text-gray-800">{t('digitaltwinscreen.export_pdf')}</span>
                       </label>
                       <label className="border border-gray-250 p-3 rounded-xl flex items-center gap-2 cursor-pointer hover:bg-gray-50">
                         <input type="radio" name="format" />
-                        <span className="text-xs font-bold text-gray-800">Export CSV</span>
+                        <span className="text-xs font-bold text-gray-800">{t('digitaltwinscreen.export_csv')}</span>
                       </label>
                     </div>
                   </div>
 
                   <div className="space-y-2 pt-2">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Analytical Scope</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">{t('digitaltwinscreen.analytical_scope')}</label>
                     <div className="space-y-2.5">
                       <label className="flex items-center gap-2.5 text-xs font-semibold text-gray-700 cursor-pointer">
                         <input type="checkbox" defaultChecked />
-                        <span>Generate Executive Summary</span>
+                        <span>{t('digitaltwinscreen.generate_executive_summary')}</span>
                       </label>
                       <label className="flex items-center gap-2.5 text-xs font-semibold text-gray-700 cursor-pointer">
                         <input type="checkbox" defaultChecked />
-                        <span>Generate Agronomy Recommendation Report</span>
+                        <span>{t('digitaltwinscreen.generate_agronomy_recommendation_report')}</span>
                       </label>
                     </div>
                   </div>
@@ -985,7 +987,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                     type="submit"
                     className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer mt-4"
                   >
-                    Compile & Download
+                    {t('digitaltwinscreen.compile__download')}
                   </button>
                 </form>
               )}

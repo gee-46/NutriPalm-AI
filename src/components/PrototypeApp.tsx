@@ -36,6 +36,8 @@ import {
   AnalyticsSkeleton, 
   GenericSkeleton 
 } from "./prototype/LoadingSkeletons";
+import { LanguageToggle } from "../translation/LanguageToggle";
+import { useTranslation } from "../translation/useTranslation";
 
 interface PrototypeAppProps {
   onBackToLanding: () => void;
@@ -87,6 +89,7 @@ const demoSteps = [
 ];
 
 export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) => {
+  const { t } = useTranslation();
   const [currentScreen, setCurrentScreen] = useState("Dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isScreenLoading, setIsScreenLoading] = useState(false);
@@ -490,7 +493,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                   }`}
                 >
                   {item.icon}
-                  {!isSidebarCollapsed && <span>{item.name}</span>}
+                  {!isSidebarCollapsed && <span>{t(`sidebar.${item.name}`)}</span>}
                 </button>
               );
             })}
@@ -505,7 +508,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-all border-0 cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
-            {!isSidebarCollapsed && <span>Sign Out</span>}
+            {!isSidebarCollapsed && <span>{t('app.sign_out')}</span>}
           </button>
           
           {/* Collapse toggle */}
@@ -514,7 +517,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-850 hover:bg-gray-50 transition-all border-0 cursor-pointer"
           >
             {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-            {!isSidebarCollapsed && <span>Collapse Sidebar</span>}
+            {!isSidebarCollapsed && <span>{t('app.collapse_sidebar')}</span>}
           </button>
         </div>
       </motion.aside>
@@ -533,14 +536,15 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-              <span>NutriPalm Console</span>
+              <span>{t('app.console_title')}</span>
               <span className="text-gray-300">/</span>
-              <span className="text-primary font-extrabold">{currentScreen}</span>
+              <span className="text-primary font-extrabold">{t(`sidebar.${currentScreen}`)}</span>
             </div>
           </div>
 
           {/* Right: Notifications & Profile Quick Card */}
           <div className="flex items-center gap-4">
+            <LanguageToggle />
             {/* System Status Online */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-100 bg-emerald-50 text-[10px] font-bold text-primary">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -661,6 +665,9 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                       ✕
                     </button>
                   </div>
+                  <div className="mb-6 flex justify-center">
+                    <LanguageToggle />
+                  </div>
                   <nav className="space-y-1 text-left">
                     {sidebarItems.map((item) => (
                       <button
@@ -676,7 +683,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                         }`}
                       >
                         {item.icon}
-                        <span>{item.name}</span>
+                        <span>{t(`sidebar.${item.name}`)}</span>
                       </button>
                     ))}
                   </nav>
@@ -689,7 +696,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-all border-0 cursor-pointer"
                 >
                   <ArrowLeft className="w-5 h-5" />
-                  <span>Landing Page</span>
+                  <span>{t('app.landing_page')}</span>
                 </button>
               </motion.div>
             </>
