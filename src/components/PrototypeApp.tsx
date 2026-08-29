@@ -415,7 +415,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           />
         );
       case "Analytics":
-        return <AnalyticsScreen />;
+        return <AnalyticsScreen onNavigate={changeScreen} />;
       case "Settings":
         return (
           <SettingsScreen 
