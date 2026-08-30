@@ -23,12 +23,12 @@ interface DigitalTwinScreenProps {
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
 }
 
-export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({ 
-  onNavigate, 
-  showToast 
+export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
+  onNavigate,
+  showToast
 }) => {
   const { t } = useTranslation();
-  const [activePlotId, setActivePlotId] = useState("plot-1");
+  const [activePlotId, setActivePlotId] = useState("");
   const [simMode, setSimMode] = useState<"Past" | "Current" | "Prediction">("Current");
   const [isSyncing, setIsSyncing] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -36,7 +36,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const [activeChartTab, setActiveChartTab] = useState<"NDVI" | "Health" | "Moisture" | "Temp">("NDVI");
   const [activeTimeframe, setActiveTimeframe] = useState<"7d" | "30d" | "90d">("30d");
   const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
-  
+
   // Living updates states
   const [lastSyncMinutes, setLastSyncMinutes] = useState(2);
   const [fluctuateMoisture, setFluctuateMoisture] = useState(0);
@@ -98,9 +98,18 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   // ── Shared store ─────────────────────────────────────────────────────────
   const { plots } = usePlots();
 
+  // Select the first real Supabase plot once the authenticated plots load.
+  // Never leave the Digital Twin bound to an empty/placeholder plot id.
+  useEffect(() => {
+    if (plots.length > 0 && !plots.some((plot) => plot.id === activePlotId)) {
+      setActivePlotId(plots[0].id);
+    }
+  }, [plots, activePlotId]);
+
   const activePlot = plots.find((p) => p.id === activePlotId) || plots[0];
 
-  const { snapshots, isLoading: isTwinsLoading } = useDigitalTwinSnapshots(activePlotId);
+  const { snapshots, isLoading: isTwinsLoading } =
+    useDigitalTwinSnapshots(activePlotId);
   const activeSnapshot = snapshots[simMode];
 
   if (plots.length === 0 || !activePlot) {
@@ -125,16 +134,16 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
   const activeNDVI = activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0);
-  const activeMoisture = activeSnapshot?.water_stress_score 
-    ? Math.round(activeSnapshot.water_stress_score + fluctuateMoisture) 
+  const activeMoisture = activeSnapshot?.water_stress_score
+    ? Math.round(activeSnapshot.water_stress_score + fluctuateMoisture)
     : (activePlot?.moistureTimeline ? Math.round(activePlot.moistureTimeline[simMode] + fluctuateMoisture) : 0);
   const activeSoilHealth = activeSnapshot?.crop_health_score ?? (activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0);
-  const activeYield = activeSnapshot?.yield_prediction 
-    ? `${activeSnapshot.yield_prediction} Tons` 
+  const activeYield = activeSnapshot?.yield_prediction
+    ? `${activeSnapshot.yield_prediction} Tons`
     : (activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A");
   const activeDiseasePct = activeSnapshot?.disease_probability ?? (activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0);
   const activeDiseaseRisk = activeSnapshot?.risk_level ?? (activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending");
-  
+
   const activeConfidence = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? 0;
   const activeWhyDisease = activeSnapshot?.disease_explanation ?? activePlot?.whyDisease;
   const activeRecommendedAction = activeSnapshot?.recommended_action ?? activePlot?.recommendedAction;
@@ -142,7 +151,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   // Dynamic average for the main Twin Health donut
   const healthComponents = [activeSoilHealth, activeNDVI * 100, activeMoisture].filter(v => v > 0);
-  const overallTwinHealth = healthComponents.length > 0 
+  const overallTwinHealth = healthComponents.length > 0
     ? Math.round(healthComponents.reduce((a, b) => a + b, 0) / healthComponents.length)
     : 0;
 
@@ -229,7 +238,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       exit={{ opacity: 0, y: -15 }}
       className="space-y-6 text-left"
     >
-      
+
       {/* ================= PAGE HEADER ================= */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200/50 pb-5">
         <div>
@@ -246,11 +255,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                       setIsChangingPlot(false);
                     }, 450);
                   }}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer flex items-center gap-2 ${
-                    activePlotId === plot.id
-                      ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-primary/50 hover:bg-emerald-50/30"
-                  }`}
+                  className={`px-4 py-2.5 rounded-xl font-bold text-[11px] transition-all cursor-pointer flex items-center gap-2 ${activePlotId === plot.id
+                    ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-primary/50 hover:bg-emerald-50/30"
+                    }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${plot.statusDotColor}`} />
                   {plot.name}
@@ -302,7 +310,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
       {/* ================= 2. TIME SIMULATION CONTROL & 5. MINI FARM SWITCHER ================= */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-gray-150 p-4 rounded-3xl shadow-xs">
-        
+
         {/* Plot Selector Blocks */}
         <div className="space-y-1.5 w-full md:w-auto">
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t('digitaltwinscreen.active_crop_twin_mappers_1')}</p>
@@ -313,11 +321,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handlePlotSwitch(item.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5 ${
-                    isSelected 
-                      ? "bg-slate-950 text-white border-slate-950 shadow-md" 
-                      : "bg-white text-gray-650 border-gray-250 hover:bg-gray-50"
-                  }`}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-1.5 ${isSelected
+                    ? "bg-slate-950 text-white border-slate-950 shadow-md"
+                    : "bg-white text-gray-650 border-gray-250 hover:bg-gray-50"
+                    }`}
                 >
                   <span className={`w-2.5 h-2.5 rounded-full ${item.statusDotColor}`} />
                   {item.name || `Plot ${item.id.replace("plot-", "").toUpperCase()}`}
@@ -335,11 +342,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <button
                 key={mode}
                 onClick={() => handleSimModeSwitch(mode)}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  simMode === mode 
-                    ? "bg-primary text-white shadow-xs" 
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${simMode === mode
+                  ? "bg-primary text-white shadow-xs"
+                  : "text-gray-500 hover:text-gray-900"
+                  }`}
               >
                 {mode}
               </button>
@@ -391,7 +397,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
       {/* ================= LAYOUT GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">
-        
+
         {/* Shimmer loading overlay when switching plot/modes or fetching twins */}
         <AnimatePresence>
           {(isChangingPlot || isTwinsLoading) && (
@@ -413,22 +419,22 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
         {/* ================= LEFT COLUMN ================= */}
         <div className="lg:col-span-7 space-y-6">
-          
+
           {/* 1. DIGITAL CROP MODEL */}
           <div className="bg-slate-950 rounded-[32px] border border-slate-900 p-6 shadow-xl relative min-h-[460px] flex flex-col justify-between overflow-hidden">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px]" />
             <div className="absolute -top-12 -left-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-            
+
             <div className="flex justify-between items-start z-10 relative">
               <div className="flex gap-4">
                 {activePlot.boundaryMapped && activePlot.geoJSON && (
                   <div className="w-12 h-12 bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden shrink-0 flex items-center justify-center p-1">
                     <svg viewBox="0 0 100 100" className="w-full h-full opacity-80">
-                      <path 
-                        d={boundaryToSvgPath(activePlot.geoJSON, { width: 100, height: 100 }, 10)} 
-                        fill="rgba(16, 185, 129, 0.2)" 
-                        stroke="#10b981" 
-                        strokeWidth="2" 
+                      <path
+                        d={boundaryToSvgPath(activePlot.geoJSON, { width: 100, height: 100 }, 10)}
+                        fill="rgba(16, 185, 129, 0.2)"
+                        stroke="#10b981"
+                        strokeWidth="2"
                       />
                     </svg>
                   </div>
@@ -530,13 +536,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   <div className="p-2 bg-gray-50 border border-gray-150 rounded-xl">
                     {card.icon}
                   </div>
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                    card.status === "Optimal" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-                  }`}>
+                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${card.status === "Optimal" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                    }`}>
                     {card.status}
                   </span>
                 </div>
-                
+
                 <div className="mt-4 text-left">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
                   <div className="flex items-baseline justify-between mt-1">
@@ -620,9 +625,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                     <button
                       key={tab}
                       onClick={() => setActiveChartTab(tab)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                        activeChartTab === tab ? "bg-white text-primary shadow-xs" : "text-gray-500 hover:text-gray-950"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${activeChartTab === tab ? "bg-white text-primary shadow-xs" : "text-gray-500 hover:text-gray-950"
+                        }`}
                     >
                       {tab}
                     </button>
@@ -634,9 +638,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                     <button
                       key={time}
                       onClick={() => setActiveTimeframe(time)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                        activeTimeframe === time ? "bg-white text-primary shadow-xs" : "text-gray-500 hover:text-gray-950"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${activeTimeframe === time ? "bg-white text-primary shadow-xs" : "text-gray-500 hover:text-gray-950"
+                        }`}
                     >
                       {time.toUpperCase()}
                     </button>
@@ -647,7 +650,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
             <div className="h-56 border border-gray-100 rounded-2xl relative p-4 flex flex-col justify-between overflow-hidden">
               <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
-              
+
               <div className="flex justify-between text-[9px] font-mono text-gray-400 relative z-10">
                 <span>0.90 Index</span>
                 <span>Optimal Bounds</span>
@@ -684,11 +687,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
         {/* ================= RIGHT COLUMN ================= */}
         <div className="lg:col-span-5 space-y-6">
-          
+
           {/* 2. DIGITAL TWIN HEALTH SCORE */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">{t('digitaltwinscreen.twin_health_indices_1')}</span>
-            
+
             <div className="flex items-center gap-6">
               <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
                 <svg className="w-full h-full transform -rotate-90">
@@ -784,7 +787,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <p className="text-lg font-black text-gray-950">{activeYield}</p>
                 <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activeConfidence}% Conf.</span>
               </div>
-              
+
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Harvest Ready</span>
                 <p className="text-lg font-black text-gray-950">72%</p>
@@ -803,11 +806,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   <div className="relative w-7 h-7">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15" fill="none" className="stroke-gray-100" strokeWidth="4" />
-                      <circle 
-                        cx="18" cy="18" r="15" fill="none" 
-                        className={activeDiseasePct > 60 ? "stroke-rose-500" : activeDiseasePct > 30 ? "stroke-amber-500" : "stroke-emerald-500"} 
-                        strokeWidth="4" 
-                        strokeDasharray="94.2" 
+                      <circle
+                        cx="18" cy="18" r="15" fill="none"
+                        className={activeDiseasePct > 60 ? "stroke-rose-500" : activeDiseasePct > 30 ? "stroke-amber-500" : "stroke-emerald-500"}
+                        strokeWidth="4"
+                        strokeDasharray="94.2"
                         strokeDashoffset={94.2 - (94.2 * activeDiseasePct) / 100}
                         strokeLinecap="round"
                         style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
@@ -816,7 +819,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               {!activeWhyDisease ? (
                 <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl text-[10px] text-gray-450 font-semibold">
                   Insufficient telemetry data to generate disease probability.
@@ -839,7 +842,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
               {t('digitaltwinscreen.soil_chemical_matrix')}
             </h4>
-            
+
             <div className="space-y-3 text-xs">
               {soilNutrients.map((nut) => (
                 <div key={nut.label} className="space-y-1.5">
@@ -909,7 +912,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
               {t('digitaltwinscreen.sensor_operational_status')}
             </h4>
-            
+
             <div className="grid grid-cols-1 gap-3.5 text-xs font-semibold text-gray-700">
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.sensors_connected')}</span>
@@ -942,7 +945,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       <AnimatePresence>
         {isExportOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.5 }}
               exit={{ opacity: 0 }}
