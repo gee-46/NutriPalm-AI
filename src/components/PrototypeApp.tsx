@@ -29,15 +29,16 @@ import { RecommendationScreen } from "./prototype/RecommendationScreen";
 import { AnalyticsScreen } from "./prototype/AnalyticsScreen";
 import { SettingsScreen } from "./prototype/SettingsScreen";
 import { NotFoundScreen } from "./prototype/NotFoundScreen";
-import { 
-  DashboardSkeleton, 
-  FarmerTableSkeleton, 
-  SoilReportSkeleton, 
-  AnalyticsSkeleton, 
-  GenericSkeleton 
+import {
+  DashboardSkeleton,
+  FarmerTableSkeleton,
+  SoilReportSkeleton,
+  AnalyticsSkeleton,
+  GenericSkeleton
 } from "./prototype/LoadingSkeletons";
 import { LanguageToggle } from "../translation/LanguageToggle";
 import { useTranslation } from "../translation/useTranslation";
+import { usePlots } from "../data/plots";
 
 interface PrototypeAppProps {
   onBackToLanding: () => void;
@@ -90,6 +91,7 @@ const demoSteps = [
 
 export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) => {
   const { t } = useTranslation();
+  const { plots } = usePlots();
   const [currentScreen, setCurrentScreen] = useState("Dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isScreenLoading, setIsScreenLoading] = useState(false);
@@ -147,6 +149,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [lastUploadedReport, setLastUploadedReport] = useState<any>(null);
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
@@ -190,7 +193,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentScreen]);
+  }, []);
 
   const avatarUrl =
     currentUser?.user_metadata?.avatar_url ||
@@ -223,86 +226,174 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     }, 3000);
   };
 
-  // Shared state: pre-populated list of farmers with rich properties
-  const [farmers, setFarmers] = useState<Farmer[]>([
-    {
-      id: "F-01",
-      name: "Swaminathan Gowda",
-      village: "Rangampeta",
-      district: "Dakshina Kannada",
-      contact: "+91 94401 23456",
-      email: "swamy.g@gmail.com",
-      crop: "Oil Palm",
-      area: 12.5,
-      joinDate: "June 2024",
-      yield: "14.2 tons/ac",
-      soilHealth: 88,
-      lastInspection: "2 hours ago",
-      status: "Active",
-      digitalTwin: "Online",
-      lastRecommendation: "NPK Mix-B"
-    },
-    {
-      id: "F-02",
-      name: "K. Ramachandra Rao",
-      village: "Kothagudem",
-      district: "Bhadradri Kothagudem",
-      contact: "+91 98480 98765",
-      email: "ramachandra.k@gmail.com",
-      crop: "Oil Palm",
-      area: 8.2,
-      joinDate: "Sept 2024",
-      yield: "13.0 tons/ac",
-      soilHealth: 72,
-      lastInspection: "5 hours ago",
-      status: "Monitoring",
-      digitalTwin: "Synced",
-      lastRecommendation: "Potash supplement"
-    },
-    {
-      id: "F-03",
-      name: "M. Devamma",
-      village: "Chittoor",
-      district: "Chittoor",
-      contact: "+91 99123 45678",
-      email: "devamma.m@gmail.com",
-      crop: "Coconut Palm",
-      area: 5.0,
-      joinDate: "Jan 2025",
-      yield: "6.5 tons/ac",
-      soilHealth: 55,
-      lastInspection: "1 day ago",
-      status: "Attention",
-      digitalTwin: "Warning",
-      lastRecommendation: "Slow-Release NPK-A"
-    },
-    {
-      id: "F-04",
-      name: "Rajesh Kumar",
-      village: "Hassan",
-      district: "Hassan",
-      contact: "+91 94900 11223",
-      email: "rajesh.k@gmail.com",
-      crop: "Cocoa",
-      area: 7.8,
-      joinDate: "March 2025",
-      yield: "2.1 tons/ac",
-      soilHealth: 38,
-      lastInspection: "2 days ago",
-      status: "Inactive",
-      digitalTwin: "Offline",
-      lastRecommendation: "Emergency NPK dose"
-    }
-  ]);
+  // Shared state: list of farmers
+  const [farmers, setFarmers] = useState<Farmer[]>([]);
 
-  // Dashboard Stats derived from live data
-  const [stats, setStats] = useState({
+  // Database calculated statistics (for logged in users)
+  const [dbStats, setDbStats] = useState({
+    activeTwins: 0,
+    recommendations: 0,
+    soilHealthScore: 0
+  });
+
+  // Sync farmers list between demo data (when logged out) and user data (when logged in)
+  useEffect(() => {
+    if (currentUser) {
+      try {
+        const cached = localStorage.getItem(`nutripalm:farmers:${currentUser.id}`);
+        setFarmers(cached ? JSON.parse(cached) : []);
+      } catch {
+        setFarmers([]);
+      }
+    } else {
+      setFarmers([
+        {
+          id: "F-01",
+          name: "Swaminathan Gowda",
+          village: "Rangampeta",
+          district: "Dakshina Kannada",
+          contact: "+91 94401 23456",
+          email: "swamy.g@gmail.com",
+          crop: "Oil Palm",
+          area: 12.5,
+          joinDate: "June 2024",
+          yield: "14.2 tons/ac",
+          soilHealth: 88,
+          lastInspection: "2 hours ago",
+          status: "Active",
+          digitalTwin: "Online",
+          lastRecommendation: "NPK Mix-B"
+        },
+        {
+          id: "F-02",
+          name: "K. Ramachandra Rao",
+          village: "Kothagudem",
+          district: "Bhadradri Kothagudem",
+          contact: "+91 98480 98765",
+          email: "ramachandra.k@gmail.com",
+          crop: "Oil Palm",
+          area: 8.2,
+          joinDate: "Sept 2024",
+          yield: "13.0 tons/ac",
+          soilHealth: 72,
+          lastInspection: "5 hours ago",
+          status: "Monitoring",
+          digitalTwin: "Synced",
+          lastRecommendation: "Potash supplement"
+        },
+        {
+          id: "F-03",
+          name: "M. Devamma",
+          village: "Chittoor",
+          district: "Chittoor",
+          contact: "+91 99123 45678",
+          email: "devamma.m@gmail.com",
+          crop: "Coconut Palm",
+          area: 5.0,
+          joinDate: "Jan 2025",
+          yield: "6.5 tons/ac",
+          soilHealth: 55,
+          lastInspection: "1 day ago",
+          status: "Attention",
+          digitalTwin: "Warning",
+          lastRecommendation: "Slow-Release NPK-A"
+        },
+        {
+          id: "F-04",
+          name: "Rajesh Kumar",
+          village: "Hassan",
+          district: "Hassan",
+          contact: "+91 94900 11223",
+          email: "rajesh.k@gmail.com",
+          crop: "Cocoa",
+          area: 7.8,
+          joinDate: "March 2025",
+          yield: "2.1 tons/ac",
+          soilHealth: 38,
+          lastInspection: "2 days ago",
+          status: "Inactive",
+          digitalTwin: "Offline",
+          lastRecommendation: "Emergency NPK dose"
+        }
+      ]);
+    }
+  }, [currentUser]);
+
+  // Fetch live stats from database tables for the logged-in user
+  useEffect(() => {
+    let isMounted = true;
+    if (!currentUser) return;
+
+    async function fetchStats() {
+      try {
+        const plotIds = plots.filter(p => !p.id.startsWith("plot-")).map(p => p.id);
+        
+        let twinsCount = 0;
+        let recsCount = 0;
+        let avgSoilScore = 0;
+
+        if (plotIds.length > 0) {
+          // Fetch digital twins count
+          const { data: twinsData, error: twinsError } = await supabase
+            .from("digital_twins")
+            .select("plot_id, crop_health_score")
+            .in("plot_id", plotIds);
+
+          if (!twinsError && twinsData) {
+            twinsCount = twinsData.length;
+            const healthScores = (twinsData as Array<{ crop_health_score: number | null }>)
+              .map((d): number | null => d.crop_health_score)
+              .filter((s): s is number => typeof s === 'number' && s > 0);
+            if (healthScores.length > 0) {
+              avgSoilScore = Math.round(healthScores.reduce((a: number, b: number) => a + b, 0) / healthScores.length);
+            }
+          }
+
+          // Fetch recommendations count
+          const { data: recsData, error: recsError } = await supabase
+            .from("recommendations")
+            .select("id")
+            .in("plot_id", plotIds);
+
+          if (!recsError && recsData) {
+            recsCount = recsData.length;
+          }
+        }
+
+        if (isMounted) {
+          setDbStats({
+            activeTwins: twinsCount,
+            recommendations: recsCount,
+            soilHealthScore: avgSoilScore
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats from Supabase:", err);
+      }
+    }
+
+    fetchStats();
+    return () => { isMounted = false; };
+  }, [plots, currentUser]);
+
+  // Derive stats dynamically (authenticated vs. unauthenticated)
+  const stats = currentUser ? {
+    totalFarmers: farmers.length,
+    totalFarms: plots.length,
+    mappedPlots: plots.filter(p => p.boundaryMapped).length,
+    totalAcreage: plots.reduce((acc, p) => acc + p.area, 0),
+    activeTwins: dbStats.activeTwins,
+    recommendations: dbStats.recommendations,
+    soilHealthScore: dbStats.soilHealthScore
+  } : {
     totalFarmers: farmers.length,
     totalFarms: 6,
+    mappedPlots: 6,
+    totalAcreage: 33.5,
     activeTwins: 4,
     recommendations: 38,
     soilHealthScore: 78
-  });
+  };
 
   // Add a farmer handler
   const handleAddFarmer = (newFarmer: Omit<Farmer, "id" | "joinDate">) => {
@@ -312,21 +403,22 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       joinDate: "July 2026",
       yield: "Pending Scan"
     };
-    setFarmers((prev) => [formatted, ...prev]);
-    setStats((prev) => ({
-      ...prev,
-      totalFarmers: farmers.length + 1,
-      totalFarms: prev.totalFarms + 1
-    }));
+    setFarmers((prev) => {
+      const updated = [formatted, ...prev];
+      if (currentUser) {
+        try {
+          localStorage.setItem(`nutripalm:farmers:${currentUser.id}`, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
     showToast(`Farmer "${formatted.name}" registered successfully.`, "success");
   };
 
-  const handleSoilReportUploaded = () => {
-    setStats((prev) => ({
-      ...prev,
-      recommendations: prev.recommendations + 1,
-      soilHealthScore: 81 // mock score bump on clean diagnostics
-    }));
+  const handleSoilReportUploaded = (data: any) => {
+    if (data) {
+      setLastUploadedReport(data);
+    }
     // Add a notification
     setNotifications((prev) => [
       { id: Date.now(), text: "New laboratory soil report successfully scanned.", read: false },
@@ -367,7 +459,16 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   const renderActiveScreen = () => {
     switch (currentScreen) {
       case "Dashboard":
-        return <DashboardScreen stats={stats} onNavigate={changeScreen} onStartDemo={startDemo} />;
+        return (
+          <DashboardScreen
+            stats={stats}
+            plots={plots}
+            currentUser={currentUser}
+            userProfile={userProfile}
+            onNavigate={changeScreen}
+            onStartDemo={startDemo}
+          />
+        );
       case "Farmers":
         return (
           <FarmerScreen
@@ -386,7 +487,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         );
       case "Farm Plots":
         return (
-          <FarmPlotScreen 
+          <FarmPlotScreen
             onPlotCreated={() => showToast("New GIS boundary registered for Plot 3B.", "success")}
             onSync={() => showToast("Satellite GPS coordinates synchronized.", "info")}
             onNavigate={changeScreen}
@@ -395,7 +496,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         );
       case "Digital Twin":
         return (
-          <DigitalTwinScreen 
+          <DigitalTwinScreen
             onNavigate={changeScreen}
             showToast={showToast}
           />
@@ -410,23 +511,29 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         );
       case "Recommendations":
         return (
-          <RecommendationScreen 
-            onLoad={() => showToast("Slow-release NPK formulation compiled for Plot 2A.", "success")}
+          <RecommendationScreen
+            lastUploadedReport={lastUploadedReport}
+            onClearReport={() => {
+              setLastUploadedReport(null);
+              localStorage.removeItem("nutripalm:lastUploadedReport");
+              localStorage.removeItem("nutripalm:lastRecommendation");
+            }}
+            showToast={showToast}
           />
         );
       case "Analytics":
         return <AnalyticsScreen onNavigate={changeScreen} />;
       case "Settings":
         return (
-          <SettingsScreen 
-            activeSection="Theme" 
+          <SettingsScreen
+            activeSection="Theme"
             onSaveSuccess={() => showToast("System configuration profiles saved successfully.", "success")}
           />
         );
       case "Profile":
         return (
-          <SettingsScreen 
-            activeSection="Profile" 
+          <SettingsScreen
+            activeSection="Profile"
             onSaveSuccess={() => showToast("Lead agronomist profile settings saved successfully.", "success")}
           />
         );
@@ -443,7 +550,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   return (
     <div className="flex min-h-screen bg-[#F8FAF7] text-gray-800">
-      
+
       {/* Sidebar - Desktop */}
       <motion.aside
         animate={{ width: isSidebarCollapsed ? "80px" : "240px" }}
@@ -479,18 +586,17 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           {/* Sidebar Nav Items */}
           <nav className="px-3 space-y-1 text-left">
             {sidebarItems.map((item) => {
-              const isSelected = currentScreen === item.name || 
+              const isSelected = currentScreen === item.name ||
                 (item.name === "Settings" && currentScreen === "Settings") ||
                 (item.name === "Profile" && currentScreen === "Profile");
               return (
                 <button
                   key={item.name}
                   onClick={() => changeScreen(item.name)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${
-                    isSelected
-                      ? "bg-primary text-white shadow-md shadow-primary/10"
-                      : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${isSelected
+                    ? "bg-primary text-white shadow-md shadow-primary/10"
+                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                    }`}
                 >
                   {item.icon}
                   {!isSidebarCollapsed && <span>{t(`sidebar.${item.name}`)}</span>}
@@ -510,7 +616,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             <ArrowLeft className="w-5 h-5" />
             {!isSidebarCollapsed && <span>{t('app.sign_out')}</span>}
           </button>
-          
+
           {/* Collapse toggle */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -524,7 +630,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        
+
         {/* Top Header */}
         <header className="h-[72px] bg-white border-b border-gray-150 flex items-center justify-between px-6 z-20">
           {/* Left: Mobile menu toggle + Page title */}
@@ -595,7 +701,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             </div>
 
             {/* Profile Avatar Card */}
-            <div 
+            <div
               onClick={() => changeScreen("Profile")}
               className="flex items-center gap-2 cursor-pointer p-1.5 hover:bg-gray-50 rounded-xl transition-all"
             >
@@ -630,7 +736,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="fixed inset-0 bg-black z-30 md:hidden"
               />
-              
+
               {/* Sidebar drawer */}
               <motion.div
                 initial={{ x: "-100%" }}
@@ -676,11 +782,10 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                           changeScreen(item.name);
                           setIsMobileMenuOpen(false);
                         }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${
-                          currentScreen === item.name
-                            ? "bg-primary text-white"
-                            : "text-gray-500 hover:bg-gray-100"
-                        }`}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${currentScreen === item.name
+                          ? "bg-primary text-white"
+                          : "text-gray-500 hover:bg-gray-100"
+                          }`}
                       >
                         {item.icon}
                         <span>{t(`sidebar.${item.name}`)}</span>
@@ -734,18 +839,17 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
               className="pointer-events-auto w-80 bg-white/75 backdrop-blur-md border border-gray-200/50 shadow-lg rounded-2xl p-4 flex gap-3 items-start relative overflow-hidden"
             >
               {/* Left Color strip */}
-              <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${
-                toast.type === "success" ? "bg-emerald-500" :
+              <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${toast.type === "success" ? "bg-emerald-500" :
                 toast.type === "info" ? "bg-blue-500" : "bg-amber-500"
-              }`} />
-              
+                }`} />
+
               <div className="flex-grow pl-2 text-left text-xs">
                 <div className="flex justify-between items-start">
                   <span className="font-extrabold text-gray-900 leading-tight">
                     {toast.type === "success" ? "Success Notification" :
-                     toast.type === "info" ? "Telemetry Sync" : "System Alert"}
+                      toast.type === "info" ? "Telemetry Sync" : "System Alert"}
                   </span>
-                  <button 
+                  <button
                     onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
                     className="text-gray-400 hover:text-gray-650 cursor-pointer border-0 bg-transparent text-[10px] p-0 leading-none"
                   >
@@ -802,7 +906,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                 <span className="text-[8.5px] font-mono text-indigo-400 uppercase tracking-widest block font-bold">NutriPalm AI Investor Guided Tour</span>
                 <span className="text-xs font-extrabold block mt-1">Active Screen: {demoSteps[demoState.stepIndex].screen}</span>
               </div>
-              
+
               <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   onClick={prevDemoStep}
