@@ -5,10 +5,14 @@ import {
   UploadCloud, FileText, ArrowRight, Activity, Sparkles, 
   Check, Download
 } from "lucide-react";
+import { usePlots } from "../../data/plots";
+import { supabase } from "../../lib/supabaseClient";
 
 interface SoilReportScreenProps {
   onRecommendationClick: () => void;
   onUploadSuccess: (nutrients: {
+    id?: string;
+    plotId?: string;
     nitrogen: number;
     phosphorus: number;
     potassium: number;
@@ -26,7 +30,9 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   onUploadSuccess,
   showToast
 }) => {
-    const { t } = useTranslation();
+  const { t } = useTranslation();
+  const { plots } = usePlots();
+  const [selectedPlotId, setSelectedPlotId] = useState<string>("");
   const [stage, setStage] = useState<ScreenStage>("upload");
   const [file, setFile] = useState<{ name: string; size: string; time: string } | null>(null);
   
@@ -59,6 +65,19 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     "Generating custom slow-release NPK formulation recommendations...",
     "AI analysis complete. Redirecting to diagnostic dashboard."
   ];
+
+  // Sync selected plot default
+  useEffect(() => {
+    if (plots.length > 0 && !selectedPlotId) {
+      // Filter out mock plot ids if there are real database plot ids
+      const realPlots = plots.filter(p => !p.id.startsWith("plot-"));
+      if (realPlots.length > 0) {
+        setSelectedPlotId(realPlots[0].id);
+      } else {
+        setSelectedPlotId(plots[0].id);
+      }
+    }
+  }, [plots, selectedPlotId]);
 
   useEffect(() => {
     if (consoleBottomRef.current) {
@@ -113,8 +132,47 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         if (next >= 100) {
           clearInterval(progressInterval);
           clearInterval(logInterval);
-          setTimeout(() => {
+          
+          const saveReportAndComplete = async () => {
+            let reportId = undefined;
+            try {
+              const { data: sessionData } = await supabase.auth.getSession();
+              if (sessionData?.session?.user && selectedPlotId && !selectedPlotId.startsWith("plot-")) {
+                const { data, error } = await supabase
+                  .from("soil_reports")
+                  .insert({
+                    plot_id: selectedPlotId,
+                    owner_id: sessionData.session.user.id,
+                    nitrogen_kg_ha: 135,
+                    phosphorus_kg_ha: 24,
+                    potassium_kg_ha: 160,
+                    organic_carbon_percent: 1.82,
+                    ph: 5.85,
+                    electrical_conductivity: 1.2,
+                    status: "Completed",
+                    report_date: new Date().toISOString().split("T")[0]
+                  })
+                  .select()
+                  .single();
+
+                if (error) throw error;
+                if (data) {
+                  reportId = data.id;
+                  
+                  // Also update local/db plot status
+                  await supabase
+                    .from("plots")
+                    .update({ soil_report_attached: true })
+                    .eq("id", selectedPlotId);
+                }
+              }
+            } catch (err) {
+              console.error("Failed to persist soil report to Supabase:", err);
+            }
+
             onUploadSuccess({
+              id: reportId,
+              plotId: selectedPlotId,
               nitrogen: 135,
               phosphorus: 24,
               potassium: 160,
@@ -123,7 +181,9 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
             });
             setStage("results");
             triggerToast("Report analyzed and parameters synchronized.", "success");
-          }, 800);
+          };
+
+          saveReportAndComplete();
           return 100;
         }
         return next;
@@ -178,10 +238,40 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
           >
             <div className="bg-white rounded-3xl border border-gray-150 p-8 shadow-xs text-center space-y-6">
               
+              {/* Plot Selector */}
+              {plots.length > 0 ? (
+                <div className="text-left space-y-1.5 max-w-sm mx-auto">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Select Farm Plot for Report
+                  </label>
+                  <select
+                    value={selectedPlotId}
+                    onChange={(e) => setSelectedPlotId(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:border-primary/50 text-gray-800"
+                  >
+                    {plots.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.crop})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="bg-red-50 border border-red-150 text-red-700 text-xs rounded-xl p-3 max-w-sm mx-auto font-bold">
+                  No farm plots found. Please create a plot in the Farm Plots screen first.
+                </div>
+              )}
+
               {/* Drag and Drop Zone */}
               <div
-                onClick={handleUpload}
-                className="border-2 border-dashed border-gray-250 hover:border-primary/50 bg-gray-50/50 hover:bg-emerald-50/10 rounded-2xl p-12 transition-all cursor-pointer group flex flex-col items-center justify-center space-y-4"
+                onClick={() => {
+                  if (plots.length === 0) {
+                    triggerToast("Please add a plot first before uploading reports.", "warning");
+                    return;
+                  }
+                  handleUpload();
+                }}
+                className={`border-2 border-dashed border-gray-250 hover:border-primary/50 bg-gray-50/50 hover:bg-emerald-50/10 rounded-2xl p-12 transition-all cursor-pointer group flex flex-col items-center justify-center space-y-4 ${plots.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
               >
                 <div className="p-4 bg-primary/5 text-primary rounded-2xl group-hover:scale-110 transition-transform duration-300">
                   <UploadCloud className="w-8 h-8" />
@@ -209,8 +299,15 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   </div>
                 </div>
                 <button
-                  onClick={handleUpload}
-                  className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-2 rounded-lg cursor-pointer transition-all border-0 shadow-xs shrink-0"
+                  onClick={() => {
+                    if (plots.length === 0) {
+                      triggerToast("Please add a plot first before loading samples.", "warning");
+                      return;
+                    }
+                    handleUpload();
+                  }}
+                  disabled={plots.length === 0}
+                  className={`bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-2 rounded-lg cursor-pointer transition-all border-0 shadow-xs shrink-0 ${plots.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
                 >
                   
                                                     {t('soilreportscreen.load_sample_report')}
