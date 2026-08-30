@@ -114,6 +114,18 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
   const selectedPlot = plots.find((p) => p.id === selectedPlotId) || plots[0];
 
+  // Dynamic KPI calculations
+  const totalArea = plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
+  const healthyPlotsCount = plots.filter(plot => plot.status === "Healthy" || plot.statusDotColor === "bg-emerald-500").length;
+  
+  const validSoilHealths = plots.map(p => p.soilHealth?.Current).filter((v): v is number => typeof v === 'number');
+  const avgSoilHealth = validSoilHealths.length > 0 
+    ? Math.round(validSoilHealths.reduce((a, b) => a + b, 0) / validSoilHealths.length)
+    : 0;
+
+  const uniqueCrops = new Set(plots.map(p => p.crop).filter(Boolean));
+  const activeCropTypes = uniqueCrops.size;
+
   const triggerToast = (msg: string, type: "success" | "info" | "warning" = "success") => {
     if (showToast) {
       showToast(msg, type);
@@ -361,14 +373,14 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           
-                            {t('farmplotscreen.total_area')} <strong className="text-primary font-black">{t('farmplotscreen.39_5_acres')}</strong>
+                            {t('farmplotscreen.total_area')} <strong className="text-primary font-black">{totalArea.toFixed(1)} Acres</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           
                             {t('farmplotscreen.gis_sync')} <strong className="text-primary font-black">{t('farmplotscreen.100_online')}</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.healthy_plots')} <strong className="text-primary font-black">3</strong>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.healthy_plots')} <strong className="text-primary font-black">{healthyPlotsCount}</strong>
         </span>
       </div>
 
@@ -393,11 +405,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.cultivated_area')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
-              <AnimatedCounter value={39.5} decimals={1} suffix=" Ac" />
+              <AnimatedCounter value={totalArea} decimals={1} suffix=" Ac" />
             </h3>
           </div>
           <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mt-4">
-            <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: "90%" }} transition={{ duration: 1 }} />
+            <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${Math.min(totalArea, 100)}%` }} transition={{ duration: 1 }} />
           </div>
         </div>
 
@@ -406,11 +418,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.average_soil_health')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
-              <AnimatedCounter value={67} suffix="%" />
+              <AnimatedCounter value={avgSoilHealth} suffix="%" />
             </h3>
           </div>
           <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mt-4">
-            <motion.div className="h-full bg-amber-500" initial={{ width: 0 }} animate={{ width: "67%" }} transition={{ duration: 1 }} />
+            <motion.div className="h-full bg-amber-500" initial={{ width: 0 }} animate={{ width: `${avgSoilHealth}%` }} transition={{ duration: 1 }} />
           </div>
         </div>
 
@@ -419,11 +431,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.active_crop_types')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
-              <AnimatedCounter value={3} />
+              <AnimatedCounter value={activeCropTypes} />
             </h3>
           </div>
           <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mt-4">
-            <motion.div className="h-full bg-indigo-500" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 1 }} />
+            <motion.div className="h-full bg-indigo-500" initial={{ width: 0 }} animate={{ width: activeCropTypes > 0 ? "100%" : "0%" }} transition={{ duration: 1 }} />
           </div>
         </div>
 
