@@ -35,17 +35,68 @@ if (isValidUrl(supabaseUrl) && supabaseAnonKey) {
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
 } else {
   console.warn('Supabase URL is not a valid HTTP/HTTPS URL. Current URL:', supabaseUrl);
+  
+  // Create stateful mock auth variables for robust offline prototype fallback
+  let mockSession: any = null;
+  const authListeners = new Set<(event: string, session: any) => void>();
+
   // Create a fallback proxy client that safely resolves promises rather than crashing
   supabaseInstance = new Proxy({} as any, {
     get(_, prop) {
       if (prop === 'auth') {
         return {
-          getSession: () => Promise.resolve({ data: { session: null } }),
-          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-          signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase client not configured with a valid HTTP URL.') }),
-          signInWithOAuth: () => Promise.resolve({ data: null, error: new Error('Supabase client not configured with a valid HTTP URL.') }),
-          signUp: () => Promise.resolve({ data: null, error: new Error('Supabase client not configured with a valid HTTP URL.') }),
-          signOut: () => Promise.resolve({ error: null }),
+          getSession: () => Promise.resolve({ data: { session: mockSession } }),
+          onAuthStateChange: (callback: any) => {
+            authListeners.add(callback);
+            // Initial notify to sync components
+            setTimeout(() => {
+              callback(mockSession ? 'SIGNED_IN' : 'SIGNED_OUT', mockSession);
+            }, 0);
+            return {
+              data: {
+                subscription: {
+                  unsubscribe: () => {
+                    authListeners.delete(callback);
+                  }
+                }
+              }
+            };
+          },
+          signInWithPassword: ({ email }: any) => {
+            mockSession = {
+              user: {
+                id: 'mock-user',
+                email: email || 'demo@samruddhiorganics.in',
+              }
+            };
+            authListeners.forEach(cb => cb('SIGNED_IN', mockSession));
+            return Promise.resolve({ data: { session: mockSession }, error: null });
+          },
+          signInWithOAuth: ({ provider }: any) => {
+            mockSession = {
+              user: {
+                id: 'mock-user',
+                email: `${provider}-user@gmail.com`,
+              }
+            };
+            authListeners.forEach(cb => cb('SIGNED_IN', mockSession));
+            return Promise.resolve({ data: { session: mockSession }, error: null });
+          },
+          signUp: ({ email }: any) => {
+            mockSession = {
+              user: {
+                id: 'mock-user',
+                email: email,
+              }
+            };
+            authListeners.forEach(cb => cb('SIGNED_IN', mockSession));
+            return Promise.resolve({ data: { session: mockSession }, error: null });
+          },
+          signOut: () => {
+            mockSession = null;
+            authListeners.forEach(cb => cb('SIGNED_OUT', null));
+            return Promise.resolve({ error: null });
+          },
         };
       }
       return () => Promise.resolve({ data: null, error: new Error('Supabase client not configured.') });
