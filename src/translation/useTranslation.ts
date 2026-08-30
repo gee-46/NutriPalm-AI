@@ -23,7 +23,7 @@ export function useTranslation() {
   const { lang, setLang } = useLanguage();
   const map = translations[lang] ?? translations["en"];
 
-  function t(key: string): string {
+  function t(key: string, defaultValue?: string): string {
     if (key in map) return map[key];
 
     // Fall back to English
@@ -37,7 +37,7 @@ export function useTranslation() {
     if (import.meta.env.DEV) {
       console.warn(`[i18n] Unknown translation key: "${key}"`);
     }
-    return key; // last resort: show the key itself
+    return defaultValue ?? key; // last resort: show default or the key itself
   }
 
   return { t, lang, setLang };
