@@ -60,19 +60,34 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: num
   );
 };
 
+import type { Plot } from "../../data/plots";
+import { supabase } from "../../lib/supabaseClient";
+
 interface DashboardScreenProps {
   stats: {
     totalFarmers: number;
     totalFarms: number;
+    mappedPlots: number;
+    totalAcreage: number;
     activeTwins: number;
     recommendations: number;
     soilHealthScore: number;
   };
+  plots: Plot[];
+  currentUser: any;
+  userProfile: any;
   onNavigate: (screen: string) => void;
   onStartDemo?: () => void;
 }
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavigate, onStartDemo }) => {
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({
+  stats,
+  plots,
+  currentUser,
+  userProfile,
+  onNavigate,
+  onStartDemo
+}) => {
     const { t } = useTranslation();
   const [isAssistantExpanded, setIsAssistantExpanded] = useState(false);
   
@@ -88,62 +103,239 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
     statusColor: string;
   } | null>(null);
 
-  const plots = [
+  // Time Greeting Calculation
+  const getTimeGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return t('dashboardscreen.good_morning', 'Good Morning');
+    if (hour >= 12 && hour < 17) return t('dashboardscreen.good_afternoon', 'Good Afternoon');
+    if (hour >= 17 && hour < 21) return t('dashboardscreen.good_evening', 'Good Evening');
+    return t('dashboardscreen.good_night', 'Good Night');
+  };
+
+  const [greeting, setGreeting] = useState(getTimeGreeting());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreeting(getTimeGreeting());
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Display Name priority resolution
+  const getUserDisplayName = (): string => {
+    if (userProfile?.full_name) return userProfile.full_name;
+    if (currentUser?.user_metadata?.full_name) return currentUser.user_metadata.full_name;
+    if (currentUser?.user_metadata?.name) return currentUser.user_metadata.name;
+    if (currentUser?.email) {
+      const parts = currentUser.email.split("@")[0].split(/[._-]/);
+      return parts.map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+    }
+    return t('dashboardscreen.farmer', 'Farmer');
+  };
+
+  const displayRole = userProfile?.user_role || currentUser?.user_metadata?.role || t('dashboardscreen.lead_agronomist', 'Lead Agronomist');
+
+  const seedPlots: Plot[] = [
     {
       id: "Plot A",
+      name: "Plot A",
       farmer: "N. Swamy",
       crop: "Oil Palm (Hybrid)",
-      soilHealth: "Optimal NPK (88%)",
-      recommendation: "Maintain irrigation cycle",
-      lastInspection: "2 hours ago",
-      status: "Healthy" as const,
+      stage: "Flowering",
+      age: 6,
+      area: 12.5,
+      coordinates: [],
+      geoJSON: undefined,
+      soil: "Sandy",
+      irrigation: "Drip",
+      status: "Healthy",
       statusColor: "text-emerald-600",
-      path: "M 40 30 L 160 20 L 200 95 L 80 105 Z",
-      fill: "rgba(46, 125, 50, 0.25)",
-      stroke: "#2E7D32"
+      statusDotColor: "bg-emerald-500",
+      svgPath: "M 40 30 L 160 20 L 200 95 L 80 105 Z",
+      fillGradient: "rgba(46, 125, 50, 0.25)",
+      strokeColor: "#2E7D32",
+      glowColor: "rgba(46, 125, 50, 0.25)",
+      boundaryMapped: true,
+      soilReportAttached: true,
+      createdAt: new Date().toISOString()
     },
     {
       id: "Plot B",
+      name: "Plot B",
       farmer: "S. Gowda",
       crop: "Oil Palm",
-      soilHealth: "Moderate Potassium (72%)",
-      recommendation: "Apply potash supplement",
-      lastInspection: "5 hours ago",
-      status: "Moderate" as const,
+      stage: "Flowering",
+      age: 4,
+      area: 8.2,
+      coordinates: [],
+      geoJSON: undefined,
+      soil: "Sandy",
+      irrigation: "Drip",
+      status: "Moderate",
       statusColor: "text-amber-500",
-      path: "M 175 18 L 300 10 L 320 85 L 210 90 Z",
-      fill: "rgba(245, 158, 11, 0.22)",
-      stroke: "#F59E0B"
+      statusDotColor: "bg-amber-500",
+      svgPath: "M 175 18 L 300 10 L 320 85 L 210 90 Z",
+      fillGradient: "rgba(245, 158, 11, 0.22)",
+      strokeColor: "#F59E0B",
+      glowColor: "rgba(245, 158, 11, 0.22)",
+      boundaryMapped: true,
+      soilReportAttached: true,
+      createdAt: new Date().toISOString()
     },
     {
       id: "Plot C",
+      name: "Plot C",
       farmer: "Rajesh Kumar",
       crop: "Oil Palm (Young)",
-      soilHealth: "Low Nitrogen (55%)",
-      recommendation: "Apply Slow-Release NPK-A",
-      lastInspection: "1 day ago",
-      status: "Needs Attention" as const,
+      stage: "Flowering",
+      age: 2,
+      area: 7.8,
+      coordinates: [],
+      geoJSON: undefined,
+      soil: "Sandy",
+      irrigation: "Drip",
+      status: "Needs Attention",
       statusColor: "text-orange-500",
-      path: "M 218 97 L 330 90 L 370 160 L 230 155 Z",
-      fill: "rgba(249, 115, 22, 0.22)",
-      stroke: "#F97316"
+      statusDotColor: "bg-orange-500",
+      svgPath: "M 218 97 L 330 90 L 370 160 L 230 155 Z",
+      fillGradient: "rgba(249, 115, 22, 0.22)",
+      strokeColor: "#F97316",
+      glowColor: "rgba(249, 115, 22, 0.22)",
+      boundaryMapped: true,
+      soilReportAttached: true,
+      createdAt: new Date().toISOString()
     },
     {
       id: "Plot D",
+      name: "Plot D",
       farmer: "K. R. Rao",
       crop: "Oil Palm (Mature)",
-      soilHealth: "Critical Nitrogen Dip (38%)",
-      recommendation: "Immediate emergency NPK dose",
-      lastInspection: "2 days ago",
-      status: "Critical" as const,
+      stage: "Flowering",
+      age: 8,
+      area: 5.0,
+      coordinates: [],
+      geoJSON: undefined,
+      soil: "Sandy",
+      irrigation: "Drip",
+      status: "Critical",
       statusColor: "text-rose-600",
-      path: "M 85 110 L 195 103 L 225 170 L 105 175 Z",
-      fill: "rgba(225, 29, 72, 0.22)",
-      stroke: "#E11D48"
+      statusDotColor: "bg-rose-500",
+      svgPath: "M 85 110 L 195 103 L 225 170 L 105 175 Z",
+      fillGradient: "rgba(225, 29, 72, 0.22)",
+      strokeColor: "#E11D48",
+      glowColor: "rgba(225, 29, 72, 0.22)",
+      boundaryMapped: true,
+      soilReportAttached: true,
+      createdAt: new Date().toISOString()
     }
   ];
 
-  // Motion stagger configs
+  const activePlots = currentUser ? plots : seedPlots;
+
+  // Recent activities list from database
+  const [activities, setActivities] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setActivities([
+        { id: 1, time: "09:32", title: "New Farmer Registered", desc: "Rajesh Kumar enrolled with 7.8 acres.", icon: <Users className="w-3.5 h-3.5 text-white" />, color: "bg-emerald-500" },
+        { id: 2, time: "09:18", title: "Soil Report Uploaded", desc: "NPK diagnostic scan completed for Plot 3A.", icon: <FileText className="w-3.5 h-3.5 text-white" />, color: "bg-indigo-500" },
+        { id: 3, time: "08:54", title: "Digital Twin Updated", desc: "Sentinel-2 canopy indices calibrated.", icon: <Layers3 className="w-3.5 h-3.5 text-white" />, color: "bg-emerald-600" },
+        { id: 4, time: "08:40", title: "Recommendation Generated", desc: "Custom NPK slow-release recipe formulated.", icon: <Sparkles className="w-3.5 h-3.5 text-white" />, color: "bg-amber-500" },
+        { id: 5, time: "Yesterday", title: "Weather Synced", desc: "Telangana climate cluster telemetry synchronized.", icon: <Sun className="w-3.5 h-3.5 text-white" />, color: "bg-sky-500" },
+      ]);
+      return;
+    }
+
+    async function loadActivities() {
+      try {
+        const plotIds = plots.filter(p => !p.id.startsWith("plot-")).map(p => p.id);
+        if (plotIds.length === 0) {
+          setActivities([]);
+          return;
+        }
+
+        // Fetch recent soil reports
+        const { data: soilReports } = await supabase
+          .from("soil_reports")
+          .select("id, created_at, plot_id")
+          .in("plot_id", plotIds)
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        // Fetch recent recommendations
+        const { data: recommendations } = await supabase
+          .from("recommendations")
+          .select("id, created_at, plot_id, crop")
+          .in("plot_id", plotIds)
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        const merged: any[] = [];
+
+        // Add plot registrations
+        plots.forEach(p => {
+          merged.push({
+            id: `plot-${p.id}`,
+            time: new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            dateObj: new Date(p.createdAt),
+            title: "Plot Registered",
+            desc: `GIS boundary mapped for ${p.name} (${p.crop}).`,
+            color: "bg-emerald-500",
+            icon: <Layers3 className="w-3.5 h-3.5 text-white" />
+          });
+        });
+
+        // Add soil reports
+        if (soilReports) {
+          soilReports.forEach((s: any) => {
+            const plotName = plots.find(p => p.id === s.plot_id)?.name || "Plot";
+            merged.push({
+              id: `soil-${s.id}`,
+              time: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              dateObj: new Date(s.created_at),
+              title: "Soil Report Scanned",
+              desc: `Chemical levels extracted for ${plotName}.`,
+              color: "bg-indigo-500",
+              icon: <FileText className="w-3.5 h-3.5 text-white" />
+            });
+          });
+        }
+
+        // Add recommendations
+        if (recommendations) {
+          recommendations.forEach((r: any) => {
+            const plotName = plots.find(p => p.id === r.plot_id)?.name || "Plot";
+            merged.push({
+              id: `rec-${r.id}`,
+              time: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              dateObj: new Date(r.created_at),
+              title: "Recommendation Generated",
+              desc: `Custom recipe re-computed for ${plotName} (${r.crop}).`,
+              color: "bg-amber-500",
+              icon: <Sparkles className="w-3.5 h-3.5 text-white" />
+            });
+          });
+        }
+
+        merged.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+        setActivities(merged.slice(0, 5));
+      } catch (err) {
+        console.error("Failed to compile activity log:", err);
+      }
+    }
+
+    loadActivities();
+  }, [plots, currentUser]);
+
+  const weatherForecast = [
+    { day: "Today", temp: "32°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "15%" },
+    { day: "Sat", temp: "30°", icon: <Cloud className="w-4 h-4 text-gray-400 fill-gray-100" />, pop: "20%" },
+    { day: "Sun", temp: "29°", icon: <CloudRain className="w-4 h-4 text-sky-400 animate-pulse" />, pop: "75%" },
+    { day: "Mon", temp: "31°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "10%" },
+    { day: "Tue", temp: "33°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "5%" }
+  ];
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -158,22 +350,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
     hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
   };
-
-  const weatherForecast = [
-    { day: "Today", temp: "32°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "15%" },
-    { day: "Sat", temp: "30°", icon: <Cloud className="w-4 h-4 text-gray-400 fill-gray-100" />, pop: "20%" },
-    { day: "Sun", temp: "29°", icon: <CloudRain className="w-4 h-4 text-sky-400 animate-pulse" />, pop: "75%" },
-    { day: "Mon", temp: "31°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "10%" },
-    { day: "Tue", temp: "33°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "5%" }
-  ];
-
-  const timelineActivities = [
-    { id: 1, time: "09:32", title: "New Farmer Registered", desc: "Rajesh Kumar enrolled with 7.8 acres.", icon: <Users className="w-3.5 h-3.5 text-white" />, color: "bg-emerald-500" },
-    { id: 2, time: "09:18", title: "Soil Report Uploaded", desc: "NPK diagnostic scan completed for Plot 3A.", icon: <FileText className="w-3.5 h-3.5 text-white" />, color: "bg-indigo-500" },
-    { id: 3, time: "08:54", title: "Digital Twin Updated", desc: "Sentinel-2 canopy indices calibrated.", icon: <Layers3 className="w-3.5 h-3.5 text-white" />, color: "bg-emerald-600" },
-    { id: 4, time: "08:40", title: "Recommendation Generated", desc: "Custom NPK slow-release recipe formulated.", icon: <Sparkles className="w-3.5 h-3.5 text-white" />, color: "bg-amber-500" },
-    { id: 5, time: "Yesterday", title: "Weather Synced", desc: "Telangana climate cluster telemetry synchronized.", icon: <Sun className="w-3.5 h-3.5 text-white" />, color: "bg-sky-500" },
-  ];
 
   return (
     <motion.div
@@ -219,32 +395,27 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
         className="bg-emerald-50/40 border border-emerald-500/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-semibold text-gray-700"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-extrabold text-gray-900">{t('dashboardscreen.good_morning_dr_l_ramana')}</span>
+          <span className="text-sm font-extrabold text-gray-900">{greeting}, {getUserDisplayName()}</span>
           <span className="text-2xs text-primary bg-primary/10 border border-primary/10 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
-            
-                                  {t('dashboardscreen.lead_agronomist')}
-                                </span>
+            {displayRole}
+          </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            
-                                  {t('dashboardscreen.4_farms_monitored_today')}
-                                </span>
+            {currentUser ? `${activePlots.length} ${activePlots.length === 1 ? t('dashboardscreen.farm_monitored', 'farm monitored') : t('dashboardscreen.farms_monitored', 'farms monitored')}` : t('dashboardscreen.4_farms_monitored_today')}
+          </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            
-                                  {t('dashboardscreen.18_sensors_online')}
-                                </span>
+            {currentUser ? `${activePlots.length * 3} ${t('dashboardscreen.sensors_online', 'sensors online')}` : t('dashboardscreen.18_sensors_online')}
+          </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            
-                                  {t('dashboardscreen.ai_engine_active')}
-                                </span>
+            {t('dashboardscreen.ai_engine_active')}
+          </span>
           <span className="flex items-center gap-1.5 text-gray-450 font-mono text-[11px]">
-            
-                                  {t('dashboardscreen.last_sync_2_mins_ago')}
-                                </span>
+            {currentUser ? t('dashboardscreen.live_sync', 'Live Telemetry Synced') : t('dashboardscreen.last_sync_2_mins_ago')}
+          </span>
         </div>
       </motion.div>
 
@@ -294,7 +465,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
             </div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.mapped_plots')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
-              <AnimatedCounter value={stats.totalFarms} />
+              <AnimatedCounter value={stats.mappedPlots} />
             </p>
           </div>
           {/* Sparkline Progress Bar */}
@@ -420,29 +591,34 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
             <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left flex flex-col justify-between">
               <div>
                 <span className="text-[9px] font-bold text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full">
-                  
-                                                    {t('dashboardscreen.plantation_summary')}
-                                                  </span>
+                  {t('dashboardscreen.plantation_summary')}
+                </span>
                 <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">{t('dashboardscreen.farm_overview_profile')}</h3>
                 
                 <div className="space-y-2.5 text-xs text-gray-700">
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.total_mapped_land')}</span>
                     <span className="font-bold text-gray-850">
-                      <AnimatedCounter value={33.5} decimals={1} suffix=" Acres" />
+                      <AnimatedCounter value={currentUser ? stats.totalAcreage : 33.5} decimals={currentUser ? 2 : 1} suffix=" Acres" />
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.crop_variety')}</span>
-                    <span className="font-bold text-gray-850">{t('dashboardscreen.oil_palm_85_mixed')}</span>
+                    <span className="font-bold text-gray-850">
+                      {currentUser ? (plots.length > 0 ? Array.from(new Set(plots.map(p => p.crop).filter(Boolean))).join(" / ") : t('dashboardscreen.no_plots', 'No Plots Mapped')) : t('dashboardscreen.oil_palm_85_mixed')}
+                    </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.iot_telemetry_nodes')}</span>
-                    <span className="font-bold text-primary">{t('dashboardscreen.18_sensors_active')}</span>
+                    <span className="font-bold text-primary">
+                      {currentUser ? `${activePlots.length * 3} ${t('dashboardscreen.sensors_active', 'Sensors Active')}` : t('dashboardscreen.18_sensors_active')}
+                    </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.irrigation_type')}</span>
-                    <span className="font-bold text-gray-850">{t('dashboardscreen.precision_drip_94')}</span>
+                    <span className="font-bold text-gray-850">
+                      {currentUser ? (plots.length > 0 ? Array.from(new Set(plots.map(p => p.irrigation).filter(Boolean))).join(" / ") : t('dashboardscreen.not_configured', 'Not Configured')) : t('dashboardscreen.precision_drip_94')}
+                    </span>
                   </div>
                 </div>
 
@@ -451,15 +627,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.farm_health_score')}</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-primary font-bold">84%</span>
-                      <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-md uppercase">{t('dashboardscreen.healthy')}</span>
+                      <span className="text-primary font-bold">{currentUser ? stats.soilHealthScore : 84}%</span>
+                      <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-md uppercase">
+                        {(currentUser ? stats.soilHealthScore : 84) >= 80 ? t('dashboardscreen.healthy') : (currentUser ? stats.soilHealthScore : 84) >= 50 ? t('dashboardscreen.moderate', 'Moderate') : t('dashboardscreen.critical', 'Critical')}
+                      </span>
                     </div>
                   </div>
                   <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <motion.div 
                       className="h-full bg-primary" 
                       initial={{ width: 0 }}
-                      animate={{ width: "84%" }}
+                      animate={{ width: `${currentUser ? stats.soilHealthScore : 84}%` }}
                       transition={{ duration: 1.2, ease: "easeOut" }}
                     />
                   </div>
@@ -469,18 +647,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                 <div className="mt-4 space-y-2 text-xs">
                   <span className="text-gray-450 font-semibold block">{t('dashboardscreen.crop_growth_stage')}</span>
                   <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-black">
-                    <div className="py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500">
-                      
-                                                                {t('dashboardscreen.vegetative')}
-                                                              </div>
-                    <div className="py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                      
-                                                                {t('dashboardscreen.flowering')}
-                                                              </div>
-                    <div className="py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500">
-                      
-                                                                {t('dashboardscreen.fruiting')}
-                                                              </div>
+                    <div className={`py-1.5 rounded-lg border ${(currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "vegetative" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "seedling" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                      {t('dashboardscreen.vegetative')}
+                    </div>
+                    <div className={`py-1.5 rounded-lg border ${(currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "flowering" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "fruit development" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                      {t('dashboardscreen.flowering')}
+                    </div>
+                    <div className={`py-1.5 rounded-lg border ${(currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "fruiting" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "mature" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "harvest ready" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                      {t('dashboardscreen.fruiting')}
+                    </div>
                   </div>
                 </div>
 
@@ -586,32 +761,68 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:25px_25px] opacity-40" />
                   
                   <svg className="w-full h-full relative z-10 opacity-90" viewBox="0 0 500 200">
-                    {plots.map((plot) => (
+                    {activePlots.map((plot) => (
                       <path
                         key={plot.id}
-                        d={plot.path}
-                        fill={plot.fill}
-                        stroke={plot.stroke}
+                        d={plot.svgPath}
+                        fill={plot.fillGradient}
+                        stroke={plot.strokeColor}
                         strokeWidth="2"
-                        strokeDasharray={plot.id === "Plot A" ? "4 4" : "0"}
-                        onClick={() => setSelectedPlot(plot)}
+                        strokeDasharray={plot.id === "Plot A" || !plot.boundaryMapped ? "4 4" : "0"}
+                        onClick={() => {
+                          setSelectedPlot({
+                            id: plot.name,
+                            farmer: plot.farmer || getUserDisplayName(),
+                            crop: plot.crop,
+                            soilHealth: plot.soilReportAttached ? t('dashboardscreen.analyzed_npk', 'Analyzed NPK') : t('dashboardscreen.pending_scan', 'Pending Scan'),
+                            recommendation: plot.soilReportAttached ? t('dashboardscreen.advisory_issued', 'Advisory Issued') : t('dashboardscreen.upload_report_first', 'Upload soil report to run AI model'),
+                            lastInspection: plot.lastInspection || t('dashboardscreen.just_now', 'Just Now'),
+                            status: plot.status,
+                            statusColor: plot.statusColor
+                          });
+                        }}
                         className="hover:fill-white/10 hover:stroke-white transition-all cursor-pointer"
                       />
                     ))}
                     
                     {/* Active telemetry pins */}
-                    <g transform="translate(130, 70)" className="animate-pulse pointer-events-none">
-                      <circle cx="0" cy="0" r="10" fill="rgba(46, 125, 50, 0.4)" />
-                      <circle cx="0" cy="0" r="4" fill="#FFF" />
-                    </g>
-                    <g transform="translate(260, 60)" className="animate-pulse pointer-events-none">
-                      <circle cx="0" cy="0" r="10" fill="rgba(245, 158, 11, 0.4)" />
-                      <circle cx="0" cy="0" r="4" fill="#FFF" />
-                    </g>
-                    <g transform="translate(300, 140)" className="animate-pulse pointer-events-none">
-                      <circle cx="0" cy="0" r="10" fill="rgba(249, 115, 22, 0.4)" />
-                      <circle cx="0" cy="0" r="4" fill="#FFF" />
-                    </g>
+                    {!currentUser ? (
+                      <>
+                        <g transform="translate(130, 70)" className="animate-pulse pointer-events-none">
+                          <circle cx="0" cy="0" r="10" fill="rgba(46, 125, 50, 0.4)" />
+                          <circle cx="0" cy="0" r="4" fill="#FFF" />
+                        </g>
+                        <g transform="translate(260, 60)" className="animate-pulse pointer-events-none">
+                          <circle cx="0" cy="0" r="10" fill="rgba(245, 158, 11, 0.4)" />
+                          <circle cx="0" cy="0" r="4" fill="#FFF" />
+                        </g>
+                        <g transform="translate(300, 140)" className="animate-pulse pointer-events-none">
+                          <circle cx="0" cy="0" r="10" fill="rgba(249, 115, 22, 0.4)" />
+                          <circle cx="0" cy="0" r="4" fill="#FFF" />
+                        </g>
+                      </>
+                    ) : (
+                      activePlots.map((plot) => {
+                        if (!plot.geoJSON?.coordinates?.[0]?.[0]) return null;
+                        const coords = plot.geoJSON.coordinates[0];
+                        const lngs = coords.map(c => c[0]);
+                        const lats = coords.map(c => c[1]);
+                        const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+                        const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+                        const W = 500, H = 250, PAD = 30;
+                        const avgLng = lngs.reduce((a,b)=>a+b,0)/lngs.length;
+                        const avgLat = lats.reduce((a,b)=>a+b,0)/lats.length;
+                        const x = PAD + ((avgLng - minLng) / (maxLng - minLng || 1)) * (W - PAD * 2);
+                        const y = PAD + ((maxLat - avgLat) / (maxLat - minLat || 1)) * (H - PAD * 2);
+                        
+                        return (
+                          <g key={`pin-${plot.id}`} transform={`translate(${x}, ${y})`} className="animate-pulse pointer-events-none">
+                            <circle cx="0" cy="0" r="10" fill={plot.status === 'Critical' ? 'rgba(225, 29, 72, 0.4)' : 'rgba(46, 125, 50, 0.4)'} />
+                            <circle cx="0" cy="0" r="4" fill="#FFF" />
+                          </g>
+                        );
+                      })
+                    )}
                   </svg>
                   
                   {/* Selected Plot Popup Overlay */}
@@ -804,22 +1015,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                                       </h3>
             
             <div className="relative pl-8 border-l border-gray-100 space-y-6">
-              {timelineActivities.map((act) => (
-                <div key={act.id} className="relative">
-                  {/* Timeline Dot with Icon inside */}
-                  <span className={`absolute -left-[45px] top-0.5 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-md ${act.color}`}>
-                    {act.icon}
-                  </span>
-                  
-                  <div className="space-y-1 ml-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-xs font-bold text-gray-800">{act.title}</h4>
-                      <span className="text-[9px] font-mono text-gray-400 bg-gray-50 border border-gray-150 px-1.5 py-0.5 rounded">{act.time}</span>
+              {activities.length === 0 ? (
+                <p className="text-xs text-gray-450 italic font-semibold">{t('dashboardscreen.no_recent_activity', 'No recent activity')}</p>
+              ) : (
+                activities.map((act) => (
+                  <div key={act.id} className="relative">
+                    {/* Timeline Dot with Icon inside */}
+                    <span className={`absolute -left-[45px] top-0.5 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-md ${act.color}`}>
+                      {act.icon}
+                    </span>
+                    
+                    <div className="space-y-1 ml-2">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-xs font-bold text-gray-850">{act.title}</h4>
+                        <span className="text-[9px] font-mono text-gray-400 bg-gray-50 border border-gray-150 px-1.5 py-0.5 rounded">{act.time}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 leading-relaxed">{act.desc}</p>
                     </div>
-                    <p className="text-[11px] text-gray-500 leading-relaxed">{act.desc}</p>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </motion.div>
 
@@ -852,37 +1067,66 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                   <X className="w-4 h-4" />
                 </button>
               </div>
-
+              
               <div className="space-y-4 text-xs">
                 {/* Today's Insights */}
                 <div className="space-y-1.5">
                   <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">{t('dashboardscreen.today_s_insights')}</h4>
                   <p className="text-gray-700 leading-normal bg-gray-50 border border-gray-100 p-2.5 rounded-xl font-medium">
-                    
-                                                          {t('dashboardscreen.3_farms_require_potassium_nitrogen_calib')}<br />
-                    
-                                                          {t('dashboardscreen.vegetation_leaf_rate_up_14_2_in_plot_2a')}
-                                                        </p>
+                    {currentUser ? (
+                      activePlots.length === 0 ? (
+                        t('dashboardscreen.insight_no_data', 'No diagnostics computed. Create a plot to start monitoring.')
+                      ) : (
+                        <>
+                          {activePlots.filter(p => p.status === 'Critical' || p.status === 'Needs Attention').length} {t('dashboardscreen.attention_needed', 'plots require nutrient calibration.')}<br />
+                          {t('dashboardscreen.total_land_monitored', 'Total monitored land area is')} {stats.totalAcreage.toFixed(2)} {t('dashboardscreen.acres', 'acres.')}
+                        </>
+                      )
+                    ) : (
+                      <>
+                        {t('dashboardscreen.3_farms_require_potassium_nitrogen_calib')}<br />
+                        {t('dashboardscreen.vegetation_leaf_rate_up_14_2_in_plot_2a')}
+                      </>
+                    )}
+                  </p>
                 </div>
 
                 {/* Pending Recommendations */}
                 <div className="space-y-1.5">
-                  <h4 className="font-extrabold text-gray-450 uppercase text-[10px] tracking-wider">{t('dashboardscreen.pending_recommendations')}</h4>
+                  <h4 className="font-extrabold text-gray-455 uppercase text-[10px] tracking-wider">{t('dashboardscreen.pending_recommendations')}</h4>
                   <p className="text-gray-700 leading-normal bg-gray-50 border border-gray-100 p-2.5 rounded-xl font-medium">
-                    
-                                                          {t('dashboardscreen.formulate_potash_supplement_recipe_for_p')}<br />
-                    
-                                                          {t('dashboardscreen.approve_slow_release_npk_a_prescription_')}
-                                                        </p>
+                    {currentUser ? (
+                      activePlots.length === 0 ? (
+                        t('dashboardscreen.no_pending_advisories', 'No pending AI advisories in logs.')
+                      ) : (
+                        <>
+                          {activePlots.filter(p => !p.soilReportAttached).length} {t('dashboardscreen.plots_pending_soil', 'plots pending laboratory soil reports.')}<br />
+                          {activePlots.filter(p => p.soilReportAttached).length} {t('dashboardscreen.advisories_generated', 'advisories compiled and ready for review.')}
+                        </>
+                      )
+                    ) : (
+                      <>
+                        {t('dashboardscreen.formulate_potash_supplement_recipe_for_p')}<br />
+                        {t('dashboardscreen.approve_slow_release_npk_a_prescription_')}
+                      </>
+                    )}
+                  </p>
                 </div>
 
                 {/* Weather Alerts */}
                 <div className="space-y-1.5">
                   <h4 className="font-extrabold text-gray-455 uppercase text-[10px] tracking-wider">{t('dashboardscreen.weather_alerts')}</h4>
                   <p className="text-gray-700 leading-normal bg-amber-50/50 border border-amber-100 p-2.5 rounded-xl text-amber-900 font-medium">
-                    
-                                                          {t('dashboardscreen.rainfall_expected_tomorrow_irrigation_cy')}
-                                                        </p>
+                    {currentUser ? (
+                      activePlots.length === 0 ? (
+                        t('dashboardscreen.alerts_inactive', 'Alert triggers fully operational and active.')
+                      ) : (
+                        t('dashboardscreen.weather_advisory_active', 'Regional microclimate conditions synced. Precision irrigation enabled.')
+                      )
+                    ) : (
+                      t('dashboardscreen.rainfall_expected_tomorrow_irrigation_cy')
+                    )}
+                  </p>
                 </div>
 
                 {/* Quick Actions */}
@@ -896,9 +1140,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                       }}
                       className="py-2.5 bg-primary hover:bg-[#235F26] text-white rounded-xl text-[10px] transition-colors border-0 cursor-pointer"
                     >
-                      
-                                                                {t('dashboardscreen.ai_advisories')}
-                                                              </button>
+                      {t('dashboardscreen.ai_advisories')}
+                    </button>
                     <button 
                       onClick={() => {
                         onNavigate("Soil Reports");
@@ -906,9 +1149,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
                       }}
                       className="py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-250 rounded-xl text-[10px] transition-colors cursor-pointer"
                     >
-                      
-                                                                {t('dashboardscreen.soil_scans')}
-                                                              </button>
+                      {t('dashboardscreen.soil_scans')}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -925,13 +1167,22 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ stats, onNavig
               </div>
               <div className="text-left">
                 <p className="font-black text-gray-950 flex items-center gap-1">
-                  
-                                                        {t('dashboardscreen.nutripalm_ai')}
-                                                      </p>
-                <p className="text-gray-500 font-bold mt-0.5">{t('dashboardscreen.3_farms_require_attention_today')}</p>
+                  {t('dashboardscreen.nutripalm_ai')}
+                </p>
+                <p className="text-gray-500 font-bold mt-0.5">
+                  {currentUser ? (
+                    activePlots.length === 0 ? t('dashboardscreen.no_plots_register', 'Create a plot to configure telemetry scans.') : (
+                      (() => {
+                        const attentionPlots = activePlots.filter(p => p.status === 'Critical' || p.status === 'Needs Attention').length;
+                        return attentionPlots === 0
+                          ? t('dashboardscreen.all_plots_healthy', 'All plots operating in optimal status.')
+                          : `${attentionPlots} ${attentionPlots === 1 ? t('dashboardscreen.plot_requires_attention', 'plot requires attention today.') : t('dashboardscreen.plots_require_attention', 'plots require attention today.')}`;
+                      })()
+                    )
+                  ) : t('dashboardscreen.3_farms_require_attention_today')}
+                </p>
                 <p className="text-[10px] text-primary font-black mt-1 uppercase tracking-wider flex items-center gap-0.5">
-                  
-                                                        {t('dashboardscreen.view_summary')} <ArrowRight className="w-3 h-3" />
+                  {t('dashboardscreen.view_summary')} <ArrowRight className="w-3.5 h-3.5" />
                 </p>
               </div>
             </motion.div>
