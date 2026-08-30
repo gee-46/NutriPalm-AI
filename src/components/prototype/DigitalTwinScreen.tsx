@@ -103,6 +103,26 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const { snapshots, isLoading: isTwinsLoading } = useDigitalTwinSnapshots(activePlotId);
   const activeSnapshot = snapshots[simMode];
 
+  if (plots.length === 0 || !activePlot) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center p-12 text-center min-h-[60vh] bg-white rounded-3xl border border-gray-200/50 shadow-sm"
+      >
+        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+          <Cpu className="w-10 h-10 text-gray-300" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          {t('digitaltwinscreen.no_plots_title') || "No Digital Twin Available"}
+        </h2>
+        <p className="text-gray-500 max-w-md">
+          {t('digitaltwinscreen.no_plots_message') || "Please add a farm plot to your account to view its digital twin telemetry, historical data, and AI-driven analysis."}
+        </p>
+      </motion.div>
+    );
+  }
+
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
   const activeNDVI = activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0);
   const activeMoisture = activeSnapshot?.water_stress_score 
