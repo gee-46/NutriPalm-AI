@@ -1082,7 +1082,7 @@ Backend configuration should contain the required Supabase and API configuration
 
 # 👨‍💻 DEVELOPED BY
 
-## Gautam N Chipkar
+## Gautam N Chipkar & Team 
 
 **AI & Data Science Engineer**
 
