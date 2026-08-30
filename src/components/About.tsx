@@ -1,5 +1,5 @@
 import { useTranslation } from "../translation/useTranslation";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { ShieldCheck, ArrowRight, HelpCircle, EyeOff, LayoutGrid, BarChart3 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 
@@ -35,66 +35,11 @@ export const About: React.FC = () => {
       initials: "S",
       imgPos: "object-[center_12%]",
       desc: t('about.team.suhan')
-    },
-    {
-      id: "samruddhi-pai",
-      name: "Samruddhi Pai",
-      role: t('about.roles.Marketing Head'),
-      imgSrc: "/samruddhi-pai.png",
-      initials: "SP",
-      imgPos: "object-[center_18%]",
-      desc: t('about.team.samruddhi-pai')
-    },
-    {
-      id: "nihal",
-      name: "Nihal P K",
-      role: t('about.roles.Marketing Head'),
-      imgSrc: "/nihal.jpg",
-      initials: "NP",
-      imgPos: "object-[center_18%]",
-      desc: t('about.team.nihal')
-    },
-    {
-      id: "bhumika",
-      name: "Bhumika Rao",
-      role: t('about.roles.Marketing Head'),
-      imgSrc: "/bhumika.jpg",
-      initials: "BR",
-      imgPos: "object-[center_18%]",
-      desc: t('about.team.bhumika')
-    },
-    {
-      id: "karthik",
-      name: "Karthik H V",
-      role: t('about.roles.Social Media Marketing'),
-      imgSrc: "/karthik.jpg",
-      initials: "KH",
-      imgPos: "object-[center_18%]",
-      desc: t('about.team.karthik')
-    },
-    {
-      id: "gautam",
-      name: "Gautam N Chipkar",
-      role: t('about.roles.Technical Lead – AI & Platform Engineering'),
-      imgSrc: "/gautam.png",
-      initials: "GC",
-      imgPos: "object-[center_40%]",
-      desc: t('about.team.gautam')
     }
   ];
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.35 });
-  const [hasEntered, setHasEntered] = useState(false);
-
-  useEffect(() => {
-    if (isInView) {
-      const timer = setTimeout(() => {
-        setHasEntered(true);
-      }, 2200);
-      return () => clearTimeout(timer);
-    }
-  }, [isInView]);
 
   const milestones = [
     {
@@ -264,15 +209,13 @@ export const About: React.FC = () => {
             <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 tracking-tight">{t('about.our_leadership_team')}</h3>
           </div>
 
-          {/* Infinite Horizontal Marquee Carousel */}
-          <div className="w-full overflow-hidden relative py-6 mask-gradient">
-            <div className={`flex gap-8 w-max py-4 ${hasEntered ? "animate-marquee hover:[animation-play-state:paused]" : ""}`}>
-              
-              {/* First Set of Cards */}
+          {/* Stable and Frozen Grid */}
+          <div className="w-full py-6 flex justify-center px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl justify-center items-center">
               {teamMembers.map((member, idx) => (
                 <motion.div
-                  key={`${member.id}-first`}
-                  className="glass-card rounded-[28px] p-8 bg-white border border-gray-150 flex flex-col items-center justify-between text-center hover:-translate-y-1.5 hover:shadow-lg hover:border-primary/20 transition-all duration-300 relative group overflow-hidden w-[340px] sm:w-[340px] w-[290px] h-[400px] shrink-0"
+                  key={member.id}
+                  className="glass-card rounded-[28px] p-8 bg-white border border-gray-150 flex flex-col items-center justify-between text-center hover:-translate-y-1.5 hover:shadow-lg hover:border-primary/20 transition-all duration-300 relative group overflow-hidden w-[290px] sm:w-[340px] h-[400px] shrink-0"
                   initial={{ opacity: 0, y: 60, scale: 0.95 }}
                   animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.95 }}
                   transition={{ duration: 0.75, delay: idx * 0.2, ease: "easeOut" }}
@@ -314,51 +257,6 @@ export const About: React.FC = () => {
                   </div>
                 </motion.div>
               ))}
-
-              {/* Second Set of Cards for Seamless Infinite Loop */}
-              {teamMembers.map((member) => (
-                <div
-                  key={`${member.id}-second`}
-                  className="glass-card rounded-[28px] p-8 bg-white border border-gray-150 flex flex-col items-center justify-between text-center hover:-translate-y-1.5 hover:shadow-lg hover:border-primary/20 transition-all duration-300 relative group overflow-hidden w-[340px] sm:w-[340px] w-[290px] h-[400px] shrink-0"
-                >
-                  {/* Glow border highlight */}
-                  <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-primary to-secondary opacity-70" />
-                  
-                  {/* Circular Avatar */}
-                  <div className="relative mb-4 w-24 h-24 rounded-full overflow-hidden border-2 border-primary/20 shadow-md flex items-center justify-center bg-gray-100 z-10 shrink-0">
-                    <img
-                      src={member.imgSrc}
-                      alt={member.name}
-                      className={`w-full h-full object-cover ${member.imgPos} transition-transform duration-500 group-hover:scale-105 z-10 relative`}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    {/* Fallback Initials */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 text-[#2E7D32] font-black text-2xl z-0">
-                      {member.initials}
-                    </div>
-                  </div>
-
-                  <div className="flex-grow flex flex-col justify-center">
-                    {/* Role */}
-                    <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
-                      {member.role}
-                    </span>
-
-                    {/* Name */}
-                    <h4 className="text-base font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors leading-tight">
-                      {member.name}
-                    </h4>
-
-                    {/* Description */}
-                    <p className="text-[11.5px] text-gray-500 leading-normal max-w-[280px]">
-                      {member.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              
             </div>
           </div>
         </div>
