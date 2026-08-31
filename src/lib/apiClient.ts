@@ -94,6 +94,72 @@ export interface RecommendationRecord {
   explanation: any;
 }
 
+export interface OcrExtractedField {
+  parameter: string;
+  raw_label: string | null;
+  value: number | null;
+  unit: string | null;
+  confidence: number;
+  validation: "valid" | "review" | "missing" | "unusable";
+  warnings: string[];
+}
+
+export interface SoilReportUploadResponsePayload {
+  success: boolean;
+  persisted: boolean;
+  soil_report_id: string | null;
+  plot_id: string;
+  raw_text: string;
+  nitrogen: OcrExtractedField;
+  phosphorus: OcrExtractedField;
+  potassium: OcrExtractedField;
+  ph: OcrExtractedField;
+  electrical_conductivity: OcrExtractedField;
+  organic_carbon: OcrExtractedField;
+  extras: OcrExtractedField[];
+  micronutrients: OcrExtractedField[];
+  warnings: string[];
+}
+
+/**
+ * Upload a real soil-test lab report (PDF/JPG/PNG) for OCR + structured
+ * extraction. If every required parameter is extracted with high enough
+ * confidence, the backend persists a new soil_reports row and returns its
+ * id; otherwise `persisted` is false and the extracted fields (with
+ * per-field confidence/validation/warnings) are returned for review.
+ */
+export async function uploadSoilReport(
+  plotId: string,
+  file: File
+): Promise<SoilReportUploadResponsePayload> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  // Do NOT set Content-Type here -- the browser must set the multipart
+  // boundary itself.
+
+  const formData = new FormData();
+  formData.append("plot_id", plotId);
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/api/soil-reports/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ detail: "Failed to process soil report" }));
+    throw new Error(errBody.detail || `Server error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 /**
  * Generate a new AI Recommendation from plot and soil report details.
  */
