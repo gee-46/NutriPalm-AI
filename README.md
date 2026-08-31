@@ -11,7 +11,7 @@ Built by **Samruddhi Organics**
 
 <br/>
 
-![Status](https://img.shields.io/badge/status-V1%20Integration%20Build-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-V1%20Complete-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-lightgrey?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -26,11 +26,11 @@ Built by **Samruddhi Organics**
 [Workflow](#-v1-workflow) •
 [Features](#-features) •
 [Architecture](#-architecture) •
-[Tech Stack](#%EF%B8%8F-tech-stack) •
+[Tech Stack](#️-tech-stack) •
 [Database](#-data--database) •
 [Testing](#-testing--validation) •
 [Getting Started](#-getting-started) •
-[Roadmap](#%EF%B8%8F-roadmap)
+[Roadmap](#️-roadmap)
 
 </div>
 
@@ -38,49 +38,55 @@ Built by **Samruddhi Organics**
 
 # 📖 Overview
 
-**NutriPalm AI** is an AI-powered precision agriculture platform designed to connect farm plots, soil intelligence, crop health, digital twins and agronomic recommendations into a single system.
+**NutriPalm AI** is an agricultural intelligence platform designed to connect farm plots, soil intelligence, crop information, Digital Twin visualization, recommendations and farm analytics into a unified system.
 
-The platform gives each authenticated farmer a user-specific agricultural workspace where farm plots, soil reports, crop information, Digital Twin data, recommendations and analytics are connected through a common data layer.
+The platform provides each authenticated farmer with a user-specific agricultural workspace where farm plots, soil reports, recommendations and analytics are connected through a common data layer.
 
-The current **V1 build moves beyond the original visual prototype** and implements the core application workflow using:
+The current **V1 build is an integrated working prototype** containing:
 
-- React + TypeScript frontend
-- Supabase Authentication
+- User authentication
 - Google OAuth
-- Supabase PostgreSQL
-- Row Level Security (RLS)
-- Python + FastAPI backend services
-- Database-backed farm plots
-- Soil report storage and processing pipeline
-- AI recommendation persistence
-- Database-backed Digital Twin data
-- Account-specific dashboard synchronization
+- Farmer management
+- Farm plot management
+- Supabase PostgreSQL persistence
+- Row Level Security
+- Real soil-report PDF upload
+- Tesseract-based OCR
+- Soil parameter extraction
+- Soil validation
+- Dynamic agronomic recommendations
+- Fertilizer dosage calculations
+- Cost and ROI estimation
+- Digital Twin V1 visualization
 - Farm analytics
-
-OCR-based soil report extraction is currently being integrated as the next major V1 component.
+- OCR-to-Analytics data mapping
+- Dynamic farmer/plot context
+- Advisory PDF export
+- Automated backend testing
 
 ---
 
 # 🎯 The Problem
 
-Farmers often work with fragmented information:
+Farmers often work with fragmented agricultural information:
 
 - Soil laboratory reports
 - Farm plot information
 - Crop and growth-stage data
 - Fertilizer decisions
+- Soil health indicators
 - Historical observations
-- Farm health indicators
+- Farm health information
 
-Without connecting these datasets, agricultural decisions become difficult to optimize.
+When these datasets are disconnected, it becomes difficult to transform agricultural information into actionable decisions.
 
-NutriPalm AI aims to create a unified agricultural intelligence layer where a farm's data can be transformed into actionable recommendations.
+NutriPalm AI aims to create a unified agricultural intelligence layer where farm data can be transformed into understandable recommendations and farm insights.
 
 ---
 
 # 💡 The Solution
 
-NutriPalm AI connects:
+NutriPalm AI connects the core agricultural workflow:
 
 ```text
 Farmer Account
@@ -89,18 +95,28 @@ Farm Plot
       ↓
 Soil Report
       ↓
+OCR Extraction
+      ↓
 Soil Parameters
       ↓
-AI Soil Analysis
+Validation
       ↓
-AI Recommendation
+Structured Soil Data
       ↓
-Digital Twin
+Supabase
       ↓
-Analytics & Farm Intelligence
+ ┌────┴─────────────┐
+ ↓                  ↓
+Recommendations   Analytics
+ ↓
+Advisory Plan
+ ↓
+PDF Export
 ````
 
-The central concept is the **Digital Twin** — a digital representation of a farm plot that combines plot information, crop information, soil diagnostics and health indicators.
+The platform also contains a **Digital Twin V1** representing the current digital state and diagnostic information associated with a farm plot.
+
+The Digital Twin is currently a separate V1 visualization/intelligence layer and is **not claimed to be directly driven by OCR soil reports**.
 
 ---
 
@@ -109,90 +125,95 @@ The central concept is the **Digital Twin** — a digital representation of a fa
 The current V1 workflow is designed around authenticated, user-owned agricultural data.
 
 ```text
-┌──────────────────────┐
-│   User Authentication │
-│ Supabase + Google OAuth
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│   Farmer Profile      │
-│ PostgreSQL + RLS      │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│      Farm Plot        │
-│ Plot + Crop + Area    │
-│ Boundary information  │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│    Soil Report        │
-│ Upload / Storage      │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│    OCR Pipeline       │
-│ Extraction + Parsing   │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ Cleaning & Validation  │
-│ N / P / K / pH / EC   │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ Structured Soil Data   │
-│ PostgreSQL / Supabase  │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│   AI Soil Analysis     │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ Recommendation Engine  │
-│ NPK + Application Plan │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│     Digital Twin      │
-│ Health + Crop + Water │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│       Analytics       │
-│ Farm-level insights   │
-└──────────────────────┘
+┌─────────────────────────┐
+│    User Authentication  │
+│   Supabase + OAuth      │
+└────────────┬────────────┘
+             ↓
+┌─────────────────────────┐
+│     Farmer Profile      │
+│     PostgreSQL + RLS    │
+└────────────┬────────────┘
+             ↓
+┌─────────────────────────┐
+│       Farm Plot         │
+│ Plot + Crop + Area      │
+└────────────┬────────────┘
+             ↓
+┌─────────────────────────┐
+│    Soil Report PDF      │
+│       Upload            │
+└────────────┬────────────┘
+             ↓
+┌─────────────────────────┐
+│       OCR Pipeline      │
+│ Tesseract + Processing  │
+└────────────┬────────────┘
+             ↓
+┌─────────────────────────┐
+│ Extraction & Validation  │
+│ N/P/K/pH/EC/Micros      │
+└────────────┬────────────┘
+             ↓
+┌─────────────────────────┐
+│   Structured Soil Data  │
+│     Supabase Database   │
+└────────────┬────────────┘
+             ↓
+       ┌─────┴─────┐
+       ↓           ↓
+┌────────────┐ ┌────────────┐
+│Recommendation│ │ Analytics │
+│   Engine     │ │ Dashboard │
+└─────┬────────┘ └────────────┘
+      ↓
+┌─────────────────────────┐
+│    Advisory PDF Export  │
+└─────────────────────────┘
 ```
 
-### Current implementation status
+---
 
-| Component                   | V1 Status                         |
-| --------------------------- | --------------------------------- |
-| User authentication         | ✅ Working                         |
-| Google OAuth                | ✅ Implemented                     |
-| User-specific data          | ✅ Working                         |
-| Farmer profile              | ✅ Working                         |
-| Farm plot creation          | ✅ Working                         |
-| Plot ownership              | ✅ Working                         |
-| Plot persistence            | ✅ Working                         |
-| Soil report database        | ✅ Working                         |
-| Soil report upload          | ✅ Working                         |
-| OCR                         | 🚧 In progress                    |
-| Soil value extraction       | 🚧 OCR-dependent                  |
-| Soil validation             | 🚧 OCR-dependent                  |
-| AI soil analysis            | ✅ Backend workflow implemented    |
-| AI recommendations          | ✅ Working                         |
-| Recommendation persistence  | ✅ Working                         |
-| Digital Twin                | ✅ Working                         |
-| Digital Twin health states  | ✅ Working                         |
-| Analytics                   | ✅ Working                         |
-| Account-specific dashboard  | ✅ Working                         |
-| Dashboard greeting/time     | ✅ Implemented                     |
-| PDF export                  | ⚠️ Requires final V1 verification |
-| Real physical IoT telemetry | 🚧 Future                         |
-| Live satellite intelligence | 🚧 Future                         |
-| Disease detection           | 🚧 Future                         |
+# ✅ Current V1 Implementation Status
+
+| Component                          | V1 Status     |
+| ---------------------------------- | ------------- |
+| User authentication                | ✅ Working     |
+| Google OAuth                       | ✅ Working     |
+| User-specific data                 | ✅ Working     |
+| Farmer profile                     | ✅ Working     |
+| Farmer management                  | ✅ Working     |
+| Farm plot creation                 | ✅ Working     |
+| Plot ownership                     | ✅ Working     |
+| Plot persistence                   | ✅ Working     |
+| Soil report database               | ✅ Working     |
+| Soil report upload                 | ✅ Working     |
+| Real OCR                           | ✅ Working     |
+| Soil value extraction              | ✅ Working     |
+| Soil validation                    | ✅ Working     |
+| Macronutrient extraction           | ✅ Working     |
+| Micronutrient extraction           | ✅ Working     |
+| OCR persistence                    | ✅ Working     |
+| V1 recommendation engine           | ✅ Working     |
+| Dynamic fertilizer recommendations | ✅ Working     |
+| Fertilizer dosage calculations     | ✅ Working     |
+| Cost / ROI calculations            | ✅ Working     |
+| Recommendation persistence         | ✅ Working     |
+| Digital Twin V1                    | ✅ Working     |
+| Digital Twin health states         | ✅ Working     |
+| Analytics V1                       | ✅ Working     |
+| OCR → Analytics mapping            | ✅ Implemented |
+| Account-specific dashboard         | ✅ Working     |
+| Dynamic farmer identity            | ✅ Working     |
+| PDF advisory export                | ✅ Working     |
+| Backend automated tests            | ✅ 97 passed   |
+| Frontend production build          | ✅ Passing     |
+| Real PDF testing                   | ✅ Tested      |
+| Physical IoT telemetry             | 🚧 Future     |
+| Live satellite intelligence        | 🚧 Future     |
+| Live weather intelligence          | 🚧 Future     |
+| GPS farm-boundary capture          | 🚧 Future     |
+| Disease detection                  | 🚧 Future     |
 
 ---
 
@@ -205,41 +226,32 @@ The current V1 workflow is designed around authenticated, user-owned agricultura
 * React
 * TypeScript
 * Supabase Auth
-* Google OAuth 2.0
+* Google OAuth
 * Supabase JavaScript SDK
 * PostgreSQL
-* Row Level Security (RLS)
+* Row Level Security
 
 ### Functionality
 
-Users can authenticate and access their own agricultural workspace.
+Authenticated users access their own agricultural workspace.
 
-The application resolves the authenticated user and uses the account identity to load:
+The application uses the authenticated account to associate:
 
 * User profile
 * Farmers
 * Farm plots
 * Soil reports
-* Digital Twin records
 * Recommendations
 * Analytics
+* Digital Twin records
 
-Google OAuth provides an alternative login flow using the user's Google account.
+The farmer identity displayed throughout the application is dynamically resolved from the authenticated user/profile context.
 
 ---
 
 # 👨‍🌾 2. Farmer Management
 
 The Farmer Management module provides the agricultural CRM layer.
-
-### Technologies
-
-* React
-* TypeScript
-* Tailwind CSS
-* Framer Motion
-* Supabase
-* PostgreSQL
 
 ### Features
 
@@ -255,25 +267,17 @@ The Farmer Management module provides the agricultural CRM layer.
 * Status indicators
 * Farmer detail views
 
-The V1 dashboard is designed to derive information from the authenticated user's actual data rather than relying on global demonstration records.
+User-specific agricultural data is associated with the authenticated account.
 
 ---
 
 # 🗺️ 3. Farm Plot Management
 
-Farm plots are the central entity connecting agricultural information.
+Farm plots are the central agricultural entity connecting farm information.
 
-### Technologies
+### Plot information
 
-* React
-* TypeScript
-* Supabase PostgreSQL
-* GIS / spatial visualization
-* SVG-based visualization
-
-### Plot data
-
-A plot can contain information such as:
+A plot can contain:
 
 ```text
 Plot ID
@@ -282,60 +286,63 @@ Plot Name
 Crop
 Growth Stage
 Area
-Boundary
+Area Unit
+Boundary Information
 Soil Report Status
 ```
 
-Plot ownership is associated with the authenticated user's account.
+Plot ownership is associated with the authenticated user.
 
-Example:
+Conceptually:
 
 ```text
 Authenticated User
         ↓
-owner_id
+     owner_id
         ↓
-Farm Plot
+     Farm Plot
         ↓
-Soil Report
+   Soil Reports
         ↓
-Digital Twin
-        ↓
-Recommendation
+ Recommendations
 ```
 
 ---
 
 # 🧪 4. Soil Report Intelligence
 
-Soil reports are the primary input for soil-based agricultural intelligence.
+Soil reports are a major input into the V1 agricultural intelligence workflow.
 
-### Technologies
+## Processing Stack
 
-**Frontend**
+### Frontend
 
 * React
 * TypeScript
-* Supabase JS SDK
+* Supabase JavaScript SDK
 
-**Backend**
+### Backend
 
 * Python
 * FastAPI
 * Uvicorn
-* REST API
+* REST APIs
 
-**Processing**
+### OCR / Processing
 
-* OCR pipeline
+* Tesseract OCR
+* PDF processing
 * Text extraction
+* Layout-aware parsing
 * Data cleaning
 * Validation
 * Structured soil data
 
-### Target soil parameters
+---
 
-The processing pipeline is designed around agricultural parameters including:
+## Supported Soil Parameters
+
+The V1 extraction workflow handles:
 
 ```text
 Nitrogen (N)
@@ -344,103 +351,162 @@ Potassium (K)
 pH
 Electrical Conductivity (EC)
 Organic Carbon
+Zinc
+Sulphur
+Boron
+Iron
+Manganese
+Copper
 ```
-
-### Intended V1 pipeline
-
-```text
-Actual Soil Report
-        ↓
-Upload
-        ↓
-OCR
-        ↓
-Raw Text
-        ↓
-Text Extraction
-        ↓
-Cleaning
-        ↓
-Validation
-        ↓
-Structured Soil JSON
-        ↓
-Supabase PostgreSQL
-        ↓
-AI Soil Analysis
-        ↓
-Recommendation
-```
-
-### Current status
-
-The upload/database infrastructure is working.
-
-The **OCR extraction component is currently being completed and validated with real soil reports**.
 
 ---
 
-# 🤖 5. AI Recommendation Engine
-
-The Recommendation Engine converts agricultural data into actionable recommendations.
-
-### Technologies
-
-* React
-* TypeScript
-* Python
-* FastAPI
-* REST API
-* Supabase PostgreSQL
-
-### Recommendation workflow
+## V1 OCR Pipeline
 
 ```text
-Farm Plot
-    +
-Soil Report
-    ↓
-Soil Parameters
-    ↓
-AI Soil Analysis
-    ↓
-Crop Context
-    ↓
-Recommendation Engine
-    ↓
+Real Soil Report PDF
+        ↓
+      Upload
+        ↓
+    PDF Processing
+        ↓
+     Tesseract OCR
+        ↓
+      Raw Text
+        ↓
+   Text Extraction
+        ↓
+       Cleaning
+        ↓
+      Validation
+        ↓
+ Structured Soil JSON
+        ↓
+      Supabase
+        ↓
+ Recommendation / Analytics
+```
+
+The V1 OCR pipeline has been tested against multiple real soil-report PDFs.
+
+The extraction logic also accounts for common OCR formatting variations and supports inequality-style values such as:
+
+```text
+> 5
+< 1
+```
+
+The system should not be interpreted as guaranteeing perfect extraction for every possible laboratory report format.
+
+---
+
+# 🤖 5. V1 Recommendation Engine
+
+The V1 Recommendation Engine converts extracted soil information into actionable agronomic guidance.
+
+The current implementation uses a **deterministic rule-based agronomic approach** rather than claiming to be a trained machine-learning model.
+
+## Recommendation Flow
+
+```text
+Actual Soil Values
+        ↓
+Nutrient Status Evaluation
+        ↓
+Deficiency / Adequacy Diagnosis
+        ↓
+Fertilizer Selection
+        ↓
+Dose Calculation
+        ↓
+Plot-Area Adjustment
+        ↓
+Cost / ROI Estimation
+        ↓
 Recommendation
 ```
-
-The frontend sends plot and soil-report identifiers to the recommendation API.
-
-Example request:
-
-```json
-{
-  "plot_id": "plot-uuid",
-  "soil_report_id": "report-uuid",
-  "crop_price_per_ton_inr": 15000
-}
-```
-
-The generated recommendation is stored and can be loaded again after refreshing the application.
 
 ### V1 capabilities
 
-* Soil-based recommendation
-* Crop-aware recommendation
-* Nutrient guidance
+* Soil-based recommendations
+* Nutrient deficiency detection
+* Nutrient adequacy detection
+* Crop-aware context
+* Fertilizer recommendations
 * Application planning
+* Plot-area-aware quantities
+* Estimated fertilizer costs
+* Yield improvement estimates
+* ROI calculations
 * Recommendation persistence
-* Recommendation retrieval
 
 ---
 
-# 🌴 6. Digital Twin Intelligence
+## Example
 
-The Digital Twin represents the current digital state of a farm plot.
+A soil report containing:
 
-### Technologies
+```text
+Nitrogen:   211 kg/ha
+Phosphorus: 23.46 kg/ha
+Potassium:  319 kg/ha
+pH:         5.81
+```
+
+can be evaluated against the V1 agronomic thresholds.
+
+The recommendation layer can then identify deficient parameters and generate corresponding fertilizer/application guidance.
+
+---
+
+# 📄 6. Advisory PDF Export
+
+NutriPalm AI provides client-side advisory report generation using **jsPDF**.
+
+The exported advisory report contains dynamic information from the active agricultural context.
+
+### Included information
+
+* Farmer
+* Plot
+* Crop
+* Area
+* Growth phase
+* Soil analysis
+* Extracted soil values
+* Units
+* Agronomic ranges
+* Nutrient status
+* Recommendation summary
+* Fertilizer dosage
+* Required quantities
+* Estimated costs
+* Diagnoses
+* Cost-benefit information
+* ROI information
+* Advisory disclaimer
+
+Both:
+
+```text
+Export PDF
+```
+
+and:
+
+```text
+Download Advisory PDF
+```
+
+use the same export workflow.
+
+---
+
+# 🌴 7. Digital Twin V1
+
+The Digital Twin represents the digital state of a farm plot.
+
+### V1 technologies
 
 * React
 * TypeScript
@@ -448,9 +514,9 @@ The Digital Twin represents the current digital state of a farm plot.
 * SVG visualization
 * Framer Motion
 
-### Digital Twin data
+### V1 diagnostic information
 
-The Digital Twin can use diagnostic information such as:
+The Digital Twin interface can represent:
 
 ```text
 Crop Health
@@ -464,22 +530,7 @@ Confidence Score
 Analysis Date
 ```
 
-Example database-backed diagnostic:
-
-```text
-Crop Health:       91%
-Water Stress:      38%
-Nutrient Health:   88%
-Growth Stage:      Vegetative
-NDVI:              0.88
-Yield Prediction:  5.4
-Risk Level:        Low
-Confidence:        94%
-```
-
 ### Timeline modes
-
-The Digital Twin supports:
 
 ```text
 Past
@@ -487,68 +538,81 @@ Current
 Prediction
 ```
 
-These states are visualized through the Digital Twin interface.
+The current Digital Twin is a **V1 prototype/visual intelligence layer**.
 
-The application automatically detects the authenticated user's available plots and can display the corresponding Digital Twin.
+It uses the project's available plot and diagnostic data.
+
+### Important V1 scope boundary
+
+Physical sensors, live IoT telemetry, satellite imagery, weather APIs and mobile GPS collection are **not currently implemented as live data sources**.
+
+These belong to future versions.
 
 ---
 
-# 📊 7. Farm Analytics
+# 📊 8. Farm Analytics
 
-Analytics is connected to the user's agricultural data.
+Analytics provides a farm-level view of agricultural information.
 
-### Technologies
+### Current V1 analytics
 
-* React
-* TypeScript
-* Supabase PostgreSQL
-* SVG/chart visualizations
-
-### Current analytics
-
-The analytics dashboard provides information such as:
+The dashboard can represent:
 
 * Monitored land area
-* Crop health index
+* Crop health
 * Water stress
 * Yield delta
 * Soil diagnostic status
-* Digital Twin telemetry status
-* Soil nutrient balance
+* Digital Twin telemetry/diagnostic status
+* Soil nutrient information
 * Crop distribution
-
-Example:
-
-```text
-Authenticated User
-        ↓
-User-owned plots
-        ↓
-Plot aggregation
-        ↓
-Analytics calculations
-        ↓
-Dashboard visualization
-```
-
-The Analytics module has been tested with the user's own plot data.
+* Plot-level information
 
 ---
 
-# 🖥️ 8. Main Dashboard
+## OCR → Analytics
 
-The main Dashboard is account-aware.
+Persisted soil reports can be queried from Supabase and mapped into the Analytics data model.
 
-The dashboard is **not intended to use global dummy farmer data for authenticated users**.
+The current mapping includes database fields such as:
 
-### Technologies
+```text
+nitrogen_kg_ha
+phosphorus_kg_ha
+potassium_kg_ha
+organic_carbon_percent
+ph
+electrical_conductivity
+created_at
+```
 
-* React
-* TypeScript
-* Supabase
-* PostgreSQL
-* Tailwind CSS
-* Framer Motion
+These are mapped to the frontend analytics metrics.
+
+Conceptually:
+
+```text
+Soil Report PDF
+      ↓
+     OCR
+      ↓
+Validated Soil Values
+      ↓
+Supabase soil_reports
+      ↓
+useFarmerAnalytics
+      ↓
+Analytics Dashboard
+```
+
+This allows real persisted soil-report information to participate in V1 Analytics where the corresponding metric is supported.
+
+---
+
+# 🖥️ 9. Main Dashboard
+
+The main dashboard is account-aware.
+
+The application resolves the authenticated user's agricultural information rather than treating all farmers as one global dataset.
 
 ### Dynamic information
 
@@ -556,10 +620,10 @@ The dashboard can derive:
 
 * Registered farmers
 * Mapped plots
-* Digital Twin count
+* Digital Twin information
 * Recommendations
 * Total acreage
-* Crop varieties
+* Crop information
 * Soil health
 * Growth stages
 * User identity
@@ -567,7 +631,7 @@ The dashboard can derive:
 
 ### Dynamic greeting
 
-The greeting is determined from the user's local time.
+The greeting changes according to local time:
 
 ```text
 05:00 – 11:59  → Good Morning
@@ -576,15 +640,13 @@ The greeting is determined from the user's local time.
 21:00 – 04:59  → Good Night
 ```
 
-The displayed name is resolved from the authenticated profile/metadata rather than using a hardcoded administrator name.
-
 ---
 
 # 🗄️ DATA & DATABASE
 
 NutriPalm AI uses **Supabase PostgreSQL** as the primary application data layer.
 
-The database connects the major entities:
+The major entities are connected conceptually as:
 
 ```text
 Users
@@ -597,14 +659,16 @@ Users
                     │
                     ├── Soil Reports
                     │
-                    ├── Digital Twins
+                    ├── Digital Twin Data
                     │
                     └── Recommendations
 ```
 
-### Important principle
+---
 
-Data ownership is based on the authenticated user's identity.
+## Data Ownership
+
+The application uses authenticated identity to associate user-owned records.
 
 Conceptually:
 
@@ -613,10 +677,10 @@ auth.uid()
     ↓
 owner_id
     ↓
-user-owned records
+User-Owned Records
 ```
 
-This prevents the main application views from treating all farmers and plots as one global dataset.
+Row Level Security is used where configured to protect user-owned data.
 
 ---
 
@@ -630,87 +694,103 @@ This prevents the main application views from treating all farmers and plots as 
 * Row Level Security
 * JWT-based authentication
 
-The application uses authenticated sessions to associate data with the correct user.
+The application uses authenticated sessions to associate agricultural data with the correct user.
 
-Database-level security is used to restrict access to user-owned records where configured.
+### Important
+
+Never commit:
+
+* Supabase service-role keys
+* OAuth secrets
+* API secrets
+* Production credentials
+* Private keys
+
+to GitHub.
 
 ---
 
 # 🧩 MODULE → TECHNOLOGY MAPPING
 
-| Module                     | Primary Technologies                   |
-| -------------------------- | -------------------------------------- |
-| Authentication             | React, TypeScript, Supabase Auth       |
-| Google Login               | Supabase Auth, Google OAuth 2.0        |
-| User Profiles              | React, Supabase PostgreSQL             |
-| Farmer CRM                 | React, TypeScript, Tailwind, Supabase  |
-| Farm Plots                 | React, TypeScript, Supabase PostgreSQL |
-| GIS Visualization          | React, SVG/GIS visualization           |
-| Soil Upload                | React, TypeScript, Supabase            |
-| OCR                        | Python / OCR processing pipeline       |
-| Soil Processing            | Python, FastAPI                        |
-| Soil Validation            | Python                                 |
-| AI Soil Analysis           | Python, FastAPI                        |
-| Recommendations            | Python, FastAPI, PostgreSQL            |
-| Digital Twin               | React, TypeScript, Supabase            |
-| Digital Twin Visualization | SVG, React, Framer Motion              |
-| Analytics                  | React, TypeScript, Supabase            |
-| Dashboard                  | React, TypeScript, Supabase            |
-| Data Security              | Supabase Auth, PostgreSQL, RLS         |
-| API Layer                  | Python, FastAPI, Uvicorn               |
-| Build System               | Vite                                   |
-| Styling                    | Tailwind CSS / CSS                     |
-| Animation                  | Framer Motion                          |
-| Icons                      | Lucide React                           |
+| Module                     | Primary Technologies                    |
+| -------------------------- | --------------------------------------- |
+| Authentication             | React, TypeScript, Supabase Auth        |
+| Google Login               | Supabase Auth, Google OAuth             |
+| User Profiles              | React, Supabase PostgreSQL              |
+| Farmer Management          | React, TypeScript, Tailwind, Supabase   |
+| Farm Plots                 | React, TypeScript, Supabase PostgreSQL  |
+| Map Visualization          | React, SVG / GIS-oriented visualization |
+| Soil Upload                | React, TypeScript, Supabase             |
+| OCR                        | Python, Tesseract                       |
+| Soil Processing            | Python, FastAPI                         |
+| Soil Validation            | Python                                  |
+| Recommendation Engine      | TypeScript / Python application logic   |
+| Digital Twin               | React, TypeScript, Supabase             |
+| Digital Twin Visualization | SVG, React, Framer Motion               |
+| Analytics                  | React, TypeScript, Supabase             |
+| Dashboard                  | React, TypeScript, Supabase             |
+| PDF Export                 | jsPDF                                   |
+| Database                   | Supabase PostgreSQL                     |
+| Data Security              | Supabase Auth, PostgreSQL, RLS          |
+| API Layer                  | Python, FastAPI, Uvicorn                |
+| Build System               | Vite                                    |
+| Styling                    | Tailwind CSS / CSS                      |
+| Animation                  | Framer Motion                           |
+| Icons                      | Lucide React                            |
 
 ---
 
 # 🏗️ ARCHITECTURE
 
 ```text
-                         ┌───────────────────────────┐
-                         │       USER / FARMER       │
-                         └─────────────┬─────────────┘
-                                       │
-                                       ▼
-                         ┌───────────────────────────┐
-                         │     React + TypeScript    │
-                         │       Web Application     │
-                         └─────────────┬─────────────┘
-                                       │
-                ┌──────────────────────┼──────────────────────┐
-                │                      │                      │
-                ▼                      ▼                      ▼
-       ┌────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-       │ Supabase Auth  │    │ Supabase Client │    │  FastAPI Backend│
-       │ Google OAuth   │    │   PostgreSQL    │    │    Python       │
-       └────────────────┘    └────────┬────────┘    └────────┬────────┘
-                                     │                      │
-                                     │                      ▼
-                                     │             ┌─────────────────┐
-                                     │             │ Soil Processing │
-                                     │             │ OCR / Analysis  │
-                                     │             └────────┬────────┘
-                                     │                      │
-                                     └──────────┬───────────┘
-                                                ▼
-                                  ┌─────────────────────────┐
-                                  │     Agricultural Data   │
-                                  │                         │
-                                  │ • Farmers               │
-                                  │ • Plots                 │
-                                  │ • Soil Reports          │
-                                  │ • Digital Twins         │
-                                  │ • Recommendations       │
-                                  └────────────┬────────────┘
+                         ┌───────────────────────┐
+                         │   USER / FARMER       │
+                         └───────────┬───────────┘
+                                     │
+                                     ▼
+                         ┌───────────────────────┐
+                         │ React + TypeScript    │
+                         │ Web Application       │
+                         └───────────┬───────────┘
+                                     │
+             ┌───────────────────────┼───────────────────────┐
+             │                       │                       │
+             ▼                       ▼                       ▼
+     ┌───────────────┐      ┌────────────────┐     ┌────────────────┐
+     │ Supabase Auth │      │ Supabase Client│     │ FastAPI Backend│
+     │ Google OAuth  │      │ PostgreSQL     │     │ Python         │
+     └───────────────┘      └───────┬────────┘     └───────┬────────┘
+                                    │                      │
+                                    │                      ▼
+                                    │              ┌────────────────┐
+                                    │              │ Soil Processing│
+                                    │              │ OCR / Parsing  │
+                                    │              └───────┬────────┘
+                                    │                      │
+                                    └──────────┬───────────┘
+                                               ▼
+                                  ┌────────────────────────┐
+                                  │ Agricultural Data      │
+                                  │                        │
+                                  │ • Farmers              │
+                                  │ • Plots                │
+                                  │ • Soil Reports         │
+                                  │ • Recommendations      │
+                                  │ • Digital Twin Data    │
+                                  └────────────┬───────────┘
                                                │
-                  ┌────────────────────────────┼─────────────────────────┐
-                  │                            │                         │
-                  ▼                            ▼                         ▼
-        ┌─────────────────┐          ┌──────────────────┐       ┌─────────────────┐
-        │ Digital Twin    │          │ Recommendation   │       │ Analytics       │
-        │ Intelligence    │          │ Engine           │       │ Dashboard       │
-        └─────────────────┘          └──────────────────┘       └─────────────────┘
+                         ┌─────────────────────┼───────────────────┐
+                         │                     │                   │
+                         ▼                     ▼                   ▼
+                 ┌──────────────┐      ┌───────────────┐   ┌────────────┐
+                 │ Digital Twin │      │ Recommendation│   │ Analytics  │
+                 │ V1           │      │ Engine        │   │ Dashboard  │
+                 └──────────────┘      └───────┬───────┘   └────────────┘
+                                               │
+                                               ▼
+                                      ┌────────────────┐
+                                      │ Advisory PDF   │
+                                      └────────────────┘
 ```
 
 ---
@@ -721,7 +801,7 @@ Database-level security is used to restrict access to user-owned records where c
 
 * **React 19**
 * **TypeScript**
-* **Vite 8**
+* **Vite**
 * **Tailwind CSS**
 * **Framer Motion**
 * **Lucide React**
@@ -742,23 +822,27 @@ Database-level security is used to restrict access to user-owned records where c
 ## Authentication
 
 * **Supabase Auth**
-* **Google OAuth 2.0**
+* **Google OAuth**
 * **JWT sessions**
 
-## AI / Intelligence
+## OCR / Intelligence
 
-* Soil report OCR pipeline
+* **Tesseract OCR**
 * Soil parameter extraction
-* Soil analysis
-* AI recommendation engine
-* Digital Twin diagnostic processing
+* Soil validation
+* Rule-based V1 recommendation engine
+* Digital Twin diagnostics
 
 ## Visualization
 
 * SVG
-* React visual components
-* GIS-oriented map visualization
-* Interactive agricultural dashboards
+* React components
+* GIS-oriented visualization
+* Interactive dashboards
+
+## PDF
+
+* **jsPDF**
 
 ---
 
@@ -785,10 +869,10 @@ nutripalm-ai/
 │   │   │
 │   │   └── shared components
 │   │
+│   ├── hooks/
+│   │
 │   ├── lib/
 │   │   └── apiClient.ts
-│   │
-│   ├── hooks/
 │   │
 │   ├── data/
 │   │
@@ -799,10 +883,14 @@ nutripalm-ai/
 │   └── index.css
 │
 ├── backend/
-│   ├── API services
-│   ├── soil processing
-│   ├── recommendation services
-│   └── tests/
+│   ├── app/
+│   │   ├── routers/
+│   │   ├── repositories/
+│   │   ├── ocr/
+│   │   └── ...
+│   │
+│   ├── tests/
+│   └── ...
 │
 ├── docs/
 │
@@ -815,122 +903,158 @@ nutripalm-ai/
 
 # 🧪 TESTING & VALIDATION
 
-V1 has been validated through both frontend build checks and backend tests.
+V1 has been validated through automated backend testing, frontend production builds and manual real-document testing.
 
-### Frontend build
+## Frontend Build
 
 ```bash
 npm run build
 ```
 
-Expected result:
+### Result
 
 ```text
-tsc -b
-+
-vite build
-=
-successful production build
+Production build successful
+TypeScript compilation successful
+Vite build successful
 ```
 
-### Backend tests
+---
+
+## Backend Tests
 
 ```bash
-python -m pytest backend/tests
+python -m pytest backend/tests -v
 ```
 
-The backend test suite has been executed successfully with:
+### Current verified result
 
 ```text
-51 / 51 tests passing
+97 passed
+0 failed
 ```
 
-### Manually verified V1 flows
+---
+
+## Manually Tested V1 Flows
+
+The following workflows have been tested during V1 development:
 
 * Authentication
-* User-specific plot loading
+* User-specific data
+* Farmer management
 * Plot creation
 * Plot persistence
-* Digital Twin plot detection
-* Digital Twin diagnostic loading
-* Multiple Digital Twin health states
+* Soil PDF upload
+* Real OCR processing
+* Soil parameter extraction
+* OCR validation
 * Recommendation generation
-* Recommendation persistence after refresh
-* Analytics using user plot data
-* Dashboard account synchronization
-* Dynamic user greeting
-* Supabase database queries
+* Dynamic fertilizer calculations
+* Analytics data mapping
+* Dynamic farmer identity
+* Advisory PDF generation
+* Supabase database interaction
+* Frontend production build
+
+Multiple real soil-report PDFs have been used during OCR testing.
 
 ---
 
-# 🔬 VERIFIED V1 DATA FLOW
+# 🔬 VERIFIED SOIL INTELLIGENCE FLOW
 
-A core verified flow is:
-
-```text
-Authenticated User
-       ↓
-Gautam test Plot
-       ↓
-Plot UUID
-       ↓
-Digital Twin record
-       ↓
-Diagnostic data
-       ↓
-Digital Twin Health
-       ↓
-Current / Past / Prediction views
-```
-
-Example diagnostic record:
+The key V1 soil workflow is:
 
 ```text
-Crop Health       → 91
-Water Stress      → 38
-Nutrient Health   → 88
-Growth Stage      → Vegetative
-NDVI              → 0.88
-Yield Prediction  → 5.4
-Risk Level        → Low
-Confidence        → 94
-```
-
-This data is stored against the corresponding plot rather than being a purely visual dashboard value.
-
----
-
-# 🚧 CURRENT V1 DEVELOPMENT
-
-## Soil OCR
-
-The remaining major V1 integration is the complete real-document OCR pipeline.
-
-Target:
-
-```text
-Real PDF
-   ↓
-Upload
-   ↓
-OCR
-   ↓
-Text Extraction
-   ↓
-Cleaning
-   ↓
+Real Soil Report
+       ↓
+PDF Upload
+       ↓
+Tesseract OCR
+       ↓
+Text / Layout Processing
+       ↓
+Parameter Extraction
+       ↓
 Validation
-   ↓
-Structured Soil JSON
-   ↓
-Database
-   ↓
-AI Analysis
-   ↓
-Recommendation
+       ↓
+Structured Soil Data
+       ↓
+Supabase soil_reports
+       ↓
+┌──────┴────────┐
+↓               ↓
+Analytics   Recommendation
+                ↓
+          Advisory PDF
 ```
 
-The goal is to ensure the recommendation is generated from the **actual values extracted from the uploaded soil report**, rather than manually entered demonstration values.
+This is the primary integrated intelligence workflow of NutriPalm AI V1.
+
+---
+
+# 📍 FARM LOCATION & BOUNDARIES
+
+The current V1 web application can work with available browser/device location context where supported by the existing application.
+
+However, **precise farm-boundary capture is not yet a production GIS feature**.
+
+The following are future capabilities:
+
+* Satellite-drawn farm boundaries
+* Mobile GPS boundary capture
+* Walking around the farm to collect GPS points
+* Satellite-assisted boundary verification
+* GPS-based boundary adjustment
+
+### Recommended future approach
+
+A future version can combine:
+
+```text
+Satellite Initial Boundary
+          ↓
+Mobile GPS Verification
+          ↓
+Farmer Adjustment
+          ↓
+Final Farm Polygon
+```
+
+Mobile GPS-based collection is particularly suited to a future mobile application where device location services can provide more precise field-level data.
+
+---
+
+# 🚧 V1 SCOPE BOUNDARIES
+
+NutriPalm AI V1 should be understood as an **integrated agricultural prototype**, not yet as a fully deployed precision-agriculture hardware platform.
+
+### Implemented in V1
+
+* User management
+* Farm management
+* Plot management
+* Soil report OCR
+* Soil validation
+* Soil persistence
+* Rule-based recommendations
+* Fertilizer calculations
+* Analytics
+* Digital Twin visualization
+* Advisory PDF export
+
+### Not yet implemented as live intelligence
+
+* Physical IoT sensors
+* Real-time soil sensors
+* Live weather APIs
+* Live satellite imagery
+* Live NDVI feeds
+* Mobile GPS field tracking
+* Automatic disease detection
+* Production ML yield forecasting
+
+These are intentionally part of the future roadmap.
 
 ---
 
@@ -941,45 +1065,96 @@ The goal is to ensure the recommendation is generated from the **actual values e
 * Authentication
 * Google OAuth
 * User profiles
-* User-specific data
-* Farmer management
-* Farm plot management
+* Farmer Management
+* Farm Plot Management
 * Plot persistence
-* Soil report infrastructure
-* Recommendation Engine
-* Recommendation persistence
-* Digital Twin
-* Digital Twin health diagnostics
+* Soil report upload
+* Real OCR
+* Soil parameter extraction
+* Soil validation
+* Supabase persistence
+* V1 Recommendation Engine
+* Dynamic fertilizer dosage
+* Cost / ROI calculations
+* Digital Twin V1
+* Digital Twin health visualization
 * Past / Current / Prediction views
-* Analytics
+* Analytics V1
+* OCR → Analytics mapping
 * Account-aware dashboard
-* Dynamic time-based greeting
-* Supabase PostgreSQL integration
-* RLS-based data ownership
-* Python/FastAPI backend
+* Dynamic farmer identity
+* Advisory PDF export
+* FastAPI backend
 * Automated backend testing
 
-## 🚧 V1 Finalization
+---
 
-* Complete production OCR pipeline
-* Real soil document extraction
-* Soil-value validation
-* End-to-end OCR → database → AI recommendation verification
-* Final file-upload UX validation
-* Final PDF export verification
+# 🟡 V1 FINALIZATION
 
-## 🌍 Future Intelligence Layer
+The core V1 implementation is complete.
 
-* Live IoT sensor ingestion
+Remaining work is primarily:
+
+* Final end-to-end demonstration
+* Final UI/UX polish
+* Repository cleanup
+* Documentation cleanup
+* Final regression testing
+* Final GitHub release/commit
+
+These are finalization activities rather than new core features.
+
+---
+
+# 🌍 V2 — FUTURE INTELLIGENCE
+
+## IoT
+
+* Physical soil sensors
+* Moisture sensors
+* Temperature sensors
+* EC sensors
 * Real-time telemetry
+* Sensor alerts
+
+## Satellite Intelligence
+
 * Satellite imagery
-* Live NDVI feeds
-* Weather APIs
+* NDVI feeds
+* Vegetation monitoring
+* Crop stress detection
+* Satellite-assisted farm boundaries
+
+## Weather
+
+* Live weather APIs
+* Rainfall predictions
+* Temperature forecasts
+* Irrigation recommendations
+* Weather-aware crop decisions
+
+## GIS / Mobile
+
+* Mobile GPS farm mapping
+* Walk-around GPS boundary capture
+* Satellite + GPS boundary verification
+* High-precision field polygons
+
+## AI / ML
+
 * Disease detection
-* Yield prediction models
+* Computer vision crop analysis
+* ML yield prediction
 * Advanced crop models
+* Predictive soil health
 * AI agricultural assistant
-* Large-scale multi-farm monitoring
+
+## Scale
+
+* Multi-farm monitoring
+* Enterprise agricultural intelligence
+* Regional farm analytics
+* Large-scale crop monitoring
 
 ---
 
@@ -987,11 +1162,31 @@ The goal is to ensure the recommendation is generated from the **actual values e
 
 NutriPalm AI aims to build an agricultural intelligence platform where:
 
-> **Every farm has a Digital Twin.
-> Every soil report becomes structured intelligence.
-> Every recommendation is connected to real farm data.**
+> **Every farm has a Digital Twin.**
+> **Every soil report becomes structured intelligence.**
+> **Every recommendation is connected to real farm data.**
 
-The long-term goal is to combine soil intelligence, crop health, spatial information, environmental data and AI into one agricultural decision-support platform.
+The long-term vision is to combine:
+
+```text
+Soil Intelligence
+      +
+Farm Spatial Data
+      +
+Crop Health
+      +
+IoT
+      +
+Satellite Data
+      +
+Weather
+      +
+Artificial Intelligence
+      ↓
+Agricultural Decision Intelligence
+```
+
+The goal is to help farmers and agricultural organizations move from fragmented data to actionable, data-driven decisions.
 
 ---
 
@@ -999,30 +1194,52 @@ The long-term goal is to combine soil intelligence, crop health, spatial informa
 
 ## Prerequisites
 
+Install:
+
 * Node.js
 * npm
 * Python 3.x
 * Supabase project
 
-## Frontend
+For local OCR/PDF processing, the development environment also requires the project's configured OCR/PDF processing dependencies.
+
+---
+
+# 💻 FRONTEND
+
+Clone the repository:
 
 ```bash
-git clone https://github.com/gee-46/nutripalm-ai.git
+git clone https://github.com/gee-46/NutriPalm-AI.git
+```
 
-cd nutripalm-ai
+Enter the project:
 
+```bash
+cd NutriPalm-AI
+```
+
+Install dependencies:
+
+```bash
 npm install
+```
 
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-## Production build
+The Vite development server will normally be available at:
 
-```bash
-npm run build
+```text
+http://localhost:5173
 ```
 
-## Backend
+---
+
+# 🐍 BACKEND
 
 Install Python dependencies:
 
@@ -1030,15 +1247,40 @@ Install Python dependencies:
 pip install -r requirements.txt
 ```
 
-Run the FastAPI backend using the project's configured entry point.
+Start the FastAPI backend using the configured application entry point.
+
+Example:
+
+```bash
+cd backend
+python -m uvicorn app.main:app --reload
+```
+
+The development API will normally be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+# 🏗️ PRODUCTION BUILD
+
+Run:
+
+```bash
+npm run build
+```
+
+The command creates the production frontend bundle using Vite.
 
 ---
 
 # ⚙️ ENVIRONMENT VARIABLES
 
-The application requires environment-specific configuration for services such as Supabase and backend APIs.
+Frontend configuration requires environment-specific Supabase values.
 
-Example frontend configuration:
+Example:
 
 ```env
 VITE_SUPABASE_URL=your_supabase_url
@@ -1047,42 +1289,98 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 Backend configuration should contain the required Supabase and API configuration.
 
-**Never commit production secrets, service-role keys, OAuth secrets or private credentials to GitHub.**
+Never commit:
+
+```text
+Service-role keys
+OAuth secrets
+Private API keys
+Production credentials
+JWT secrets
+```
+
+to GitHub.
 
 ---
 
 # 📌 V1 STATUS
 
-### NutriPalm AI V1 — Core Integration Build
+## NutriPalm AI V1 — Integrated Core Build
 
-| Area                               | Status |
-| ---------------------------------- | ------ |
-| Frontend                           | ✅      |
-| Authentication                     | ✅      |
-| Google OAuth                       | ✅      |
-| Supabase                           | ✅      |
-| PostgreSQL                         | ✅      |
-| User data isolation                | ✅      |
-| Farmer Management                  | ✅      |
-| Farm Plots                         | ✅      |
-| Digital Twin                       | ✅      |
-| Recommendation Engine              | ✅      |
-| Recommendation persistence         | ✅      |
-| Analytics                          | ✅      |
-| Account-aware Dashboard            | ✅      |
-| Python/FastAPI backend             | ✅      |
-| Soil upload                        | ✅      |
-| OCR                                | 🚧     |
-| End-to-end OCR recommendation flow | 🚧     |
-| Advanced IoT                       | 🚧     |
-| Satellite intelligence             | 🚧     |
-| Disease detection                  | 🚧     |
+| Area                       | Status      |
+| -------------------------- | ----------- |
+| Frontend                   | ✅           |
+| Authentication             | ✅           |
+| Google OAuth               | ✅           |
+| Supabase                   | ✅           |
+| PostgreSQL                 | ✅           |
+| User data isolation        | ✅           |
+| Farmer Management          | ✅           |
+| Farm Plots                 | ✅           |
+| Soil Upload                | ✅           |
+| Real OCR                   | ✅           |
+| Soil Extraction            | ✅           |
+| Soil Validation            | ✅           |
+| Soil Persistence           | ✅           |
+| Recommendation Engine      | ✅           |
+| Recommendation Persistence | ✅           |
+| Fertilizer Dosage          | ✅           |
+| Cost / ROI                 | ✅           |
+| Digital Twin V1            | ✅           |
+| Analytics V1               | ✅           |
+| OCR → Analytics            | ✅           |
+| Account-aware Dashboard    | ✅           |
+| Dynamic Farmer Identity    | ✅           |
+| Advisory PDF Export        | ✅           |
+| Python / FastAPI Backend   | ✅           |
+| Automated Backend Tests    | ✅ 97 Passed |
+| Production Build           | ✅           |
+| IoT Telemetry              | 🚧 Future   |
+| Satellite Intelligence     | 🚧 Future   |
+| Live Weather               | 🚧 Future   |
+| GPS Farm Mapping           | 🚧 Future   |
+| Disease Detection          | 🚧 Future   |
+| Advanced ML                | 🚧 Future   |
+
+---
+
+# 🏁 V1 CONCLUSION
+
+**NutriPalm AI V1 is functionally complete as an integrated agricultural prototype.**
+
+The current build demonstrates the core workflow:
+
+```text
+Authenticated Farmer
+        ↓
+Farm Plot
+        ↓
+Real Soil Report PDF
+        ↓
+OCR
+        ↓
+Soil Extraction
+        ↓
+Validation
+        ↓
+Database Persistence
+        ↓
+Dynamic Recommendation
+        ↓
+Analytics
+        ↓
+Advisory PDF
+```
+
+The V1 establishes the foundation for future agricultural intelligence integrations.
+
+Advanced live intelligence — including IoT, satellite, weather, mobile GPS mapping, disease detection and advanced machine learning — is intentionally reserved for future versions.
 
 ---
 
 # 👨‍💻 DEVELOPED BY
 
-## Gautam N Chipkar & Team 
+## Gautam N Chipkar & Team
 
 **AI & Data Science Engineer**
 
