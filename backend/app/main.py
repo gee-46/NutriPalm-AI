@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import recommendations
+from app.routers import recommendations, soil_reports
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(recommendations.router)
+app.include_router(soil_reports.router)
 
 
 @app.get("/health", tags=["health"])
