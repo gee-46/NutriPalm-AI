@@ -40,12 +40,16 @@ def _row_to_plot_input(row: dict) -> PlotInput:
     Expected columns:
         id, owner_id, crop, area, area_unit
     """
+    area_unit = row.get("area_unit", "hectare")
+    if area_unit == "acres":
+        area_unit = "acre"
+
     return PlotInput(
         plot_id=row["id"],
         owner_id=row["owner_id"],
         crop=row["crop"],
         area=row["area"],
-        area_unit=row.get("area_unit", "hectare"),
+        area_unit=area_unit,
     )
 
 
