@@ -33,6 +33,32 @@ class SoilReportRepository(Protocol):
         ...
 
 
+class SoilReportWriter(Protocol):
+    """
+    Write-side of the soil-report boundary, used only by the OCR upload
+    endpoint (app/routers/soil_reports.py).
+
+    Kept as a separate Protocol from SoilReportRepository (read-side, used
+    by the Recommendation Engine) so existing fakes/tests that only
+    implement `get_soil_report` are unaffected.
+    """
+
+    def create_soil_report(
+        self,
+        *,
+        plot_id: str,
+        owner_id: str,
+        nitrogen_kg_ha: float,
+        phosphorus_kg_ha: float,
+        potassium_kg_ha: float,
+        organic_carbon_percent: float,
+        ph: float,
+        electrical_conductivity: float | None = None,
+    ) -> dict:
+        """Persist a new soil report row and return the inserted row."""
+        ...
+
+
 def _row_to_soil_input(row: dict) -> SoilTestInput:
     """
     Map a `soil_reports` table row to SoilTestInput.
@@ -88,6 +114,55 @@ class SupabaseSoilReportRepository:
 
         return _row_to_soil_input(row)
 
+    def create_soil_report(
+        self,
+        *,
+        plot_id: str,
+        owner_id: str,
+        nitrogen_kg_ha: float,
+        phosphorus_kg_ha: float,
+        potassium_kg_ha: float,
+        organic_carbon_percent: float,
+        ph: float,
+        electrical_conductivity: float | None = None,
+    ) -> dict:
+        client = get_supabase_client()
+
+        payload = {
+            "plot_id": plot_id,
+            "owner_id": owner_id,
+            "nitrogen_kg_ha": nitrogen_kg_ha,
+            "phosphorus_kg_ha": phosphorus_kg_ha,
+            "potassium_kg_ha": potassium_kg_ha,
+            "organic_carbon_percent": organic_carbon_percent,
+            "ph": ph,
+            "electrical_conductivity": electrical_conductivity,
+            "status": "Completed",
+        }
+
+        try:
+            response = (
+                client.table("soil_reports").insert(payload).select().execute()
+            )
+        except APIError as exc:
+            if getattr(exc, "code", None) == "42P01":
+                raise RepositoryNotConfigured(
+                    "Soil report data source is not configured: "
+                    "the 'soil_reports' table does not exist."
+                ) from exc
+            raise
+
+        rows = getattr(response, "data", None) or []
+        if not rows:
+            raise RepositoryNotConfigured(
+                "Insert into 'soil_reports' did not return the created row."
+            )
+        return rows[0]
+
 
 def get_soil_report_repository() -> SoilReportRepository:
+    return SupabaseSoilReportRepository()
+
+
+def get_soil_report_writer() -> SoilReportWriter:
     return SupabaseSoilReportRepository()
