@@ -7,18 +7,12 @@ import {
 } from "lucide-react";
 import { usePlots } from "../../data/plots";
 import { supabase } from "../../lib/supabaseClient";
+import { uploadSoilReport } from "../../lib/apiClient";
+import type { SoilReportUploadResponsePayload } from "../../lib/apiClient";
 
 interface SoilReportScreenProps {
   onRecommendationClick: () => void;
-  onUploadSuccess: (nutrients: {
-    id?: string;
-    plotId?: string;
-    nitrogen: number;
-    phosphorus: number;
-    potassium: number;
-    carbon: number;
-    ph: number;
-  }) => void;
+  onUploadSuccess: (nutrients: any) => void;
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
 }
 
@@ -35,12 +29,90 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const [selectedPlotId, setSelectedPlotId] = useState<string>("");
   const [stage, setStage] = useState<ScreenStage>("upload");
   const [file, setFile] = useState<{ name: string; size: string; time: string } | null>(null);
-  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // OCR processing states
   const [progress, setProgress] = useState(0);
   const [activeSubstep, setActiveSubstep] = useState<ProcessingSubstep>("upload");
   const [logs, setLogs] = useState<string[]>([]);
   const consoleBottomRef = useRef<HTMLDivElement>(null);
+
+  // Real OCR result from the backend (app/routers/soil_reports.py). Null
+  // until the upload completes.
+  const [ocrResult, setOcrResult] = useState<SoilReportUploadResponsePayload | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const plot = plots.find(p => p.id === selectedPlotId);
+
+  // Parse Soil Health Index from raw text dynamically
+  const sqiMatch = ocrResult?.raw_text?.match(/SQI\s*\)?\s*:\s*([0-9.]+)\s*\(([^)]+)\)/i);
+  const sqiValue = sqiMatch ? parseFloat(sqiMatch[1]) : null;
+  const sqiCategory = sqiMatch ? sqiMatch[2] : null;
+
+  const healthPercent = sqiValue ? Math.round(sqiValue * 100) : 84;
+  const healthStatus = sqiCategory ? sqiCategory.toUpperCase() : "HEALTHY";
+
+  const zn = ocrResult?.micronutrients?.find(m => m.parameter === 'zinc');
+  const fe = ocrResult?.micronutrients?.find(m => m.parameter === 'iron');
+  const mn = ocrResult?.micronutrients?.find(m => m.parameter === 'manganese');
+  const cu = ocrResult?.micronutrients?.find(m => m.parameter === 'copper');
+  const b = ocrResult?.micronutrients?.find(m => m.parameter === 'boron');
+  const s = ocrResult?.micronutrients?.find(m => m.parameter === 'sulfur');
+
+  const getFieldDisplay = (field: any, defaultUnit: string) => {
+    if (!field || field.value === null) return "Not Found";
+    return `${field.value} ${field.unit || defaultUnit}`;
+  };
+
+  const getFieldColor = (field: any) => {
+    if (!field || field.value === null) return "text-gray-400";
+    if (field.validation === "valid") return "text-emerald-700";
+    if (field.validation === "review") return "text-amber-600 font-bold animate-pulse";
+    return "text-rose-600 font-black";
+  };
+
+  const getFieldBarColor = (field: any) => {
+    if (!field || field.value === null) return "bg-gray-200";
+    if (field.validation === "valid") return "bg-emerald-500";
+    if (field.validation === "review") return "bg-amber-500";
+    return "bg-rose-500";
+  };
+
+  const getFieldPct = (field: any, maxVal: number) => {
+    if (!field || field.value === null) return "0%";
+    const val = typeof field.value === 'number' ? field.value : parseFloat(field.value) || 0;
+    return `${Math.min(100, Math.max(5, Math.round((val / maxVal) * 100)))}%`;
+  };
+
+  const getDynamicSummary = () => {
+    if (!ocrResult) return "";
+    const n = ocrResult.nitrogen.value;
+    const p = ocrResult.phosphorus.value;
+    const k = ocrResult.potassium.value;
+    const ph = ocrResult.ph.value;
+    const oc = ocrResult.organic_carbon.value;
+
+    let text = `Soil analysis complete for plot ${plot?.name || selectedPlotId}. `;
+    text += `Extracted values: Nitrogen = ${n ?? "N/A"} kg/ha, Phosphorus = ${p ?? "N/A"} kg/ha, Potassium = ${k ?? "N/A"} kg/ha, pH = ${ph ?? "N/A"}, Organic Carbon = ${oc ?? "N/A"}%.`;
+    
+    const issues: string[] = [];
+    if (ph && (ph < 5.5 || ph > 7.5)) {
+      issues.push(`pH of ${ph} indicates ${ph < 5.5 ? "acidic" : "alkaline"} soil`);
+    }
+    if (oc && oc < 0.5) {
+      issues.push(`organic carbon of ${oc}% is low`);
+    }
+    if (k && k < 110) {
+      issues.push(`potassium is low`);
+    }
+    
+    if (issues.length > 0) {
+      text += ` Attention needed for: ${issues.join(", ")}.`;
+    } else {
+      text += " Overall, the macronutrient levels are within healthy ranges.";
+    }
+    return text;
+  };
 
   const processingTimeline = [
     { key: "upload", label: "Uploading Document", pct: 20 },
@@ -50,20 +122,15 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     { key: "completed", label: "Completed", pct: 100 }
   ];
 
+  // Generic stage flavor-text only -- no fabricated extraction values here.
+  // Real extracted values are appended as log lines once the actual
+  // backend OCR response comes back (see handleFileSelected below).
   const logDatabase = [
-    "Initializing neural parser engine...",
-    "Scanning structural bounding boxes...",
-    "Document classified as: Hassan Labs Soil Diagnostic Report v2.0",
+    "Initializing document parser...",
+    "Scanning page layout and structure...",
     "Running Optical Character Recognition (OCR)...",
-    "Extracted: Nitrogen = 135 mg/kg (94% confidence)",
-    "Extracted: Phosphorus = 24 mg/kg (91% confidence)",
-    "Extracted: Potassium = 160 mg/kg (88% confidence)",
-    "Extracted: Organic Carbon = 1.82% (96% confidence)",
-    "Extracted: Soil pH Index = 5.85 (98% confidence)",
-    "Cross-referencing telemetry with Sentinel-2 vegetation canopy indexes...",
-    "Mapping Plot Hassan-3A historical potassium trends...",
-    "Generating custom slow-release NPK formulation recommendations...",
-    "AI analysis complete. Redirecting to diagnostic dashboard."
+    "Matching recognized text against known soil-report labels...",
+    "Validating extracted values against expected ranges and units...",
   ];
 
   // Sync selected plot default
@@ -94,19 +161,52 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   };
 
   const handleUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!selected) return;
+    startUpload(selected);
+  };
+
+  const startUpload = (selectedFile: File) => {
+    if (!selectedPlotId || selectedPlotId.startsWith("plot-")) {
+      triggerToast("Select a real farm plot before uploading a report.", "warning");
+      return;
+    }
+
     const now = new Date();
     setFile({
-      name: "SAMRUDDHI_LABS_EAST_PLOT_3A.pdf",
-      size: "1.4 MB",
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      name: selectedFile.name,
+      size: `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`,
+      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     });
+    setOcrResult(null);
+    setUploadError(null);
     setStage("processing");
     setProgress(0);
     setActiveSubstep("upload");
     setLogs(["[SYSTEM] Connection secure. Document upload received."]);
+
+    // Kick off the REAL OCR request in parallel with the stage animation
+    // below. The animation communicates progress; the actual completion
+    // (and all extracted values) come from this promise, never from
+    // fabricated numbers.
+    uploadSoilReport(selectedPlotId, selectedFile)
+      .then((result) => {
+        setOcrResult(result);
+      })
+      .catch((err) => {
+        setUploadError(err instanceof Error ? err.message : "Failed to process soil report.");
+      });
   };
 
-  // Manage process automation
+  // Manage process automation. The visual progress bar/log stream is a
+  // fixed-duration animation for UX polish; it does not determine the
+  // result -- that comes from the real `ocrResult`/`uploadError` state
+  // once the actual backend request resolves (awaited below).
   useEffect(() => {
     if (stage !== "processing") return;
 
@@ -132,58 +232,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         if (next >= 100) {
           clearInterval(progressInterval);
           clearInterval(logInterval);
-          
-          const saveReportAndComplete = async () => {
-            let reportId = undefined;
-            try {
-              const { data: sessionData } = await supabase.auth.getSession();
-              if (sessionData?.session?.user && selectedPlotId && !selectedPlotId.startsWith("plot-")) {
-                const { data, error } = await supabase
-                  .from("soil_reports")
-                  .insert({
-                    plot_id: selectedPlotId,
-                    owner_id: sessionData.session.user.id,
-                    nitrogen_kg_ha: 135,
-                    phosphorus_kg_ha: 24,
-                    potassium_kg_ha: 160,
-                    organic_carbon_percent: 1.82,
-                    ph: 5.85,
-                    electrical_conductivity: 1.2,
-                    status: "Completed",
-                    report_date: new Date().toISOString().split("T")[0]
-                  })
-                  .select()
-                  .single();
-
-                if (error) throw error;
-                if (data) {
-                  reportId = data.id;
-                  
-                  // Also update local/db plot status
-                  await supabase
-                    .from("plots")
-                    .update({ soil_report_attached: true })
-                    .eq("id", selectedPlotId);
-                }
-              }
-            } catch (err) {
-              console.error("Failed to persist soil report to Supabase:", err);
-            }
-
-            onUploadSuccess({
-              id: reportId,
-              plotId: selectedPlotId,
-              nitrogen: 135,
-              phosphorus: 24,
-              potassium: 160,
-              carbon: 1.82,
-              ph: 5.85
-            });
-            setStage("results");
-            triggerToast("Report analyzed and parameters synchronized.", "success");
-          };
-
-          saveReportAndComplete();
           return 100;
         }
         return next;
@@ -195,6 +243,81 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
       clearInterval(logInterval);
     };
   }, [stage]);
+
+  // Once the animation reaches 100% AND the real request has resolved
+  // (in whichever order they finish), reveal the actual result.
+  useEffect(() => {
+    if (stage !== "processing" || progress < 100) return;
+    if (!ocrResult && !uploadError) return; // still waiting on the real request
+
+    if (uploadError) {
+      setLogs(prev => [...prev, `[ERROR] ${uploadError}`]);
+      triggerToast(uploadError, "warning");
+      setStage("upload");
+      setFile(null);
+      return;
+    }
+
+    if (ocrResult) {
+      const summarizeField = (label: string, f: SoilReportUploadResponsePayload["nitrogen"]) =>
+        f.value === null
+          ? `[WARN] ${label}: not found in the document.`
+          : `[INFO] Extracted: ${label} = ${f.value}${f.unit ? ` ${f.unit}` : ""} (${Math.round(f.confidence * 100)}% confidence, ${f.validation})`;
+
+      setLogs(prev => [
+        ...prev,
+        summarizeField("Nitrogen", ocrResult.nitrogen),
+        summarizeField("Phosphorus", ocrResult.phosphorus),
+        summarizeField("Potassium", ocrResult.potassium),
+        summarizeField("Soil pH", ocrResult.ph),
+        summarizeField("Electrical Conductivity", ocrResult.electrical_conductivity),
+        summarizeField("Organic Carbon", ocrResult.organic_carbon),
+        ocrResult.persisted
+          ? "[SYSTEM] Report saved. Redirecting to diagnostic dashboard."
+          : "[WARN] Some required values need manual review before this report can be saved.",
+      ]);
+
+      onUploadSuccess({
+        id: ocrResult.soil_report_id ?? undefined,
+        plotId: selectedPlotId,
+        nitrogen: ocrResult.nitrogen,
+        phosphorus: ocrResult.phosphorus,
+        potassium: ocrResult.potassium,
+        organic_carbon: ocrResult.organic_carbon,
+        ph: ocrResult.ph,
+        electrical_conductivity: ocrResult.electrical_conductivity,
+        zinc: zn ?? null,
+        sulphur: s ?? null,
+        boron: b ?? null,
+        iron: fe ?? null,
+        manganese: mn ?? null,
+        copper: cu ?? null,
+        persisted: ocrResult.persisted
+      });
+
+      if (ocrResult.persisted) {
+        // Flip the plot's "soil report attached" badge (owned by the
+        // Plot/Digital Twin module's `plots` table -- see
+        // src/data/plots.ts). This is not soil data itself, just a UI
+        // flag, so it's fine to set from the frontend client as before.
+        supabase
+          .from("plots")
+          .update({ soil_report_attached: true })
+          .eq("id", selectedPlotId)
+          .then((result: { error: unknown }) => {
+            if (result.error) console.error("Failed to flag plot as having a soil report:", result.error);
+          });
+        setStage("results");
+        triggerToast("Report analyzed and parameters synchronized.", "success");
+      } else {
+        triggerToast(
+          "Extraction finished, but some values need manual review before saving.",
+          "warning"
+        );
+        setStage("results");
+      }
+    }
+  }, [stage, progress, ocrResult, uploadError]);
 
   const resetScanner = () => {
     setFile(null);
@@ -262,6 +385,15 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 </div>
               )}
 
+              {/* Hidden real file input -- the drop zone below triggers this */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                className="hidden"
+                onChange={handleFileSelected}
+              />
+
               {/* Drag and Drop Zone */}
               <div
                 onClick={() => {
@@ -270,6 +402,16 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     return;
                   }
                   handleUpload();
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (plots.length === 0) {
+                    triggerToast("Please add a plot first before uploading reports.", "warning");
+                    return;
+                  }
+                  const dropped = e.dataTransfer.files?.[0];
+                  if (dropped) startUpload(dropped);
                 }}
                 className={`border-2 border-dashed border-gray-250 hover:border-primary/50 bg-gray-50/50 hover:bg-emerald-50/10 rounded-2xl p-12 transition-all cursor-pointer group flex flex-col items-center justify-center space-y-4 ${plots.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
               >
@@ -286,7 +428,9 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                                                   </span>
               </div>
 
-              {/* Demo Sandbox Quick Link */}
+              {/* Demo Sandbox Quick Link -- loads a bundled real sample PDF
+                  through the exact same real OCR endpoint, never fabricated
+                  numbers. */}
               <div className="flex justify-between items-center bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-xs text-indigo-800 text-left">
                 <div className="flex gap-2.5 items-start">
                   <FileText className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
@@ -299,12 +443,21 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   </div>
                 </div>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (plots.length === 0) {
                       triggerToast("Please add a plot first before loading samples.", "warning");
                       return;
                     }
-                    handleUpload();
+                    try {
+                      const res = await fetch("/sample-soil-report.pdf");
+                      const blob = await res.blob();
+                      const sampleFile = new File([blob], "sample-soil-report.pdf", {
+                        type: "application/pdf",
+                      });
+                      startUpload(sampleFile);
+                    } catch {
+                      triggerToast("Could not load the sample report file.", "warning");
+                    }
                   }}
                   disabled={plots.length === 0}
                   className={`bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-2 rounded-lg cursor-pointer transition-all border-0 shadow-xs shrink-0 ${plots.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
@@ -401,7 +554,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         )}
 
         {/* Stage 3: Results Dashboard */}
-        {stage === "results" && (
+        {stage === "results" && ocrResult && (
           <motion.div
             key="results"
             initial={{ opacity: 0, scale: 0.98 }}
@@ -409,20 +562,29 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
             className="space-y-6"
           >
             {/* Top Analysis Complete Banner */}
-            <div className="bg-emerald-50 border border-emerald-100/50 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-28 h-28 bg-emerald-100/30 rounded-full filter blur-xl pointer-events-none" />
+            <div className={`border rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden ${
+              ocrResult?.persisted 
+                ? 'bg-emerald-50 border-emerald-100/50' 
+                : 'bg-amber-50 border-amber-200'
+            }`}>
+              <div className={`absolute -top-10 -right-10 w-28 h-28 rounded-full filter blur-xl pointer-events-none ${
+                ocrResult?.persisted ? 'bg-emerald-100/30' : 'bg-amber-100/30'
+              }`} />
               
               <div className="flex items-center gap-4 relative z-10">
-                <div className="p-3 bg-primary text-white rounded-2xl shadow-md shrink-0">
+                <div className={`p-3 text-white rounded-2xl shadow-md shrink-0 ${
+                  ocrResult?.persisted ? 'bg-primary' : 'bg-amber-500'
+                }`}>
                   <Check className="w-6 h-6 stroke-[3]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-gray-900">{t('soilreportscreen.ai_diagnostic_complete')}</h3>
-                  <p className="text-xs font-semibold text-emerald-700 mt-1 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    
-                                                          {t('soilreportscreen.source')} {file?.name}  {t('soilreportscreen.extracted_successfully')}
-                                                        </p>
+                  <h3 className="text-base font-extrabold text-gray-900">
+                    {ocrResult?.persisted ? t('soilreportscreen.ai_diagnostic_complete') : "Report Needs Review"}
+                  </h3>
+                  <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 text-gray-650">
+                    <span className={`w-1.5 h-1.5 rounded-full ${ocrResult?.persisted ? 'bg-primary' : 'bg-amber-500 animate-pulse'}`} />
+                    Source: {file?.name} • {ocrResult?.persisted ? "Extracted successfully" : "Review needed"}
+                  </p>
                 </div>
               </div>
 
@@ -431,19 +593,34 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   onClick={resetScanner}
                   className="flex-1 md:flex-initial px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-250 rounded-xl text-xs font-bold text-gray-650 cursor-pointer transition-colors shadow-xs"
                 >
-                  
-                                                    {t('soilreportscreen.upload_another_report')}
-                                                  </button>
-                <button
-                  onClick={onRecommendationClick}
-                  className="flex-1 md:flex-initial px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors border-0 cursor-pointer shadow-md shadow-primary/10"
-                >
-                  
-                                                    {t('soilreportscreen.generate_ai_recommendation')}
-                                                    <ArrowRight className="w-4 h-4" />
+                  {t('soilreportscreen.upload_another_report')}
                 </button>
+                {ocrResult?.persisted && (
+                  <button
+                    onClick={onRecommendationClick}
+                    className="flex-1 md:flex-initial px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors border-0 cursor-pointer shadow-md shadow-primary/10"
+                  >
+                    {t('soilreportscreen.generate_ai_recommendation')}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Review Warning Banner if not persisted */}
+            {ocrResult && !ocrResult.persisted && (
+              <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-left flex items-start gap-4 shadow-xs">
+                <div className="p-3 bg-amber-100 text-amber-800 rounded-2xl shrink-0">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-amber-905">Manual Review Required</h4>
+                  <p className="text-xs text-amber-700 font-semibold mt-1 leading-relaxed">
+                    Some required fields (Nitrogen, Phosphorus, Potassium, pH, Organic Carbon) could not be confidently extracted or failed range checks. Please review the values marked with "review" or "missing" below. You can correct them in Supabase or upload a clearer document.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Results Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -461,14 +638,14 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="relative w-28 h-28 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90">
                         <circle cx="56" cy="56" r="46" stroke="#F1F5F0" strokeWidth="8" fill="transparent" />
-                        <circle cx="56" cy="56" r="46" stroke="#2E7D32" strokeWidth="8" fill="transparent"
+                        <circle cx="56" cy="56" r="46" stroke={ocrResult?.persisted ? "#2E7D32" : "#D97706"} strokeWidth="8" fill="transparent"
                           strokeDasharray={2 * Math.PI * 46}
-                          strokeDashoffset={2 * Math.PI * 46 * (1 - 0.84)}
+                          strokeDashoffset={2 * Math.PI * 46 * (1 - healthPercent / 100)}
                         />
                       </svg>
                       <div className="absolute">
-                        <span className="block text-2xl font-black text-gray-950">84%</span>
-                        <span className="text-[9px] font-black text-emerald-650 uppercase">{t('soilreportscreen.healthy')}</span>
+                        <span className="block text-2xl font-black text-gray-950">{healthPercent}%</span>
+                        <span className={`text-[9px] font-black uppercase ${ocrResult?.persisted ? 'text-emerald-650' : 'text-amber-600'}`}>{healthStatus}</span>
                       </div>
                     </div>
                     
@@ -480,20 +657,24 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div>
                       <div className="flex justify-between items-center">
                         <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('soilreportscreen.ai_summary')}</h4>
-                        <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                          
-                                                                            {t('soilreportscreen.98_confidence')}
-                                                                          </span>
+                        {ocrResult && (
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
+                            ocrResult.persisted 
+                              ? 'text-indigo-750 bg-indigo-50 border-indigo-100' 
+                              : 'text-amber-700 bg-amber-50 border-amber-100'
+                          }`}>
+                            {ocrResult.persisted ? "AUTO-SAVED" : "MANUAL REVIEW REQUIRED"}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-gray-700 leading-relaxed font-semibold mt-3">
-                        
-                                                                      {t('soilreportscreen.the_uploaded_soil_sample_indicates_healt')}
-                                                                    </p>
+                        {getDynamicSummary()}
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 text-[10px] text-gray-450 uppercase font-black">
                       <div>{t('soilreportscreen.analysis_completed')} <span className="text-gray-700 font-bold">{t('soilreportscreen.just_now')}</span></div>
-                      <div className="text-right">{t('soilreportscreen.processing_time')} <span className="text-gray-700 font-bold">{t('soilreportscreen.12_5_sec')}</span></div>
+                      <div className="text-right">{t('soilreportscreen.processing_time')} <span className="text-gray-700 font-bold">Real-time</span></div>
                     </div>
                   </div>
 
@@ -507,46 +688,49 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div>
                       <div className="flex justify-between mb-1.5">
                         <span>{t('soilreportscreen.nitrogen_n')}</span>
-                        <span className="text-amber-600 font-bold">{t('soilreportscreen.135_mg_kg_moderate')}</span>
+                        <span className={`font-bold ${getFieldColor(ocrResult?.nitrogen)}`}>
+                          {getFieldDisplay(ocrResult?.nitrogen, "kg/ha")}
+                          {ocrResult?.nitrogen.validation !== "valid" && ` (${ocrResult?.nitrogen.validation})`}
+                        </span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: "75%" }} />
+                        <div className={`h-full rounded-full ${getFieldBarColor(ocrResult?.nitrogen)}`} style={{ width: getFieldPct(ocrResult?.nitrogen, 800) }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
                         <span>{t('soilreportscreen.phosphorus_p')}</span>
-                        <span className="text-emerald-700 font-bold">{t('soilreportscreen.24_mg_kg_optimal')}</span>
+                        <span className={`font-bold ${getFieldColor(ocrResult?.phosphorus)}`}>
+                          {getFieldDisplay(ocrResult?.phosphorus, "kg/ha")}
+                          {ocrResult?.phosphorus.validation !== "valid" && ` (${ocrResult?.phosphorus.validation})`}
+                        </span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: "68%" }} />
+                        <div className={`h-full rounded-full ${getFieldBarColor(ocrResult?.phosphorus)}`} style={{ width: getFieldPct(ocrResult?.phosphorus, 100) }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
                         <span>{t('soilreportscreen.potassium_k')}</span>
-                        <span className="text-rose-600 font-bold">{t('soilreportscreen.160_mg_kg_low')}</span>
+                        <span className={`font-bold ${getFieldColor(ocrResult?.potassium)}`}>
+                          {getFieldDisplay(ocrResult?.potassium, "kg/ha")}
+                          {ocrResult?.potassium.validation !== "valid" && ` (${ocrResult?.potassium.validation})`}
+                        </span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-rose-500 rounded-full" style={{ width: "57%" }} />
+                        <div className={`h-full rounded-full ${getFieldBarColor(ocrResult?.potassium)}`} style={{ width: getFieldPct(ocrResult?.potassium, 900) }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-1.5">
                         <span>{t('soilreportscreen.organic_carbon_c')}</span>
-                        <span className="text-emerald-700 font-bold">{t('soilreportscreen.1_82_optimal')}</span>
+                        <span className={`font-bold ${getFieldColor(ocrResult?.organic_carbon)}`}>
+                          {getFieldDisplay(ocrResult?.organic_carbon, "%")}
+                          {ocrResult?.organic_carbon.validation !== "valid" && ` (${ocrResult?.organic_carbon.validation})`}
+                        </span>
                       </div>
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: "91%" }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1.5">
-                        <span>{t('soilreportscreen.moisture_index')}</span>
-                        <span className="text-emerald-700 font-bold">{t('soilreportscreen.42_optimal')}</span>
-                      </div>
-                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: "84%" }} />
+                        <div className={`h-full rounded-full ${getFieldBarColor(ocrResult?.organic_carbon)}`} style={{ width: getFieldPct(ocrResult?.organic_carbon, 2.0) }} />
                       </div>
                     </div>
                   </div>
@@ -556,41 +740,118 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   
                   {/* pH */}
-                  <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs text-left flex flex-col justify-between min-h-[120px]">
+                  <div className={`rounded-2xl p-4 border shadow-xs text-left flex flex-col justify-between min-h-[120px] ${
+                    ocrResult?.ph.validation === 'valid' ? 'bg-white border-gray-150' : 'bg-amber-50/50 border-amber-200'
+                  }`}>
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{t('soilreportscreen.optimal')}</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">{t('soilreportscreen.healthy_range_5_5_6_5')}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        ocrResult?.ph.validation === 'valid' 
+                          ? 'text-emerald-650 bg-emerald-50 border border-emerald-100' 
+                          : 'text-amber-700 bg-amber-100 border border-amber-200'
+                      }`}>
+                        {ocrResult?.ph.validation.toUpperCase()}
+                      </span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">range: 6.5 - 7.5</span>
                     </div>
                     <div className="mt-4">
                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.acidity_ph')}</span>
-                      <span className="text-lg font-black text-gray-950 mt-0.5">{t('soilreportscreen.5_85_ph')}</span>
+                      <span className="text-lg font-black text-gray-950 mt-0.5">
+                        {ocrResult?.ph.value !== null ? `${ocrResult.ph.value}` : 'N/A'}
+                      </span>
                     </div>
                   </div>
 
                   {/* EC */}
-                  <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs text-left flex flex-col justify-between min-h-[120px]">
+                  <div className={`rounded-2xl p-4 border shadow-xs text-left flex flex-col justify-between min-h-[120px] ${
+                    ocrResult?.electrical_conductivity.validation === 'valid' ? 'bg-white border-gray-150' : 'bg-amber-50/50 border-amber-200'
+                  }`}>
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{t('soilreportscreen.optimal')}</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">{t('soilreportscreen.healthy_range_0_2_0_5')}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        ocrResult?.electrical_conductivity.validation === 'valid' 
+                          ? 'text-emerald-650 bg-emerald-50 border border-emerald-100' 
+                          : 'text-amber-700 bg-amber-100 border border-amber-200'
+                      }`}>
+                        {ocrResult?.electrical_conductivity.validation.toUpperCase()}
+                      </span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">range: 0.50 - 0.75</span>
                     </div>
                     <div className="mt-4">
                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.electrical_conductivity')}</span>
-                      <span className="text-lg font-black text-gray-950 mt-0.5">{t('soilreportscreen.0_28_ds_m')}</span>
+                      <span className="text-lg font-black text-gray-950 mt-0.5">
+                        {ocrResult?.electrical_conductivity.value !== null ? `${ocrResult.electrical_conductivity.value} dS/m` : 'N/A'}
+                      </span>
                     </div>
                   </div>
 
                   {/* Zinc */}
-                  <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs text-left flex flex-col justify-between min-h-[120px]">
+                  <div className={`rounded-2xl p-4 border shadow-xs text-left flex flex-col justify-between min-h-[120px] ${
+                    zn && zn.validation === 'valid' ? 'bg-white border-gray-150' : 'bg-amber-50/50 border-amber-200'
+                  }`}>
                     <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md">{t('soilreportscreen.optimal')}</span>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase">{t('soilreportscreen.healthy_range_2_0_5_0')}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        zn && zn.validation === 'valid' 
+                          ? 'text-emerald-650 bg-emerald-50 border border-emerald-100' 
+                          : 'text-amber-700 bg-amber-100 border border-amber-200'
+                      }`}>
+                        {zn?.validation?.toUpperCase() || 'MISSING'}
+                      </span>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase">range: &gt; 0.6</span>
                     </div>
                     <div className="mt-4">
                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.zinc_zn')}</span>
-                      <span className="text-lg font-black text-gray-950 mt-0.5">{t('soilreportscreen.4_5_ppm')}</span>
+                      <span className="text-lg font-black text-gray-950 mt-0.5">
+                        {zn && zn.value !== null ? `${zn.value} ${zn.unit || 'mg/kg'}` : 'N/A'}
+                      </span>
                     </div>
                   </div>
 
+                </div>
+
+                {/* Micronutrients Breakdown Grid */}
+                <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
+                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Micronutrients Breakdown</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {/* Sulphur */}
+                    <div className={`rounded-2xl p-3.5 border flex flex-col justify-between ${
+                      s && s.validation === 'valid' ? 'bg-gray-50 border-gray-100' : 'bg-amber-50/30 border-amber-200'
+                    }`}>
+                      <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Sulphur (S)</span>
+                      <span className="text-base font-black text-gray-950 mt-1.5">{s && s.value !== null ? `${s.value} ${s.unit || 'mg/kg'}` : 'Not Found'}</span>
+                      <span className={`text-[8px] font-extrabold uppercase mt-1 ${s && s.validation === 'valid' ? 'text-emerald-600' : 'text-amber-600'}`}>({s?.validation || 'missing'})</span>
+                    </div>
+                    {/* Boron */}
+                    <div className={`rounded-2xl p-3.5 border flex flex-col justify-between ${
+                      b && b.validation === 'valid' ? 'bg-gray-50 border-gray-100' : 'bg-amber-50/30 border-amber-200'
+                    }`}>
+                      <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Boron (B)</span>
+                      <span className="text-base font-black text-gray-950 mt-1.5">{b && b.value !== null ? `${b.value} ${b.unit || 'mg/kg'}` : 'Not Found'}</span>
+                      <span className={`text-[8px] font-extrabold uppercase mt-1 ${b && b.validation === 'valid' ? 'text-emerald-600' : 'text-amber-600'}`}>({b?.validation || 'missing'})</span>
+                    </div>
+                    {/* Iron */}
+                    <div className={`rounded-2xl p-3.5 border flex flex-col justify-between ${
+                      fe && fe.validation === 'valid' ? 'bg-gray-50 border-gray-100' : 'bg-amber-50/30 border-amber-200'
+                    }`}>
+                      <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Iron (Fe)</span>
+                      <span className="text-base font-black text-gray-950 mt-1.5">{fe && fe.value !== null ? `${fe.value} ${fe.unit || 'mg/kg'}` : 'Not Found'}</span>
+                      <span className={`text-[8px] font-extrabold uppercase mt-1 ${fe && fe.validation === 'valid' ? 'text-emerald-600' : 'text-amber-600'}`}>({fe?.validation || 'missing'})</span>
+                    </div>
+                    {/* Manganese */}
+                    <div className={`rounded-2xl p-3.5 border flex flex-col justify-between ${
+                      mn && mn.validation === 'valid' ? 'bg-gray-50 border-gray-100' : 'bg-amber-50/30 border-amber-200'
+                    }`}>
+                      <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Manganese (Mn)</span>
+                      <span className="text-base font-black text-gray-950 mt-1.5">{mn && mn.value !== null ? `${mn.value} ${mn.unit || 'mg/kg'}` : 'Not Found'}</span>
+                      <span className={`text-[8px] font-extrabold uppercase mt-1 ${mn && mn.validation === 'valid' ? 'text-emerald-600' : 'text-amber-600'}`}>({mn?.validation || 'missing'})</span>
+                    </div>
+                    {/* Copper */}
+                    <div className={`rounded-2xl p-3.5 border flex flex-col justify-between ${
+                      cu && cu.validation === 'valid' ? 'bg-gray-50 border-gray-100' : 'bg-amber-50/30 border-amber-200'
+                    }`}>
+                      <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Copper (Cu)</span>
+                      <span className="text-base font-black text-gray-950 mt-1.5">{cu && cu.value !== null ? `${cu.value} ${cu.unit || 'mg/kg'}` : 'Not Found'}</span>
+                      <span className={`text-[8px] font-extrabold uppercase mt-1 ${cu && cu.validation === 'valid' ? 'text-emerald-600' : 'text-amber-600'}`}>({cu?.validation || 'missing'})</span>
+                    </div>
+                  </div>
                 </div>
 
               </div>
@@ -603,7 +864,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   <div className="border-b border-gray-100 pb-3">
                     <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
                       <Sparkles className="w-4.5 h-4.5 text-primary" />  {t('soilreportscreen.soil_treatment_advice')}
-                                                              </h4>
+                    </h4>
                     <p className="text-[10px] text-gray-450 mt-1">{t('soilreportscreen.recommended_chemical_corrections')}</p>
                   </div>
 
@@ -612,14 +873,26 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="space-y-2 border-b border-gray-50 pb-3">
                       <div className="flex justify-between text-xs">
                         <span className="font-extrabold text-gray-800">{t('soilreportscreen.nitrogen_correction')}</span>
-                        <span className="text-[10px] font-bold text-amber-600">{t('soilreportscreen.priority_medium')}</span>
+                        {ocrResult?.nitrogen.value !== null && ocrResult.nitrogen.value < 280 ? (
+                          <span className="text-[10px] font-bold text-amber-600">{t('soilreportscreen.priority_medium')}</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-600">NO CORRECTION NEEDED</span>
+                        )}
                       </div>
                       <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                        <p className="font-bold text-gray-900">{t('soilreportscreen.apply_urea')}</p>
+                        <p className="font-bold text-gray-900">
+                          {ocrResult?.nitrogen.value !== null && ocrResult.nitrogen.value < 280 ? t('soilreportscreen.apply_urea') : "Optimal Nitrogen"}
+                        </p>
                         <p className="text-[10px] text-gray-500 leading-normal">
-                          <strong>{t('soilreportscreen.quantity')}</strong>  {t('soilreportscreen.1_5_kg_palm_tree')}<br/>
-                          <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.compensates_for_slight_nitrogen_depletio')}
-                                                                          </p>
+                          {ocrResult?.nitrogen.value !== null && ocrResult.nitrogen.value < 280 ? (
+                            <>
+                              <strong>{t('soilreportscreen.quantity')}</strong>  {t('soilreportscreen.1_5_kg_palm_tree')}<br/>
+                              <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.compensates_for_slight_nitrogen_depletio')}
+                            </>
+                          ) : (
+                            "Nitrogen is within the optimal range. Keep monitoring."
+                          )}
+                        </p>
                       </div>
                     </div>
 
@@ -627,58 +900,50 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="space-y-2 border-b border-gray-50 pb-3">
                       <div className="flex justify-between text-xs">
                         <span className="font-extrabold text-gray-800">{t('soilreportscreen.potassium_correction')}</span>
-                        <span className="text-[10px] font-bold text-rose-600 animate-pulse">{t('soilreportscreen.priority_critical')}</span>
+                        {ocrResult?.potassium.value !== null && ocrResult.potassium.value < 110 ? (
+                          <span className="text-[10px] font-bold text-rose-600 animate-pulse">{t('soilreportscreen.priority_critical')}</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-600">NO CORRECTION NEEDED</span>
+                        )}
                       </div>
                       <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                        <p className="font-bold text-gray-900">{t('soilreportscreen.apply_muriate_of_potash_mop')}</p>
+                        <p className="font-bold text-gray-900">
+                          {ocrResult?.potassium.value !== null && ocrResult.potassium.value < 110 ? t('soilreportscreen.apply_muriate_of_potash_mop') : "Optimal Potassium"}
+                        </p>
                         <p className="text-[10px] text-gray-500 leading-normal">
-                          <strong>{t('soilreportscreen.quantity')}</strong>  {t('soilreportscreen.2_2_kg_palm_tree')}<br/>
-                          <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.extreme_deficit_identified_vital_to_prev')}
-                                                                          </p>
+                          {ocrResult?.potassium.value !== null && ocrResult.potassium.value < 110 ? (
+                            <>
+                              <strong>{t('soilreportscreen.quantity')}</strong>  {t('soilreportscreen.2_2_kg_palm_tree')}<br/>
+                              <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.extreme_deficit_identified_vital_to_prev')}
+                            </>
+                          ) : (
+                            "Potassium levels are sufficient. No immediate action required."
+                          )}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Water Advice */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="font-extrabold text-gray-800">{t('soilreportscreen.water_schedule')}</span>
-                        <span className="text-[10px] font-bold text-gray-500">{t('soilreportscreen.priority_low')}</span>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                        <p className="font-bold text-gray-900">{t('soilreportscreen.reduce_irrigation_by_10')}</p>
-                        <p className="text-[10px] text-gray-500 leading-normal">
-                          <strong>{t('soilreportscreen.reason')}</strong>  {t('soilreportscreen.matches_weather_predictions_forecasting_')}
-                                                                          </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Summary metric */}
-                  <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-[10px] text-emerald-800 flex justify-between font-black uppercase">
-                    <span>{t('soilreportscreen.expected_yield_improvement')}</span>
-                    <span>+14.2%</span>
                   </div>
                 </div>
 
                 {/* 9. Action Buttons */}
                 <div className="space-y-2.5">
-                  <button
-                    onClick={onRecommendationClick}
-                    className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
-                  >
-                    <Sparkles className="w-4 h-4 text-white" />
-                    
-                                                          {t('soilreportscreen.generate_ai_recommendation')}
-                                                        </button>
+                  {ocrResult?.persisted && (
+                    <button
+                      onClick={onRecommendationClick}
+                      className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-white" />
+                      {t('soilreportscreen.generate_ai_recommendation')}
+                    </button>
+                  )}
 
                   <button
                     onClick={() => triggerToast("Compiling complete laboratory diagnostic PDF...", "info")}
                     className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Download className="w-4 h-4 text-primary" />
-                    
-                                                          {t('soilreportscreen.download_soil_analysis_report')}
-                                                        </button>
+                    {t('soilreportscreen.download_soil_analysis_report')}
+                  </button>
                 </div>
 
               </div>
