@@ -7,3 +7,12 @@ python-jose[cryptography]>=3.3
 python-multipart>=0.0.18
 pytest>=8.0
 httpx>=0.27,<1
+
+# --- OCR / soil-report extraction ---
+# Requires the system packages `tesseract-ocr` and `poppler-utils` to be
+# installed (apt-get install tesseract-ocr poppler-utils). See
+# app/ocr/engine.py for engine-selection rationale.
+pytesseract>=0.3.10
+pdf2image>=1.17
+pdfplumber>=0.11
+Pillow>=10.0
