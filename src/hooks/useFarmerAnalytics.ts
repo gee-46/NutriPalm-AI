@@ -310,14 +310,29 @@ export function useFarmerAnalytics() {
         try {
           const { data: reportsData, error: reportsErr } = await supabase
             .from("soil_reports")
-            .select("id, plot_id, nitrogen, phosphorus, potassium, organic_carbon, ph, electrical_conductivity, status, report_date")
+            .select("id, plot_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph, electrical_conductivity, status, created_at")
             .eq("owner_id", currentUser.id);
 
           if (!reportsErr && reportsData) {
+            const mappedReports = reportsData.map((r: any) => ({
+              id: r.id,
+              plot_id: r.plot_id,
+              nitrogen: r.nitrogen_kg_ha,
+              phosphorus: r.phosphorus_kg_ha,
+              potassium: r.potassium_kg_ha,
+              organic_carbon: r.organic_carbon_percent,
+              ph: r.ph,
+              electrical_conductivity: r.electrical_conductivity,
+              status: r.status,
+              report_date: r.created_at ? r.created_at.split("T")[0] : new Date().toISOString().split("T")[0]
+            }));
+
             finalPlots = finalPlots.map((p) => ({
               ...p,
-              soil_reports: reportsData.filter((r: any) => r.plot_id === p.id)
+              soil_reports: mappedReports.filter((r: any) => r.plot_id === p.id)
             }));
+          } else if (reportsErr) {
+            console.error("Supabase query error fetching soil reports:", reportsErr);
           }
         } catch (e) {
           console.warn("soil_reports table not queryable, falling back to mock soil reports");
