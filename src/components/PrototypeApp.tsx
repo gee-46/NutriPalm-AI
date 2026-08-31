@@ -519,6 +519,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
               localStorage.removeItem("nutripalm:lastRecommendation");
             }}
             showToast={showToast}
+            farmerName={displayName}
           />
         );
       case "Analytics":
