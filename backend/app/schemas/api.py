@@ -12,6 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.ocr.schemas import ExtractedField
 from app.services.dosage_calculator import DosagePlan
 from app.services.explanation_engine import Explanation
 from app.services.nutrient_analyzer import NutrientAnalysisResult
@@ -19,6 +20,34 @@ from app.services.recommendation_service import RecommendationResult
 from app.services.roi_calculator import RoiResult
 from app.services.severity_calculator import SeverityResult
 from app.services.yield_predictor import YieldPrediction
+
+
+class SoilReportUploadResponse(BaseModel):
+    """Response for POST /api/soil-reports/upload."""
+
+    success: bool
+    persisted: bool = Field(
+        description=(
+            "True if the extracted values were confident/clean enough to "
+            "be auto-saved to soil_reports. If False, review the returned "
+            "fields (and any warnings) and resubmit corrected values."
+        )
+    )
+    soil_report_id: str | None = None
+    plot_id: str
+    raw_text: str
+    nitrogen: ExtractedField
+    phosphorus: ExtractedField
+    potassium: ExtractedField
+    ph: ExtractedField
+    electrical_conductivity: ExtractedField
+    organic_carbon: ExtractedField
+    extras: list[ExtractedField] = Field(default_factory=list)
+    micronutrients: list[ExtractedField] = Field(
+        default_factory=list,
+        description="Zn, Fe, Mn, Cu, B, and S (when explicitly reported). Not yet persisted to soil_reports -- see known limitations.",
+    )
+    warnings: list[str] = Field(default_factory=list)
 
 
 class RecommendationRequest(BaseModel):
