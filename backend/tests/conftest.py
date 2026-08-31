@@ -22,7 +22,10 @@ from app.exceptions import (
 from app.main import app
 from app.repositories.plot_repository import get_plot_repository
 from app.repositories.recommendation_repository import get_recommendation_repository
-from app.repositories.soil_report_repository import get_soil_report_repository
+from app.repositories.soil_report_repository import (
+    get_soil_report_repository,
+    get_soil_report_writer,
+)
 from tests.fixtures.sample_data import deficient_oil_palm_plot, deficient_oil_palm_soil
 
 TEST_USER_ID = "test-owner-1"
@@ -97,12 +100,40 @@ def fake_recommendation_repo():
     return FakeRecommendationRepository()
 
 
+class FakeSoilReportWriter:
+    """In-memory stand-in for the Supabase-backed soil report writer used
+    by the OCR upload endpoint (app/routers/soil_reports.py)."""
+
+    def __init__(self):
+        self.rows: dict[str, dict] = {}
+        self._counter = 0
+
+    def create_soil_report(self, **kwargs):
+        from datetime import datetime, timezone
+
+        self._counter += 1
+        row_id = f"soil-{self._counter}"
+        row = {
+            "id": row_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            **kwargs,
+        }
+        self.rows[row_id] = row
+        return row
+
+
 @pytest.fixture
-def client(fake_recommendation_repo):
+def fake_soil_report_writer():
+    return FakeSoilReportWriter()
+
+
+@pytest.fixture
+def client(fake_recommendation_repo, fake_soil_report_writer):
     app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(user_id=TEST_USER_ID)
     app.dependency_overrides[get_plot_repository] = lambda: FakePlotRepository()
     app.dependency_overrides[get_soil_report_repository] = lambda: FakeSoilReportRepository()
     app.dependency_overrides[get_recommendation_repository] = lambda: fake_recommendation_repo
+    app.dependency_overrides[get_soil_report_writer] = lambda: fake_soil_report_writer
 
     with TestClient(app) as test_client:
         yield test_client
