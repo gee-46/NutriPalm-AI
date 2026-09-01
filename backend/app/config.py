@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     """Runtime configuration loaded from environment variables / .env file."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         extra="ignore",
     )
 
@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""
     supabase_jwks_url: str = ""
+
+    # --- Satellite / External APIs ---
+    sentinel_hub_client_id: str = ""
+    sentinel_hub_client_secret: str = ""
 
     # --- App ---
     environment: str = "development"

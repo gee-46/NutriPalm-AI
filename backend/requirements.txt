@@ -16,3 +16,4 @@ pytesseract>=0.3.10
 pdf2image>=1.17
 pdfplumber>=0.11
 Pillow>=10.0
+pytz>=2024.1
