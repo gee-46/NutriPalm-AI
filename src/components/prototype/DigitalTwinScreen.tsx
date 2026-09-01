@@ -5,7 +5,7 @@ import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, ChevronRight
 import { usePlots } from "../../data/plots";
 import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
-import { useDigitalTwinSnapshots } from "../../data/digitalTwins";
+import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory } from "../../data/digitalTwins";
 
 
 
@@ -110,6 +110,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   const { snapshots, isLoading: isTwinsLoading } =
     useDigitalTwinSnapshots(activePlotId);
+  const { prediction, isLoading: isPredictionLoading } = useTwinPrediction(activePlotId);
+  const historyDays = activeTimeframe === "7d" ? 7 : activeTimeframe === "30d" ? 30 : 90;
+  const { history: twinHistory } = useDigitalTwinHistory(activePlotId, historyDays as 7 | 30 | 90);
+  
   const activeSnapshot = snapshots[simMode];
 
   if (plots.length === 0 || !activePlot) {
@@ -133,7 +137,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   }
 
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
-  const activeNDVI = activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0);
+  const isPrediction = simMode === "Prediction";
+  const activeNDVI = isPrediction ? (prediction?.predicted_ndvi ?? 0) : (activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0));
   const activeMoisture = activeSnapshot?.water_stress_score
     ? Math.round(activeSnapshot.water_stress_score + fluctuateMoisture)
     : (activePlot?.moistureTimeline ? Math.round(activePlot.moistureTimeline[simMode] + fluctuateMoisture) : 0);
@@ -143,6 +148,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     : (activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A");
   const activeDiseasePct = activeSnapshot?.disease_probability ?? (activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0);
   const activeDiseaseRisk = activeSnapshot?.risk_level ?? (activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending");
+  
+  // Real mapped fields from DB
+  const realTemp = activeSnapshot?.temperature_c ?? 31.4;
+  const realHumidity = activeSnapshot?.humidity_pct ?? 64.2;
+  const realFoliar = activeSnapshot?.foliar_health_score ?? 98;
 
   const activeConfidence = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? 0;
   const activeWhyDisease = activeSnapshot?.disease_explanation ?? activePlot?.whyDisease;
@@ -156,11 +166,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     : 0;
 
   const telemetryBadges: TelemetryBadge[] = [
-    { id: "temp", label: "Temperature", value: `${(31.4 + fluctuateTemp).toFixed(1)}°C`, interpretation: "Vegetative cellular respiration optimal.", x: 25, y: 35 },
-    { id: "humidity", label: "Humidity", value: "64%", interpretation: "Transpiration rate within calibrated threshold.", x: 75, y: 40 },
+    { id: "temp", label: "Temperature", value: `${(realTemp + fluctuateTemp).toFixed(1)}°C`, interpretation: "Vegetative cellular respiration optimal.", x: 25, y: 35 },
+    { id: "humidity", label: "Humidity", value: `${realHumidity.toFixed(1)}%`, interpretation: "Transpiration rate within calibrated threshold.", x: 75, y: 40 },
     { id: "moisture", label: "Moisture", value: `${activeMoisture}%`, interpretation: "Volumetric Water Content simulated.", x: 15, y: 65 },
-    { id: "ndvi", label: "Canopy NDVI", value: activeNDVI.toFixed(2), interpretation: "High foliar density and chlorophyll absorption.", x: 80, y: 60 },
-    { id: "health", label: "Foliar Health", value: activePlot.status, interpretation: "98% index against historical canopy twin.", x: 50, y: 20 },
+    { id: "ndvi", label: "Canopy NDVI", value: activeNDVI.toFixed(2) + (isPrediction ? ` (${prediction?.trend_direction})` : ""), interpretation: "High foliar density and chlorophyll absorption.", x: 80, y: 60 },
+    { id: "health", label: "Foliar Health", value: `${realFoliar}%`, interpretation: "Index against historical canopy twin.", x: 50, y: 20 },
     { id: "wind", label: "Wind Velocity", value: "11 km/h", interpretation: "Low risk of fungal spore migration.", x: 45, y: 75 }
   ];
 
@@ -176,21 +186,21 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     },
     {
       label: "Temperature",
-      value: `${(31.4 + fluctuateTemp).toFixed(1)}°C`,
+      value: `${(realTemp + fluctuateTemp).toFixed(1)}°C`,
       trend: "up",
       trendText: "+0.8°C",
       icon: <Thermometer className="w-5 h-5 text-amber-500" />,
       status: "Optimal",
-      sparkline: [29.5, 30.1, 30.5, 31.0, 31.2, 31.1, 31.4]
+      sparkline: [29.5, 30.1, 30.5, 31.0, 31.2, 31.1, realTemp]
     },
     {
       label: "Humidity",
-      value: "64.2%",
+      value: `${realHumidity.toFixed(1)}%`,
       trend: "down",
       trendText: "-2.4%",
       icon: <Activity className="w-5 h-5 text-emerald-500" />,
       status: "Optimal",
-      sparkline: [67, 66.5, 65.2, 64.8, 64.0, 64.5, 64.2]
+      sparkline: [67, 66.5, 65.2, 64.8, 64.0, 64.5, realHumidity]
     }
   ];
 
@@ -204,19 +214,37 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     { label: t('digitaltwinscreen.ec_electrical_conductivity'), val: "0.28 dS/m", pct: 52, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_salinity') }
   ];
 
-  // Custom Chart path generators based on selection
+  // Build a real SVG path from the history array for the chart
+  const buildPathFromHistory = (getValue: (row: any) => number | null, scale: number, baseline: number) => {
+    const rows = twinHistory.filter(r => getValue(r) != null);
+    if (rows.length < 2) return null;
+    const step = 360 / (rows.length - 1);
+    const points = rows.map((row, i) => {
+      const v = getValue(row) ?? 0;
+      return `${20 + i * step} ${baseline - v * scale}`;
+    });
+    return `M ${points.join(" L ")}`;
+  };
+
   const getChartData = () => {
     if (activeChartTab === "NDVI") {
-      return { path: `M 20 ${140 - activeNDVI * 100} L 100 ${120 - activeNDVI * 90} L 200 ${130 - activeNDVI * 95} L 300 ${110 - activeNDVI * 105} L 380 ${100 - activeNDVI * 100}`, val: activeNDVI ? activeNDVI.toFixed(2) : "0.00" };
+      const path = buildPathFromHistory(r => r.ndvi, 100, 155);
+      const val = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].ndvi ?? activeNDVI).toFixed(2) : activeNDVI.toFixed(2);
+      return { path: path ?? `M 20 ${140 - activeNDVI * 100} L 380 ${100 - activeNDVI * 100}`, val };
     }
     if (activeChartTab === "Health") {
-      return { path: `M 20 ${180 - activeSoilHealth * 1.5} L 100 ${170 - activeSoilHealth * 1.5} L 200 ${165 - activeSoilHealth * 1.5} L 300 ${172 - activeSoilHealth * 1.5} L 380 ${150 - activeSoilHealth * 1.5}`, val: `${activeSoilHealth}%` };
+      const path = buildPathFromHistory(r => r.crop_health_score, 1.5, 165);
+      const last = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].crop_health_score ?? activeSoilHealth) : activeSoilHealth;
+      return { path: path ?? `M 20 ${180 - activeSoilHealth * 1.5} L 380 ${150 - activeSoilHealth * 1.5}`, val: `${Math.round(last)}%` };
     }
     if (activeChartTab === "Moisture") {
-      return { path: `M 20 ${180 - activeMoisture * 2.5} L 100 ${170 - activeMoisture * 2.5} L 200 ${175 - activeMoisture * 2.5} L 300 ${160 - activeMoisture * 2.5} L 380 ${165 - activeMoisture * 2.5}`, val: `${activeMoisture}%` };
+      const path = buildPathFromHistory(r => r.water_stress_score, 2.5, 170);
+      const last = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].water_stress_score ?? activeMoisture) : activeMoisture;
+      return { path: path ?? `M 20 ${180 - activeMoisture * 2.5} L 380 ${165 - activeMoisture * 2.5}`, val: `${Math.round(last)}%` };
     }
     // Temp
-    return { path: "M 20 80 L 100 95 L 200 90 L 300 85 L 380 75", val: `${(31.4 + fluctuateTemp).toFixed(1)}°C` };
+    const path = buildPathFromHistory(r => r.temperature_c, 2.5, 160);
+    return { path: path ?? "M 20 80 L 100 95 L 200 90 L 300 85 L 380 75", val: `${(31.4 + fluctuateTemp).toFixed(1)}°C` };
   };
 
   const chartData = getChartData();
@@ -410,7 +438,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="bg-white border border-gray-150 p-5 rounded-2xl shadow-xl flex items-center gap-3">
                 <RefreshCw className="w-5 h-5 text-primary animate-spin" />
                 <span className="text-xs font-black text-gray-800">
-                  {isTwinsLoading ? "Syncing with Supabase AI Engine..." : "Calibrating biophysical simulation model..."}
+                  {isTwinsLoading || isPredictionLoading ? "Syncing with Supabase AI Engine..." : "Calibrating biophysical simulation model..."}
                 </span>
               </div>
             </motion.div>
@@ -522,6 +550,21 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <span className="text-white font-bold">{activePlot.stage}</span>
               </div>
             </div>
+            
+            {/* Data Completeness Gap Indicators */}
+            {activeSnapshot?.data_completeness && (
+              <div className="mt-2 flex gap-2">
+                {!activeSnapshot.data_completeness.ndvi && (
+                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">Missing NDVI</span>
+                )}
+                {!activeSnapshot.data_completeness.weather && (
+                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">Missing Weather</span>
+                )}
+                {!activeSnapshot.data_completeness.soil && (
+                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">Missing Soil</span>
+                )}
+              </div>
+            )}
 
           </div>
 

@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from app.services.crop_rules import CropRequirement
 from app.services.nutrient_analyzer import NutrientAnalysisResult
 from app.services.severity_calculator import SeverityResult
+from app.schemas.twin_snapshot import PredictionOutput
+from typing import Optional
 
 # Yield penalty applied (multiplicatively, i.e. 1 - fraction) when the soil
 # pH is outside the crop's acceptable range.
@@ -45,6 +47,7 @@ class YieldPrediction:
     additional_yield_t_ha: float
     ph_limiting: bool
     organic_carbon_limiting: bool
+    advisory_twin_prediction: Optional[PredictionOutput] = None
 
     def additional_yield_total(self, area_ha: float) -> float:
         return round(self.additional_yield_t_ha * area_ha, 3)
@@ -67,6 +70,7 @@ def predict(
     requirement: CropRequirement,
     analysis: NutrientAnalysisResult,
     severity: SeverityResult,
+    twin_prediction: Optional[PredictionOutput] = None,
 ) -> YieldPrediction:
     """
     Pure function: combine the crop baseline, the nutrient severity, and
@@ -92,4 +96,5 @@ def predict(
         additional_yield_t_ha=round(expected_yield - current_yield, 3),
         ph_limiting=ph_limiting,
         organic_carbon_limiting=oc_limiting,
+        advisory_twin_prediction=twin_prediction,
     )
