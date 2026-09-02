@@ -214,3 +214,93 @@ export async function getRecommendation(id: string): Promise<RecommendationRecor
 
   return response.json();
 }
+
+/**
+ * Sentinel-2 NDVI for the caller's plot. `available: false` is a normal,
+ * expected response (not an error) when the backend Sentinel Hub
+ * credentials are not configured for this deployment -- the UI should show
+ * a "configuration required" state rather than treating it as a failure.
+ */
+export interface NdviResponsePayload {
+  plot_id: string;
+  available: boolean;
+  mean_ndvi: number | null;
+  min_ndvi: number | null;
+  max_ndvi: number | null;
+  acquisition_date: string | null;
+  cloud_cover_percent: number | null;
+  status: "Healthy" | "Moderate" | "Stressed" | null;
+  source: string;
+  reason: string | null;
+}
+
+export async function getPlotNdvi(plotId: string): Promise<NdviResponsePayload> {
+  const headers = await getHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/geospatial/ndvi/${encodeURIComponent(plotId)}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ detail: "Failed to fetch NDVI" }));
+    throw new Error(errBody.detail || `Server error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Karnataka Bhu-Naksha cadastral parcel lookup. Ships disabled/unavailable
+ * by default (see app/services/cadastral_service.py).
+ */
+export interface CadastralResponsePayload {
+  plot_id: string;
+  available: boolean;
+  parcel_reference: string | null;
+  geometry: Record<string, any> | null;
+  source: string;
+  reason: string | null;
+}
+
+export async function getPlotCadastral(plotId: string): Promise<CadastralResponsePayload> {
+  const headers = await getHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/geospatial/bhunaksha/${encodeURIComponent(plotId)}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ detail: "Failed to fetch cadastral data" }));
+    throw new Error(errBody.detail || `Server error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Digital Twin prediction (NDVI trend & projection) for the caller's plot.
+ */
+export interface TwinPredictionResponsePayload {
+  plot_id: string;
+  target_date: string;
+  predicted_ndvi: number | null;
+  trend_direction: "up" | "down" | "flat" | "insufficient_data";
+  is_projection: boolean;
+}
+
+export async function getPlotTwinPrediction(plotId: string): Promise<TwinPredictionResponsePayload> {
+  const headers = await getHeaders();
+  const response = await fetch(`${API_BASE_URL}/api/plots/${encodeURIComponent(plotId)}/twin/prediction`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({ detail: "Failed to fetch twin prediction" }));
+    throw new Error(errBody.detail || `Server error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+
