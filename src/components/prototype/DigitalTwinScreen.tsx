@@ -5,7 +5,7 @@ import { TrendingUp, Activity, Thermometer, Droplets, FlaskConical, ChevronRight
 import { usePlots } from "../../data/plots";
 import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
-import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory } from "../../data/digitalTwins";
+import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory, useLiveTwin } from "../../data/digitalTwins";
 import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
 
 
@@ -107,6 +107,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const { prediction, isLoading: isPredictionLoading } = useTwinPrediction(activePlotId);
   const historyDays = activeTimeframe === "7d" ? 7 : activeTimeframe === "30d" ? 30 : 90;
   const { history: twinHistory } = useDigitalTwinHistory(activePlotId, historyDays as 7 | 30 | 90);
+  const { liveData, isLoading: isLiveLoading, lastUpdated, secondsUntilRefresh, error: liveError } = useLiveTwin(activePlotId);
   
   const activeSnapshot = snapshots[simMode];
   const envData = useEnvironmentalData(activePlot);
@@ -146,17 +147,32 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const activeRecommendedAction = activeSnapshot?.recommended_action ?? activePlot?.recommendedAction;
   const activeAdvisoryReason = activeSnapshot?.advisory_reason ?? activePlot?.advisoryReason;
 
-  // Real weather readings from Open-Meteo
-  const realTemp = envData.weather ? envData.weather.current.temperatureC : null;
-  const realHumidity = envData.weather ? envData.weather.current.humidityPercent : null;
-  const realWind = envData.weather ? envData.weather.current.windSpeedKmh : null;
+  // Live weather: prefer useLiveTwin, fallback to useEnvironmentalData
+  const realTemp = liveData?.live_weather.temperature_c ?? (envData.weather ? envData.weather.current.temperatureC : null);
+  const realHumidity = liveData?.live_weather.humidity_pct ?? (envData.weather ? envData.weather.current.humidityPercent : null);
+  const realWind = liveData?.live_weather.wind_kph ?? (envData.weather ? envData.weather.current.windSpeedKmh : null);
   const realFoliar = activeSnapshot?.crop_health_score ?? 98;
 
-  // Dynamic average for the main Twin Health donut (soil health + canopy NDVI)
-  const healthComponents = [activeSoilHealth, activeNDVI * 100].filter(v => v > 0);
-  const overallTwinHealth = healthComponents.length > 0
-    ? Math.round(healthComponents.reduce((a, b) => a + b, 0) / healthComponents.length)
-    : 0;
+  // Live AI scores — prefer live computed, fallback to DB snapshot
+  const liveWaterStress = liveData?.scores.water_stress ?? 0;
+  const liveDiseaseRisk = liveData?.scores.disease_risk ?? activeDiseasePct;
+  const liveCropHealth = liveData?.scores.crop_health ?? activeSoilHealth;
+  const liveYieldEst = liveData?.scores.yield_estimate_t_ha ?? null;
+  const liveSoilState = liveData?.soil_state ?? "Unknown";
+  const liveRiskLevel = liveData?.risk_level ?? "Low";
+  const liveDiseaseName = liveData?.disease_name ?? "Data Pending";
+  const liveDiseaseExplanation = liveData?.disease_explanation ?? "";
+
+  // Last updated label
+  const lastUpdatedLabel = lastUpdated
+    ? (() => {
+        const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 60000);
+        return diff === 0 ? "Just now" : `${diff} min ago`;
+      })()
+    : "Loading...";
+
+  // Dynamic average for the main Twin Health donut (uses live score when available)
+  const overallTwinHealth = Math.round(liveCropHealth || (activeSoilHealth + activeNDVI * 100) / 2 || 0);
 
   const telemetryBadges: TelemetryBadge[] = [
     {
@@ -466,6 +482,170 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           )}
         </div>
       )}
+
+      {/* ================= NEAR REAL-TIME LIVE AI SCORES PANEL ================= */}
+      <div className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs space-y-4">
+
+        {/* Panel header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              </span>
+              LIVE AI Telemetry
+              <span className="px-1.5 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">LIVE</span>
+            </h4>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              Open-Meteo weather · computed {lastUpdatedLabel}
+              {liveError && <span className="ml-2 text-red-400">(offline — showing cached)</span>}
+            </p>
+          </div>
+
+          {/* Countdown ring */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="relative w-8 h-8">
+              <svg className="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="13" fill="none" stroke="#f3f4f6" strokeWidth="3" />
+                <circle
+                  cx="16" cy="16" r="13" fill="none"
+                  stroke="#10b981" strokeWidth="3"
+                  strokeDasharray={`${2 * Math.PI * 13}`}
+                  strokeDashoffset={`${2 * Math.PI * 13 * (1 - secondsUntilRefresh / 300)}`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[7px] font-black text-gray-500">
+                {Math.ceil(secondsUntilRefresh / 60)}m
+              </span>
+            </div>
+            <span className="text-[9px] text-gray-400 font-mono">next refresh</span>
+          </div>
+        </div>
+
+        {/* Disease Risk Alert Banner */}
+        {liveDiseaseRisk > 60 && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex items-start gap-3 px-4 py-3 rounded-2xl border text-xs font-semibold ${
+              liveRiskLevel === "High"
+                ? "bg-red-50 border-red-200 text-red-800"
+                : "bg-amber-50 border-amber-200 text-amber-800"
+            }`}
+          >
+            <span className="text-base shrink-0">{liveRiskLevel === "High" ? "🔴" : "🟡"}</span>
+            <div>
+              <span className="font-black">{liveDiseaseName} Risk {liveDiseaseRisk.toFixed(0)}%</span>
+              <span className="ml-2 font-medium opacity-80">{liveDiseaseExplanation}</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 5 Score Gauges */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[
+            {
+              label: "Crop Health",
+              value: liveCropHealth,
+              unit: "%",
+              color: liveCropHealth >= 70 ? "text-emerald-600" : liveCropHealth >= 40 ? "text-amber-600" : "text-red-600",
+              ring: liveCropHealth >= 70 ? "#10b981" : liveCropHealth >= 40 ? "#f59e0b" : "#ef4444",
+              icon: "🌿",
+            },
+            {
+              label: "Water Stress",
+              value: liveWaterStress,
+              unit: "%",
+              color: liveWaterStress <= 30 ? "text-emerald-600" : liveWaterStress <= 60 ? "text-amber-600" : "text-red-600",
+              ring: liveWaterStress <= 30 ? "#10b981" : liveWaterStress <= 60 ? "#f59e0b" : "#ef4444",
+              icon: "💧",
+              invertGood: true,
+            },
+            {
+              label: "Disease Risk",
+              value: liveDiseaseRisk,
+              unit: "%",
+              color: liveDiseaseRisk <= 30 ? "text-emerald-600" : liveDiseaseRisk <= 60 ? "text-amber-600" : "text-red-600",
+              ring: liveDiseaseRisk <= 30 ? "#10b981" : liveDiseaseRisk <= 60 ? "#f59e0b" : "#ef4444",
+              icon: "🦠",
+              invertGood: true,
+            },
+            {
+              label: "Soil State",
+              value: liveData?.scores.soil_score ?? 0,
+              unit: "%",
+              sublabel: liveSoilState,
+              color: "text-amber-700",
+              ring: "#f59e0b",
+              icon: "🪨",
+            },
+            {
+              label: "Yield Est.",
+              value: liveYieldEst ?? 0,
+              unit: " t/ha",
+              sublabel: liveData?.yield_risk,
+              color: (liveYieldEst ?? 0) >= 18 ? "text-emerald-600" : "text-amber-600",
+              ring: (liveYieldEst ?? 0) >= 18 ? "#10b981" : "#f59e0b",
+              icon: "🌾",
+            },
+          ].map((score) => {
+            const pct = score.label === "Yield Est."
+              ? Math.min(100, ((score.value as number) / 22) * 100)
+              : (score.value as number);
+            const r = 22;
+            const circumference = 2 * Math.PI * r;
+            return (
+              <div key={score.label} className="flex flex-col items-center bg-gray-50 rounded-2xl p-3 border border-gray-100 gap-1">
+                <div className="relative w-14 h-14 flex items-center justify-center">
+                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r={r} fill="none" stroke="#f3f4f6" strokeWidth="4" />
+                    <motion.circle
+                      cx="28" cy="28" r={r} fill="none"
+                      stroke={score.ring} strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      initial={{ strokeDashoffset: circumference }}
+                      animate={{ strokeDashoffset: circumference * (1 - pct / 100) }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
+                  </svg>
+                  <span className="absolute text-base">{score.icon}</span>
+                </div>
+                <span className={`text-sm font-black ${score.color}`}>
+                  {isLiveLoading ? "—" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
+                </span>
+                {score.sublabel && (
+                  <span className="text-[9px] font-bold text-gray-400">{score.sublabel}</span>
+                )}
+                <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider text-center">{score.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Live weather quick-read strip */}
+        {liveData && (
+          <div className="flex flex-wrap gap-3 pt-1 border-t border-gray-100">
+            {[
+              { label: "Temp", val: liveData.live_weather.temperature_c != null ? `${liveData.live_weather.temperature_c.toFixed(1)}°C` : "—", icon: "🌡️" },
+              { label: "Humidity", val: liveData.live_weather.humidity_pct != null ? `${Math.round(liveData.live_weather.humidity_pct)}%` : "—", icon: "💧" },
+              { label: "Rain (now)", val: liveData.live_weather.rainfall_now_mm != null ? `${liveData.live_weather.rainfall_now_mm}mm` : "—", icon: "🌧️" },
+              { label: "Rain (7d)", val: liveData.live_weather.rainfall_7d_mm != null ? `${liveData.live_weather.rainfall_7d_mm}mm` : "—", icon: "📊" },
+              { label: "Wind", val: liveData.live_weather.wind_kph != null ? `${Math.round(liveData.live_weather.wind_kph)} km/h` : "—", icon: "💨" },
+              { label: "UV Index", val: liveData.live_weather.uv_index != null ? liveData.live_weather.uv_index.toFixed(1) : "—", icon: "☀️" },
+            ].map(({ label, val, icon }) => (
+              <div key={label} className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100">
+                <span className="text-xs">{icon}</span>
+                <span className="text-[10px] font-black text-gray-500 uppercase">{label}</span>
+                <span className="text-[11px] font-black text-gray-900">{val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ================= LAYOUT GRID ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start relative">

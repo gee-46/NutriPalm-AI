@@ -200,3 +200,127 @@ export function useDigitalTwinHistory(plotId: string, days: 7 | 30 | 90 = 30) {
 
   return { history, isLoading };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live Twin Hook — polls /api/plots/{id}/twin/live every 5 minutes
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LiveScores {
+  water_stress: number;
+  disease_risk: number;
+  crop_health: number;
+  soil_score: number;
+  yield_estimate_t_ha: number;
+}
+
+export interface LiveWeather {
+  temperature_c: number | null;
+  apparent_temp_c: number | null;
+  humidity_pct: number | null;
+  rainfall_now_mm: number | null;
+  rainfall_7d_mm: number | null;
+  wind_kph: number | null;
+  uv_index: number | null;
+  cloud_cover_pct: number | null;
+  weather_fetched_at: string | null;
+}
+
+export interface LiveTwinData {
+  plot_id: string;
+  plot_name: string | null;
+  computed_at: string;
+  model_version: string;
+  live_weather: LiveWeather;
+  scores: LiveScores;
+  soil_state: string;
+  soil_interpretation: string;
+  disease_name: string;
+  disease_explanation: string;
+  yield_risk: string;
+  risk_level: "Low" | "Moderate" | "High";
+  ndvi_last_known: number | null;
+  daily_7d: Array<{
+    date: string;
+    temp_max: number | null;
+    temp_min: number | null;
+    humidity_mean: number | null;
+    rainfall_mm: number;
+    uv_index_max: number | null;
+  }>;
+}
+
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+export function useLiveTwin(plotId: string) {
+  const [liveData, setLiveData] = useState<LiveTwinData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [secondsUntilRefresh, setSecondsUntilRefresh] = useState(
+    POLL_INTERVAL_MS / 1000
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    let pollTimer: ReturnType<typeof setInterval>;
+    let countdownTimer: ReturnType<typeof setInterval>;
+
+    if (!plotId || plotId.startsWith("plot-")) {
+      setIsLoading(false);
+      return;
+    }
+
+    async function fetchLive() {
+      if (!isMounted) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Get current user's JWT token for auth header
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        const resp = await fetch(
+          `http://localhost:8000/api/plots/${plotId}/twin/live`,
+          token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+        );
+
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}`);
+        }
+
+        const data: LiveTwinData = await resp.json();
+        if (isMounted) {
+          setLiveData(data);
+          setLastUpdated(new Date());
+          setSecondsUntilRefresh(POLL_INTERVAL_MS / 1000);
+        }
+      } catch (err) {
+        console.error("Failed to fetch live twin data:", err);
+        if (isMounted) setError("Live data unavailable");
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    // Initial fetch
+    fetchLive();
+
+    // Poll every 5 minutes
+    pollTimer = setInterval(fetchLive, POLL_INTERVAL_MS);
+
+    // Countdown timer (ticks every second)
+    countdownTimer = setInterval(() => {
+      if (isMounted) {
+        setSecondsUntilRefresh((prev) => (prev <= 1 ? POLL_INTERVAL_MS / 1000 : prev - 1));
+      }
+    }, 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollTimer);
+      clearInterval(countdownTimer);
+    };
+  }, [plotId]);
+
+  return { liveData, isLoading, lastUpdated, secondsUntilRefresh, error };
+}

@@ -49,3 +49,45 @@ class PredictionOutput(BaseModel):
     is_projection: bool = True
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class LiveWeather(BaseModel):
+    temperature_c: Optional[float] = None
+    apparent_temp_c: Optional[float] = None
+    humidity_pct: Optional[float] = None
+    rainfall_now_mm: Optional[float] = None
+    rainfall_7d_mm: Optional[float] = None
+    wind_kph: Optional[float] = None
+    uv_index: Optional[float] = None
+    cloud_cover_pct: Optional[float] = None
+    weather_fetched_at: Optional[str] = None
+
+
+class LiveScores(BaseModel):
+    water_stress: float = 0.0
+    disease_risk: float = 0.0
+    crop_health: float = 0.0
+    soil_score: float = 0.0
+    yield_estimate_t_ha: float = 0.0
+
+
+class LiveTwinResponse(BaseModel):
+    plot_id: str
+    plot_name: Optional[str] = None
+    computed_at: str
+    model_version: str
+
+    live_weather: LiveWeather
+    scores: LiveScores
+
+    soil_state: str = "Unknown"
+    soil_interpretation: str = ""
+    disease_name: str = "No Significant Risk"
+    disease_explanation: str = ""
+    yield_risk: str = "Unknown"
+    risk_level: str = "Low"
+
+    ndvi_last_known: Optional[float] = None
+    daily_7d: list = []
+
+    model_config = ConfigDict(from_attributes=True)
