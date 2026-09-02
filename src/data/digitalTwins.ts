@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { getPlotTwinPrediction, type TwinPredictionResponsePayload } from "../lib/apiClient";
+
+export interface DataCompleteness {
+  ndvi: boolean;
+  weather: boolean;
+  soil: boolean;
+}
 
 export interface DigitalTwinRow {
   id: string;
@@ -15,25 +22,19 @@ export interface DigitalTwinRow {
   analysis_date: string;
   created_at: string;
   
-  // Optional beyond-contract fields
+  // Extended fields
   ndvi: number | null;
+  temperature_c?: number | null;
+  humidity_pct?: number | null;
+  rainfall_mm?: number | null;
+  foliar_health_score?: number | null;
   disease_name: string | null;
   disease_probability: number | null;
   disease_explanation: string | null;
   recommended_action: string | null;
   advisory_reason: string | null;
-  temperature_c?: number | null;
-  humidity_pct?: number | null;
-  rainfall_mm?: number | null;
-  foliar_health_score?: number | null;
-  is_synthetic?: boolean;
   data_completeness?: DataCompleteness | null;
-}
-
-export interface DataCompleteness {
-  ndvi: boolean;
-  weather: boolean;
-  soil: boolean;
+  is_synthetic?: boolean;
 }
 
 export function useDigitalTwinSnapshots(plotId: string) {
@@ -63,7 +64,6 @@ export function useDigitalTwinSnapshots(plotId: string) {
           .from('digital_twins')
           .select('*')
           .eq('plot_id', plotId)
-          // .eq('is_synthetic', false) // Temporarily disabled for testing synthetic data
           .order('analysis_date', { ascending: false });
 
         if (error) {
@@ -113,64 +113,76 @@ export function useDigitalTwinSnapshots(plotId: string) {
 }
 
 export function useTwinPrediction(plotId: string) {
-  const [prediction, setPrediction] = useState<any>(null);
+  const [prediction, setPrediction] = useState<TwinPredictionResponsePayload | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    if (!plotId || plotId.startsWith('plot-')) return;
+    if (!plotId || plotId.startsWith("plot-")) {
+      if (isMounted) {
+        setPrediction(null);
+        setIsLoading(false);
+      }
+      return;
+    }
 
     async function fetchPrediction() {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/plots/${plotId}/twin/prediction`);
-        if (response.ok) {
-          const data = await response.json();
-          if (isMounted) setPrediction(data);
-        }
+        const result = await getPlotTwinPrediction(plotId);
+        if (isMounted) setPrediction(result);
       } catch (err) {
-        console.error("Failed to fetch prediction:", err);
+        console.error("Failed to fetch twin prediction from API:", err);
+        if (isMounted) setPrediction(null);
       } finally {
         if (isMounted) setIsLoading(false);
       }
     }
+
     fetchPrediction();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [plotId]);
 
   return { prediction, isLoading };
 }
 
-/**
- * Fetches ordered time-series rows for charting (7, 30, or 90 days).
- * Returns rows newest-first so the chart can slice as needed.
- */
-export function useDigitalTwinHistory(plotId: string, days: 7 | 30 | 90) {
+
+export function useDigitalTwinHistory(plotId: string, days: 7 | 30 | 90 = 30) {
   const [history, setHistory] = useState<DigitalTwinRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    if (!plotId || plotId.startsWith('plot-')) {
-      setHistory([]);
-      setIsLoading(false);
+    if (!plotId || plotId.startsWith("plot-")) {
+      if (isMounted) {
+        setHistory([]);
+        setIsLoading(false);
+      }
       return;
     }
 
     async function fetchHistory() {
       setIsLoading(true);
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - days);
-
       try {
-        const { data, error } = await supabase
-          .from('digital_twins')
-          .select('analysis_date, ndvi, crop_health_score, water_stress_score, temperature_c')
-          .eq('plot_id', plotId)
-          .gte('analysis_date', cutoff.toISOString())
-          .order('analysis_date', { ascending: true });
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
 
-        if (!error && data && isMounted) {
+        const { data, error } = await supabase
+          .from("digital_twins")
+          .select("*")
+          .eq("plot_id", plotId)
+          .gte("analysis_date", cutoffDate.toISOString())
+          .order("analysis_date", { ascending: true });
+
+        if (error) {
+          console.error("Error fetching digital twin history:", error);
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        if (isMounted && data) {
           setHistory(data as DigitalTwinRow[]);
         }
       } catch (err) {
@@ -181,7 +193,9 @@ export function useDigitalTwinHistory(plotId: string, days: 7 | 30 | 90) {
     }
 
     fetchHistory();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [plotId, days]);
 
   return { history, isLoading };
