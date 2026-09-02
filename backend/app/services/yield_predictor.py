@@ -22,12 +22,12 @@ configurable V1 defaults, isolated here rather than hardcoded inline.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
+from app.schemas.twin_snapshot import PredictionOutput
 from app.services.crop_rules import CropRequirement
 from app.services.nutrient_analyzer import NutrientAnalysisResult
 from app.services.severity_calculator import SeverityResult
-from app.schemas.twin_snapshot import PredictionOutput
-from typing import Optional
 
 # Yield penalty applied (multiplicatively, i.e. 1 - fraction) when the soil
 # pH is outside the crop's acceptable range.
@@ -98,3 +98,4 @@ def predict(
         organic_carbon_limiting=oc_limiting,
         advisory_twin_prediction=twin_prediction,
     )
+
