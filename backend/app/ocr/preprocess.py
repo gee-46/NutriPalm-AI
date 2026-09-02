@@ -110,6 +110,42 @@ def _load_pdf(content: bytes) -> list[LoadedPage]:
     return pages
 
 
+def _find_poppler_path() -> str | None:
+    """
+    Resolve the poppler bin path across platforms:
+    1. POPPLER_PATH environment variable (explicit operator override)
+    2. PATH / system binaries (Linux/Debian poppler-utils)
+    3. Common Windows installation locations (WinGet, Program Files, C:\\poppler)
+    """
+    import glob
+    import os
+    import shutil
+
+    env_path = os.environ.get("POPPLER_PATH")
+    if env_path and os.path.exists(env_path):
+        return env_path
+
+    if shutil.which("pdftoppm"):
+        return None  # Let pdf2image use system PATH directly
+
+    # Check common Windows locations
+    candidates = [
+        *glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Packages\oschwartz10612.Poppler_*\*\Library\bin")),
+        *glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Packages\oschwartz10612.Poppler_*\Library\bin")),
+        *glob.glob(r"C:\Program Files\poppler*\Library\bin"),
+        *glob.glob(r"C:\Program Files\poppler*\bin"),
+        *glob.glob(r"C:\poppler*\Library\bin"),
+        *glob.glob(r"C:\poppler*\bin"),
+        *glob.glob(r"C:\tools\poppler*\bin"),
+        *glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\Programs\poppler*\bin")),
+    ]
+    for candidate in candidates:
+        if os.path.exists(os.path.join(candidate, "pdftoppm.exe")) or os.path.exists(os.path.join(candidate, "pdfinfo.exe")):
+            return candidate
+
+    return None
+
+
 def _render_pdf_pages(
     content: bytes, page_numbers: list[int]
 ) -> dict[int, Image.Image]:
@@ -117,17 +153,22 @@ def _render_pdf_pages(
     if not page_numbers:
         return {}
 
+    # 1. Attempt primary rendering via pdf2image / poppler
     try:
         from pdf2image import convert_from_bytes
 
         first = min(page_numbers)
         last = max(page_numbers)
-        rendered = convert_from_bytes(
-            content,
-            dpi=PDF_RENDER_DPI,
-            first_page=first,
-            last_page=last,
-        )
+        poppler_path = _find_poppler_path()
+        kwargs: dict = {
+            "dpi": PDF_RENDER_DPI,
+            "first_page": first,
+            "last_page": last,
+        }
+        if poppler_path:
+            kwargs["poppler_path"] = poppler_path
+
+        rendered = convert_from_bytes(content, **kwargs)
         offset = first
         wanted = set(page_numbers)
         return {
@@ -135,9 +176,32 @@ def _render_pdf_pages(
             for idx, img in enumerate(rendered)
             if (offset + idx) in wanted
         }
+    except Exception as exc:
+        logger.warning(
+            "PDF rasterization via pdf2image/poppler failed (%s); attempting fallback via pdfplumber",
+            exc,
+        )
+
+    # 2. Fallback rendering via pdfplumber (uses built-in pypdfium2)
+    try:
+        import pdfplumber
+
+        results: dict[int, Image.Image] = {}
+        with pdfplumber.open(io.BytesIO(content)) as pdf:
+            for page_num in page_numbers:
+                if 1 <= page_num <= len(pdf.pages):
+                    page = pdf.pages[page_num - 1]
+                    page_img = page.to_image(resolution=PDF_RENDER_DPI).original
+                    results[page_num] = (
+                        page_img.convert("RGB")
+                        if page_img.mode != "RGB"
+                        else page_img
+                    )
+        return results
     except Exception:
-        logger.exception("PDF rasterization via pdf2image/poppler failed")
+        logger.exception("PDF rasterization via pdfplumber fallback also failed")
         return {}
+
 
 
 def _load_image(content: bytes) -> list[LoadedPage]:
