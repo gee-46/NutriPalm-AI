@@ -8,8 +8,11 @@ import {
 } from "lucide-react";
 import { usePlots, type Plot, getStatusColor, getStatusDotColor } from "../../data/plots";
 import LeafletMapPicker, { type BoundaryData } from "./LeafletMapPicker";
+import { FarmPlotOverviewMap, type BasemapMode, type DataOverlayLayer } from "./FarmPlotOverviewMap";
 import { reverseGeocode, getElevation, parseGeoJSONFile, type GeoJSONPolygon } from "../../lib/geo";
-import { boundaryToSvgPath, coordinateToSvgPoint, generatePlaceholderSvgPath } from "../../lib/svgPath";
+import { boundaryToSvgPath, generatePlaceholderSvgPath } from "../../lib/svgPath";
+import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
+
 
 
 // Premium Animated Counter Component
@@ -69,11 +72,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [activeLayer, setActiveLayer] = useState<"NDVI" | "Moisture" | "Boundary">("NDVI");
-  const [viewMode, setViewMode] = useState<"Satellite" | "Terrain">("Satellite");
-  const [zoomLevel, setZoomLevel] = useState(100);
+  const [activeLayer, setActiveLayer] = useState<DataOverlayLayer>("NDVI");
+  const [viewMode, setViewMode] = useState<BasemapMode>("Satellite");
   
   // Selected plot state
+
   const [selectedPlotId, setSelectedPlotId] = useState("plot-1");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addStep, setAddStep] = useState(1);
@@ -113,18 +116,22 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const { plots, isLoading: isDbLoading, addPlot: storAddPlot } = usePlots();
 
   const selectedPlot = plots.find((p) => p.id === selectedPlotId) || plots[0];
+  const envData = useEnvironmentalData(selectedPlot);
 
   // Dynamic KPI calculations
   const totalArea = plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
   const healthyPlotsCount = plots.filter(plot => plot.status === "Healthy" || plot.statusDotColor === "bg-emerald-500").length;
   
-  const validSoilHealths = plots.map(p => p.soilHealth?.Current).filter((v): v is number => typeof v === 'number');
+  const validSoilHealths = plots
+    .map(p => p.soilHealth?.Current)
+    .filter((v): v is number => typeof v === 'number' && v > 0);
   const avgSoilHealth = validSoilHealths.length > 0 
     ? Math.round(validSoilHealths.reduce((a, b) => a + b, 0) / validSoilHealths.length)
-    : 0;
+    : null;
 
   const uniqueCrops = new Set(plots.map(p => p.crop).filter(Boolean));
   const activeCropTypes = uniqueCrops.size;
+
 
   const triggerToast = (msg: string, type: "success" | "info" | "warning" = "success") => {
     if (showToast) {
@@ -418,13 +425,26 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmplotscreen.average_soil_health')}</p>
             <h3 className="text-3xl font-black text-gray-900 mt-2 tracking-tight">
-              <AnimatedCounter value={avgSoilHealth} suffix="%" />
+              {avgSoilHealth !== null ? (
+                <AnimatedCounter value={avgSoilHealth} suffix="%" />
+              ) : (
+                <span className="text-2xl font-black text-gray-400">N/A</span>
+              )}
             </h3>
+            {avgSoilHealth === null && (
+              <p className="text-[10px] text-gray-400 mt-1 font-semibold">Pending Soil Test</p>
+            )}
           </div>
           <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mt-4">
-            <motion.div className="h-full bg-amber-500" initial={{ width: 0 }} animate={{ width: `${avgSoilHealth}%` }} transition={{ duration: 1 }} />
+            <motion.div 
+              className={`h-full ${avgSoilHealth !== null ? "bg-amber-500" : "bg-gray-200"}`} 
+              initial={{ width: 0 }} 
+              animate={{ width: `${avgSoilHealth ?? 0}%` }} 
+              transition={{ duration: 1 }} 
+            />
           </div>
         </div>
+
 
         {/* KPI 4 */}
         <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs hover:shadow-md hover:border-primary/20 transition-all duration-300 group flex flex-col justify-between">
@@ -490,221 +510,20 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         {/* LEFT COLUMN: Map toolbar, Canvas, legend, Stats (8/12 width) */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* ================= 4. GIS Toolbar ================= */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs flex flex-wrap gap-2 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setViewMode("Satellite")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  viewMode === "Satellite" ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
-                }`}
-              >
-                
-                                              {t('farmplotscreen.satellite_view')}
-                                            </button>
-              <button
-                onClick={() => setViewMode("Terrain")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  viewMode === "Terrain" ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
-                }`}
-              >
-                
-                                              {t('farmplotscreen.terrain_view')}
-                                            </button>
-              
-              <div className="h-6 w-[1px] bg-gray-250 mx-1" />
+          {/* ================= Interactive GIS Leaflet Map with Real Basemaps & Overlays ================= */}
+          <FarmPlotOverviewMap
+            plots={plots}
+            selectedPlotId={selectedPlotId}
+            onSelectPlot={setSelectedPlotId}
+            basemapMode={viewMode}
+            onBasemapModeChange={setViewMode}
+            activeLayer={activeLayer}
+            onActiveLayerChange={setActiveLayer}
+            isScanning={isScanning}
+            onForceScan={triggerScan}
+            showToast={showToast}
+          />
 
-              <button
-                onClick={() => setActiveLayer("NDVI")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  activeLayer === "NDVI" ? "bg-[#84cc16]/10 text-[#5f930e] border-[#84cc16]/30" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
-                }`}
-              >
-                
-                                              {t('farmplotscreen.ndvi_layer')}
-                                            </button>
-              <button
-                onClick={() => setActiveLayer("Moisture")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  activeLayer === "Moisture" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
-                }`}
-              >
-                
-                                              {t('farmplotscreen.soil_layer')}
-                                            </button>
-              <button
-                onClick={() => setActiveLayer("Boundary")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                  activeLayer === "Boundary" ? "bg-gray-100 text-gray-800 border-gray-300" : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
-                }`}
-              >
-                
-                                              {t('farmplotscreen.boundary_view')}
-                                            </button>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button 
-                onClick={() => setZoomLevel(prev => Math.min(prev + 10, 150))}
-                className="w-8 h-8 rounded-lg border border-gray-250 bg-white flex items-center justify-center text-xs font-black hover:bg-gray-50 cursor-pointer"
-              >
-                +
-              </button>
-              <button 
-                onClick={() => setZoomLevel(prev => Math.max(prev - 10, 50))}
-                className="w-8 h-8 rounded-lg border border-gray-250 bg-white flex items-center justify-center text-xs font-black hover:bg-gray-50 cursor-pointer"
-              >
-                -
-              </button>
-              <button 
-                onClick={() => { setZoomLevel(100); setViewMode("Satellite"); setActiveLayer("NDVI"); }}
-                className="px-2.5 py-1.5 rounded-lg border border-gray-250 bg-white text-[10px] font-bold hover:bg-gray-50 cursor-pointer"
-              >
-                
-                                              {t('farmplotscreen.center')}
-                                            </button>
-            </div>
-          </div>
-
-          {/* ================= 3. Interactive GIS Farm Map ================= */}
-          <div className="bg-slate-950 rounded-3xl border border-slate-900 shadow-md overflow-hidden relative">
-            
-            {/* Map Header Status overlays */}
-            <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
-              <div className="bg-slate-900/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[10px] text-emerald-400 font-mono flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
-                <span>{t('farmplotscreen.active_view')} {viewMode.toUpperCase()}  {t('farmplotscreen.layer')} {activeLayer.toUpperCase()}</span>
-              </div>
-              <button
-                onClick={triggerScan}
-                disabled={isScanning}
-                className="bg-emerald-500 hover:bg-emerald-650 disabled:bg-emerald-700 text-slate-950 font-bold px-4 py-2 rounded-xl text-[10px] flex items-center gap-1.5 transition-all cursor-pointer border-0 shadow-sm"
-              >
-                <RefreshCw className={`w-3 h-3 ${isScanning ? "animate-spin" : ""}`} />
-                {isScanning ? "RE-INDEXING GNSS..." : "FORCE SATELLITE SYNC"}
-              </button>
-            </div>
-
-            {/* Map Canvas */}
-            <div className="h-96 relative flex items-center justify-center p-6 select-none overflow-hidden">
-              
-              {/* Radar sweep scan line */}
-              {isScanning && (
-                <motion.div
-                  initial={{ top: "0%" }}
-                  animate={{ top: "100%" }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute left-0 right-0 h-1.5 bg-emerald-400/50 shadow-lg shadow-emerald-400 z-10 pointer-events-none"
-                />
-              )}
-
-              {/* Grid Background */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:30px_30px]" />
-
-              {/* Map Plot SVG Container */}
-              <motion.div 
-                style={{ scale: zoomLevel / 100 }}
-                className="w-full h-full relative transition-all duration-300 flex items-center justify-center"
-              >
-                <svg className="w-full h-full relative z-10" viewBox="0 0 500 220">
-                  <defs>
-                    {/* Healthy Gradient */}
-                    <linearGradient id="healthyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#059669" stopOpacity={activeLayer === "NDVI" ? 0.35 : 0.15} />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity={activeLayer === "NDVI" ? 0.55 : 0.35} />
-                    </linearGradient>
-                    
-                    {/* Stable Gradient */}
-                    <linearGradient id="stableGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#4d7c0f" stopOpacity={activeLayer === "NDVI" ? 0.35 : 0.2} />
-                      <stop offset="100%" stopColor="#84cc16" stopOpacity={activeLayer === "NDVI" ? 0.55 : 0.4} />
-                    </linearGradient>
-
-                    {/* Deficient Gradient */}
-                    <linearGradient id="deficientGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#b45309" stopOpacity={activeLayer === "NDVI" ? 0.35 : 0.25} />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={activeLayer === "NDVI" ? 0.55 : 0.45} />
-                    </linearGradient>
-
-                    {/* Critical Gradient */}
-                    <linearGradient id="criticalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#be123c" stopOpacity={activeLayer === "NDVI" ? 0.35 : 0.25} />
-                      <stop offset="100%" stopColor="#e11d48" stopOpacity={activeLayer === "NDVI" ? 0.55 : 0.45} />
-                    </linearGradient>
-
-                    {/* Moisture Gradient */}
-                    <linearGradient id="moistureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#1e3a8a" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0.6} />
-                    </linearGradient>
-                  </defs>
-
-                  {/* SVG paths mapping */}
-                  {plots.map((plot) => {
-
-                    const isSelected = selectedPlotId === plot.id;
-                    const fillValue = activeLayer === "Moisture" ? "url(#moistureGrad)" : plot.fillGradient;
-                    const strokeValue = isSelected ? "#FFF" : plot.strokeColor;
-                    const strokeWidthValue = isSelected ? 2.5 : 1.5;
-
-                    return (
-                      <g key={plot.id} className="cursor-pointer" onClick={() => setSelectedPlotId(plot.id)}>
-                        {isSelected && (
-                          <path
-                            d={plot.svgPath}
-                            fill="transparent"
-                            stroke={plot.strokeColor}
-                            strokeWidth="8"
-                            opacity="0.35"
-                            className="transition-all"
-                          />
-                        )}
-                        
-                        <path
-                          d={plot.svgPath}
-                          fill={fillValue}
-                          stroke={strokeValue}
-                          strokeWidth={strokeWidthValue}
-                          className="transition-all duration-300 hover:fill-white/10"
-                        />
-                        
-                        <text
-                          x={
-                            plot.boundaryMapped && plot.geoJSON
-                              ? coordinateToSvgPoint(plot.geoJSON).x
-                              : (plot.id === "plot-1" ? 165 :
-                                 plot.id === "plot-2" ? 305 :
-                                 plot.id === "plot-3" ? 215 : 
-                                 plot.id === "plot-4" ? 355 : 435)
-                          }
-                          y={
-                            plot.boundaryMapped && plot.geoJSON
-                              ? coordinateToSvgPoint(plot.geoJSON).y
-                              : (plot.id === "plot-1" ? 75 :
-                                 plot.id === "plot-2" ? 65 :
-                                 plot.id === "plot-3" ? 158 : 
-                                 plot.id === "plot-4" ? 145 : 62)
-                          }
-                          fill={isSelected ? "#FFF" : "#cbd5e1"}
-                          fontSize="9"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                          className="pointer-events-none select-none font-mono drop-shadow-md"
-                        >
-                          {plot.crop} ({plot.area}  {t('farmplotscreen.ac')}
-                                                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </motion.div>
-
-              <div className="absolute bottom-4 left-4 text-[9px] font-mono text-slate-500">
-                
-                                              {t('farmplotscreen.wgs_84_epsg_4326_coordinate_ticks_17_38_')}
-                                            </div>
-            </div>
-          </div>
 
           {/* ================= 9. GIS Legend Card ================= */}
           <div className="bg-white rounded-2xl p-4 border border-gray-150 shadow-xs space-y-3.5 text-xs text-gray-700">
@@ -892,23 +711,41 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full">
-                    
-                                                          {t('farmplotscreen.plot_id')} {selectedPlot.id.toUpperCase()}
+                    {t('farmplotscreen.plot_id')} {selectedPlot.id.toUpperCase()}
                   </span>
                 </div>
-                {/* Health Badge */}
-                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${selectedPlot.statusColor}`}>
-                  {selectedPlot.status}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {(selectedPlot.isDemo || selectedPlot.id.startsWith("plot-")) && (
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                      Demo Plot
+                    </span>
+                  )}
+                  {/* Health Badge */}
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${selectedPlot.statusColor}`}>
+                    {selectedPlot.status}
+                  </span>
+                </div>
               </div>
               <h3 className="font-black text-gray-900 text-lg mt-3 leading-tight">{selectedPlot.name}</h3>
             </div>
 
             {/* Specs detail list */}
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
+              <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                <span className="text-gray-400">Boundary Geometry</span>
+                {selectedPlot.boundaryMapped && selectedPlot.geoJSON ? (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Mapped (GPS/GIS)
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    ⚠️ Not Mapped
+                  </span>
+                )}
+              </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.landholder')}</span>
-                <span className="font-bold text-gray-900">{selectedPlot.farmer}</span>
+                <span className="font-bold text-gray-900">{selectedPlot.farmer || "Account Owner"}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.acreage')}</span>
@@ -918,6 +755,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <span className="text-gray-400">{t('farmplotscreen.crop_variety')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.crop}</span>
               </div>
+
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.growth_stage')}</span>
                 <span className="font-bold text-gray-900">{selectedPlot.stage}</span>
@@ -943,12 +781,15 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               <div className="space-y-1.5 pt-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-400">{t('farmplotscreen.soil_health_score')}</span>
-                  {/* soilHealth is optional for DB-sourced plots (AI data not yet populated) */}
-                  <span className="text-primary font-bold">{selectedPlot.soilHealth?.Current ?? 0}%</span>
+                  {typeof selectedPlot.soilHealth?.Current === 'number' ? (
+                    <span className="text-primary font-bold">{selectedPlot.soilHealth.Current}%</span>
+                  ) : (
+                    <span className="text-gray-400 font-medium text-xs">No data</span>
+                  )}
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div 
-                    className="h-full bg-primary" 
+                    className={`h-full ${typeof selectedPlot.soilHealth?.Current === 'number' ? 'bg-primary' : 'bg-gray-200'}`} 
                     initial={{ width: 0 }}
                     animate={{ width: `${selectedPlot.soilHealth?.Current ?? 0}%` }}
                     transition={{ duration: 0.8 }}
@@ -959,52 +800,112 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
             {/* ================= 6. Environmental Snapshot ================= */}
             <div className="space-y-3">
-              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.environmental_snapshot')}</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.environmental_snapshot')}</h4>
+                {envData.weather ? (
+                  <span className="text-[8px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md">
+                    Live · {envData.weather.source}
+                  </span>
+                ) : envData.weatherLoading ? (
+                  <span className="text-[8px] font-black uppercase tracking-wider text-gray-400 flex items-center gap-1">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Loading
+                  </span>
+                ) : (
+                  <span className="text-[8px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-150 px-1.5 py-0.5 rounded-md">
+                    Demo data
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-2">
-                
+
                 {/* Temp */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Thermometer className="w-4.5 h-4.5 text-primary mx-auto" />
                   <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.temp')}</span>
-                  <span className="text-xs font-extrabold text-gray-800">{selectedPlot.temp}</span>
+                  <span className="text-xs font-extrabold text-gray-800">
+                    {envData.weather ? `${Math.round(envData.weather.current.temperatureC)}°C` : selectedPlot.temp}
+                  </span>
                 </div>
 
                 {/* Humidity */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Droplets className="w-4.5 h-4.5 text-primary mx-auto" />
                   <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.humidity')}</span>
-                  <span className="text-xs font-extrabold text-gray-800">{selectedPlot.humidity}</span>
+                  <span className="text-xs font-extrabold text-gray-800">
+                    {envData.weather?.current.humidityPercent != null
+                      ? `${Math.round(envData.weather.current.humidityPercent)}%`
+                      : selectedPlot.humidity}
+                  </span>
                 </div>
 
                 {/* Wind */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Wind className="w-4.5 h-4.5 text-primary mx-auto" />
                   <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.wind')}</span>
-                  <span className="text-xs font-extrabold text-gray-800">{selectedPlot.windSpeed}</span>
+                  <span className="text-xs font-extrabold text-gray-800">
+                    {envData.weather?.current.windSpeedKmh != null
+                      ? `${Math.round(envData.weather.current.windSpeedKmh)} km/h`
+                      : selectedPlot.windSpeed}
+                  </span>
                 </div>
 
-                {/* Solar */}
+                {/* Solar / condition (real weather has no solar radiance field — show live condition text instead when available) */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Sun className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.solar')}</span>
-                  <span className="text-[10px] font-extrabold text-gray-800">{selectedPlot.solarRad}</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">
+                    {envData.weather ? "Condition" : t('farmplotscreen.solar')}
+                  </span>
+                  <span className="text-[10px] font-extrabold text-gray-800">
+                    {envData.weather ? envData.weather.current.conditionText : selectedPlot.solarRad}
+                  </span>
                 </div>
 
-                {/* UV */}
+                {/* Rain / UV */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Sparkles className="w-4.5 h-4.5 text-primary mx-auto" />
-                  <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.uv_index')}</span>
-                  <span className="text-xs font-extrabold text-gray-800">{selectedPlot.uvIndex}</span>
+                  <span className="block text-[8px] font-bold text-gray-400 uppercase">
+                    {envData.weather ? "Rain" : t('farmplotscreen.uv_index')}
+                  </span>
+                  <span className="text-xs font-extrabold text-gray-800">
+                    {envData.weather?.current.precipitationMm != null
+                      ? `${envData.weather.current.precipitationMm.toFixed(1)} mm`
+                      : selectedPlot.uvIndex}
+                  </span>
                 </div>
 
-                {/* NDVI */}
+                {/* NDVI — Sentinel-2 when available, otherwise explicit unavailable/demo state */}
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Layers className="w-4.5 h-4.5 text-primary mx-auto" />
                   <span className="block text-[8px] font-bold text-gray-400 uppercase">{t('farmplotscreen.ndvi')}</span>
-                  <span className="text-xs font-extrabold text-primary">{selectedPlot.ndvi}</span>
+                  {envData.ndvi?.available ? (
+                    <span className="text-xs font-extrabold text-primary">{envData.ndvi.mean_ndvi?.toFixed(2)}</span>
+                  ) : envData.ndviLoading ? (
+                    <span className="text-[9px] font-bold text-gray-400">Loading…</span>
+                  ) : envData.ndvi && !envData.ndvi.available ? (
+                    <span className="text-[9px] font-bold text-amber-600" title={envData.ndvi.reason ?? undefined}>
+                      Config required
+                    </span>
+                  ) : (
+                    <span className="text-xs font-extrabold text-primary">{selectedPlot.ndvi}</span>
+                  )}
                 </div>
 
               </div>
+
+              {/* NDVI detail line: acquisition date + source, shown once we have a real answer */}
+              {envData.ndvi && (
+                <div className="flex items-center justify-between text-[9px] text-gray-450 px-1">
+                  <span>
+                    {envData.ndvi.available
+                      ? `Status: ${envData.ndvi.status ?? "—"} · ${envData.ndvi.acquisition_date ?? "—"}`
+                      : "Sentinel-2 unavailable — configuration required"}
+                  </span>
+                  <span className="font-semibold">{envData.ndvi.source}</span>
+                </div>
+              )}
+              {envData.weatherError && !envData.weather && (
+                <p className="text-[9px] text-amber-600 px-1">{envData.weatherError}</p>
+              )}
             </div>
 
             {/* ================= 7. AI Plot Insights ================= */}
@@ -1012,7 +913,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.ai_boundary_observations')}</h4>
               <div className="space-y-2 text-xs text-gray-700">
                 {/* soilHealth is optional for DB-sourced plots (AI telemetry not yet populated) */}
-                {(selectedPlot.soilHealth?.Current ?? 0) < 60 && (
+                {typeof selectedPlot.soilHealth?.Current === 'number' && selectedPlot.soilHealth.Current < 60 && (
                   <div className="p-2.5 bg-red-50/50 border border-red-100 rounded-xl flex gap-2 items-start">
                     <span className="text-red-500 mt-0.5">⚠️</span>
                     <div className="space-y-0.5">
@@ -1021,6 +922,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                     </div>
                   </div>
                 )}
+
                 {selectedPlot.moisture !== undefined && selectedPlot.moisture < 35 ? (
                   <div className="p-2.5 bg-amber-50/50 border border-amber-100 rounded-xl flex gap-2 items-start">
                     <span className="text-amber-500 mt-0.5">⚠️</span>
