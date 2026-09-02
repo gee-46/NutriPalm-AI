@@ -16,6 +16,8 @@ export interface GeoJSONPolygon {
 export interface Plot {
   // Identity
   id: string;
+  /** True when this plot is synthetic sample/demo data (not a real user farm) */
+  isDemo?: boolean;
   /** Optional - DB plots key off owner_id (auth user). Kept for AnalyticsScreen display. */
   farmer?: string;
   name: string;
@@ -79,19 +81,19 @@ export interface Plot {
   advisoryReason?: string;
 
   // Meta / cross-module status
-  boundaryMapped: boolean;      // true when geoJSON is populated
+  boundaryMapped: boolean;      // true when real geoJSON polygon is populated
   soilReportAttached: boolean;  // set by Soil Report module
   createdAt: string;            // ISO date string
 }
 
 // ---------------------------------------------------------------------------
-// Seed data -- used for logged-out / empty / error states.
-// Zero visual change from earlier phases.
+// Seed data -- used ONLY for logged-out demo state. Explicitly marked isDemo: true.
 // ---------------------------------------------------------------------------
 
 const SEED_PLOTS: Plot[] = [
   {
     id: "plot-1",
+    isDemo: true,
     name: "Swamy North Plot (Plot 2A)",
     farmer: "Swaminathan Gowda",
     crop: "Oil Palm",
@@ -105,6 +107,18 @@ const SEED_PLOTS: Plot[] = [
       "17.3872 N, 78.4925 E",
       "17.3860 N, 78.4900 E",
     ],
+    geoJSON: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [78.4892, 17.3881],
+          [78.4910, 17.3895],
+          [78.4925, 17.3872],
+          [78.4900, 17.3860],
+          [78.4892, 17.3881],
+        ],
+      ],
+    },
     soil: "Loamy (Optimal)",
     soilHealth: { Past: 84, Current: 88, Prediction: 92 },
     irrigation: "Precision Drip (94%)",
@@ -134,12 +148,13 @@ const SEED_PLOTS: Plot[] = [
     recommendedAction: "Apply Phosphorus Enrichment and Optimize Micro-Drip Timing",
     advisoryReason:
       "Soil Nitrogen and Potassium complexes are highly saturated; phosphorus optimizes fruit bunch sizes.",
-    boundaryMapped: false,
+    boundaryMapped: true,
     soilReportAttached: false,
     createdAt: "2026-01-15T00:00:00Z",
   },
   {
     id: "plot-2",
+    isDemo: true,
     name: "Kothagudem South Field",
     farmer: "K. Ramachandra Rao",
     crop: "Oil Palm",
@@ -153,6 +168,18 @@ const SEED_PLOTS: Plot[] = [
       "17.3905 N, 78.4950 E",
       "17.3885 N, 78.4928 E",
     ],
+    geoJSON: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [78.4912, 17.3898],
+          [78.4930, 17.3920],
+          [78.4950, 17.3905],
+          [78.4928, 17.3885],
+          [78.4912, 17.3898],
+        ],
+      ],
+    },
     soil: "Red Clayey",
     soilHealth: { Past: 68, Current: 72, Prediction: 76 },
     irrigation: "Precision Drip",
@@ -181,12 +208,13 @@ const SEED_PLOTS: Plot[] = [
     whyDisease: "Clay texture holds humidity steady around trunk bases.",
     recommendedAction: "Local Nitrate supplement to sustain vegetative greening",
     advisoryReason: "Pre-empt nitrogen leeching before the wet monsoon cycle begins.",
-    boundaryMapped: false,
+    boundaryMapped: true,
     soilReportAttached: false,
     createdAt: "2026-01-20T00:00:00Z",
   },
   {
     id: "plot-3",
+    isDemo: true,
     name: "Devamma Palm Zone 1",
     farmer: "M. Devamma",
     crop: "Coconut Palm",
@@ -200,6 +228,18 @@ const SEED_PLOTS: Plot[] = [
       "17.3848 N, 78.4935 E",
       "17.3838 N, 78.4915 E",
     ],
+    geoJSON: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [78.4902, 17.3855],
+          [78.4924, 17.3868],
+          [78.4935, 17.3848],
+          [78.4915, 17.3838],
+          [78.4902, 17.3855],
+        ],
+      ],
+    },
     soil: "Sandy Clay",
     soilHealth: { Past: 52, Current: 55, Prediction: 60 },
     irrigation: "Drip Irrigation",
@@ -228,12 +268,13 @@ const SEED_PLOTS: Plot[] = [
     whyDisease: "Fungal leaf spots detected in satellite spectrum profiles.",
     recommendedAction: "Schedule copper-based fungicide spray",
     advisoryReason: "NDVI reduction correlates directly to early-stage bud rot symptoms.",
-    boundaryMapped: false,
+    boundaryMapped: true,
     soilReportAttached: false,
     createdAt: "2026-02-01T00:00:00Z",
   },
   {
     id: "plot-4",
+    isDemo: true,
     name: "Swamy East Plantation",
     farmer: "Swaminathan Gowda",
     crop: "Oil Palm",
@@ -247,6 +288,18 @@ const SEED_PLOTS: Plot[] = [
       "17.3860 N, 78.4960 E",
       "17.3850 N, 78.4938 E",
     ],
+    geoJSON: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [78.4927, 17.3870],
+          [78.4948, 17.3883],
+          [78.4960, 17.3860],
+          [78.4938, 17.3850],
+          [78.4927, 17.3870],
+        ],
+      ],
+    },
     soil: "Loamy (Optimal)",
     soilHealth: { Past: 76, Current: 79, Prediction: 84 },
     irrigation: "Precision Drip",
@@ -275,12 +328,13 @@ const SEED_PLOTS: Plot[] = [
     whyDisease: "Optimal spacing maximizes daylight capture and airflow.",
     recommendedAction: "Routine potassium top-up during cell division",
     advisoryReason: "Maintains optimal moisture uptake metrics across leaves.",
-    boundaryMapped: false,
+    boundaryMapped: true,
     soilReportAttached: false,
     createdAt: "2026-02-10T00:00:00Z",
   },
   {
     id: "plot-5",
+    isDemo: true,
     name: "Hassan Cocoa Plot",
     farmer: "Rajesh Kumar",
     crop: "Cocoa",
@@ -294,6 +348,18 @@ const SEED_PLOTS: Plot[] = [
       "17.3915 N, 78.4985 E",
       "17.3895 N, 78.4962 E",
     ],
+    geoJSON: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [78.4948, 17.3912],
+          [78.4965, 17.3930],
+          [78.4985, 17.3915],
+          [78.4962, 17.3895],
+          [78.4948, 17.3912],
+        ],
+      ],
+    },
     soil: "Sandy Loam",
     soilHealth: { Past: 42, Current: 38, Prediction: 45 },
     irrigation: "Manual Drip",
@@ -323,11 +389,12 @@ const SEED_PLOTS: Plot[] = [
     recommendedAction: "Execute emergency moisture recovery drip",
     advisoryReason:
       "Water deficit triggers leaf drop, reducing chlorophyll conversion efficiency.",
-    boundaryMapped: false,
+    boundaryMapped: true,
     soilReportAttached: false,
     createdAt: "2026-02-15T00:00:00Z",
   },
 ];
+
 
 // ---------------------------------------------------------------------------
 // DB -> Frontend mapper (snake_case DB row -> camelCase Plot)
@@ -336,8 +403,17 @@ const SEED_PLOTS: Plot[] = [
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function dbRowToPlot(row: Record<string, any>): Plot {
   const status = (row.status as Plot["status"]) || "Healthy";
-  const geoJSON: GeoJSONPolygon | undefined =
-    row.boundary && typeof row.boundary === "object" ? (row.boundary as GeoJSONPolygon) : undefined;
+
+  // Real geometry from Supabase 'boundary' JSON column (captured via GPS drawing or imported GeoJSON)
+  const isGeoJSONValid =
+    row.boundary &&
+    typeof row.boundary === "object" &&
+    row.boundary.type === "Polygon" &&
+    Array.isArray(row.boundary.coordinates) &&
+    Array.isArray(row.boundary.coordinates[0]) &&
+    row.boundary.coordinates[0].length >= 3;
+
+  const geoJSON: GeoJSONPolygon | undefined = isGeoJSONValid ? (row.boundary as GeoJSONPolygon) : undefined;
 
   const coordinates: string[] =
     geoJSON?.coordinates?.[0]
@@ -346,7 +422,28 @@ function dbRowToPlot(row: Record<string, any>): Plot {
         )
       : [];
 
-  let svgPath = "M 80 40 L 220 30 L 260 110 L 130 120 Z";
+  // Extract latest digital twin if joined
+  const latestTwin = Array.isArray(row.digital_twins) && row.digital_twins.length > 0
+    ? [...row.digital_twins].sort(
+        (a, b) =>
+          new Date(b.analysis_date || b.created_at || 0).getTime() -
+          new Date(a.analysis_date || a.created_at || 0).getTime()
+      )[0]
+    : null;
+
+  const soilHealth =
+    latestTwin && typeof latestTwin.crop_health_score === "number"
+      ? {
+          Past: Math.max(0, Math.round(latestTwin.crop_health_score - 4)),
+          Current: Math.round(latestTwin.crop_health_score),
+          Prediction: Math.min(100, Math.round(latestTwin.crop_health_score + 4)),
+        }
+      : undefined;
+
+  const ndvi =
+    latestTwin && typeof latestTwin.ndvi === "number" ? latestTwin.ndvi : undefined;
+
+  let svgPath = "";
   if (geoJSON) {
     try {
       const coords = geoJSON.coordinates[0] as number[][];
@@ -377,6 +474,7 @@ function dbRowToPlot(row: Record<string, any>): Plot {
 
   return {
     id: row.id as string,
+    isDemo: false,
     name: row.name as string,
     crop: row.crop || "",
     stage: row.stage || "Seedling",
@@ -393,6 +491,8 @@ function dbRowToPlot(row: Record<string, any>): Plot {
     state: row.state || undefined,
     country: row.country || undefined,
     soil: row.soil || "",
+    soilHealth,
+    ndvi,
     irrigation: row.irrigation_type || "",
     status,
     statusColor: getStatusColor(status),
@@ -401,11 +501,12 @@ function dbRowToPlot(row: Record<string, any>): Plot {
     fillGradient: fillMap[status],
     strokeColor: strokeMap[status],
     glowColor: glowMap[status],
-    boundaryMapped: row.boundary_mapped === true || !!geoJSON,
+    boundaryMapped: Boolean(geoJSON),
     soilReportAttached: row.soil_report_attached === true,
     createdAt: row.created_at as string,
   };
 }
+
 
 // ---------------------------------------------------------------------------
 // Module-level external store (useSyncExternalStore compatible)
@@ -454,7 +555,7 @@ async function _fetchFromDb(userId: string) {
   try {
     const { data, error } = await supabase
       .from("plots")
-      .select("*")
+      .select("*, digital_twins(*)")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -469,6 +570,7 @@ async function _fetchFromDb(userId: string) {
     _notify();
   }
 }
+
 
 // ---------------------------------------------------------------------------
 // Auth state listener -- re-fetch on sign-in, reset on sign-out
