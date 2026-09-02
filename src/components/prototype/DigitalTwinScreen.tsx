@@ -6,6 +6,7 @@ import { usePlots } from "../../data/plots";
 import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
 import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory } from "../../data/digitalTwins";
+import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
 
 
 
@@ -39,8 +40,6 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   // Living updates states
   const [lastSyncMinutes, setLastSyncMinutes] = useState(2);
-  const [fluctuateMoisture, setFluctuateMoisture] = useState(0);
-  const [fluctuateTemp, setFluctuateTemp] = useState(0);
   const [isChangingPlot, setIsChangingPlot] = useState(false);
 
   const triggerToast = (msg: string, type: "success" | "info" | "warning" = "success") => {
@@ -51,30 +50,25 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     }
   };
 
-  // 1. Auto-updating sync timer & telemetry fluctuation
+  // 1. Auto-updating sync timer
   useEffect(() => {
     const timerInterval = setInterval(() => {
       setLastSyncMinutes(prev => prev + 1);
     }, 60000); // every minute
 
-    const telemetryInterval = setInterval(() => {
-      setFluctuateMoisture(Math.random() * 1.2 - 0.6);
-      setFluctuateTemp(Math.random() * 0.4 - 0.2);
-    }, 4000); // fluctuate every 4 seconds
-
     return () => {
       clearInterval(timerInterval);
-      clearInterval(telemetryInterval);
     };
   }, []);
 
   const handleSync = () => {
     setIsSyncing(true);
+    envData.refresh();
     setTimeout(() => {
       setIsSyncing(false);
       setLastSyncMinutes(0);
-      triggerToast("Digital Twin virtual model synchronized with localized sensor grid.", "success");
-    }, 1200);
+      triggerToast("Digital Twin virtual model synchronized.", "success");
+    }, 1000);
   };
 
   const handlePlotSwitch = (id: string) => {
@@ -115,6 +109,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const { history: twinHistory } = useDigitalTwinHistory(activePlotId, historyDays as 7 | 30 | 90);
   
   const activeSnapshot = snapshots[simMode];
+  const envData = useEnvironmentalData(activePlot);
 
   if (plots.length === 0 || !activePlot) {
     return (
@@ -139,9 +134,6 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
   const isPrediction = simMode === "Prediction";
   const activeNDVI = isPrediction ? (prediction?.predicted_ndvi ?? 0) : (activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0));
-  const activeMoisture = activeSnapshot?.water_stress_score
-    ? Math.round(activeSnapshot.water_stress_score + fluctuateMoisture)
-    : (activePlot?.moistureTimeline ? Math.round(activePlot.moistureTimeline[simMode] + fluctuateMoisture) : 0);
   const activeSoilHealth = activeSnapshot?.crop_health_score ?? (activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0);
   const activeYield = activeSnapshot?.yield_prediction
     ? `${activeSnapshot.yield_prediction} Tons`
@@ -149,58 +141,107 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const activeDiseasePct = activeSnapshot?.disease_probability ?? (activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0);
   const activeDiseaseRisk = activeSnapshot?.risk_level ?? (activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending");
   
-  // Real mapped fields from DB
-  const realTemp = activeSnapshot?.temperature_c ?? 31.4;
-  const realHumidity = activeSnapshot?.humidity_pct ?? 64.2;
-  const realFoliar = activeSnapshot?.foliar_health_score ?? 98;
-
   const activeConfidence = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? 0;
   const activeWhyDisease = activeSnapshot?.disease_explanation ?? activePlot?.whyDisease;
   const activeRecommendedAction = activeSnapshot?.recommended_action ?? activePlot?.recommendedAction;
   const activeAdvisoryReason = activeSnapshot?.advisory_reason ?? activePlot?.advisoryReason;
 
-  // Dynamic average for the main Twin Health donut
-  const healthComponents = [activeSoilHealth, activeNDVI * 100, activeMoisture].filter(v => v > 0);
+  // Real weather readings from Open-Meteo
+  const realTemp = envData.weather ? envData.weather.current.temperatureC : null;
+  const realHumidity = envData.weather ? envData.weather.current.humidityPercent : null;
+  const realWind = envData.weather ? envData.weather.current.windSpeedKmh : null;
+  const realFoliar = activeSnapshot?.crop_health_score ?? 98;
+
+  // Dynamic average for the main Twin Health donut (soil health + canopy NDVI)
+  const healthComponents = [activeSoilHealth, activeNDVI * 100].filter(v => v > 0);
   const overallTwinHealth = healthComponents.length > 0
     ? Math.round(healthComponents.reduce((a, b) => a + b, 0) / healthComponents.length)
     : 0;
 
   const telemetryBadges: TelemetryBadge[] = [
-    { id: "temp", label: "Temperature", value: `${(realTemp + fluctuateTemp).toFixed(1)}°C`, interpretation: "Vegetative cellular respiration optimal.", x: 25, y: 35 },
-    { id: "humidity", label: "Humidity", value: `${realHumidity.toFixed(1)}%`, interpretation: "Transpiration rate within calibrated threshold.", x: 75, y: 40 },
-    { id: "moisture", label: "Moisture", value: `${activeMoisture}%`, interpretation: "Volumetric Water Content simulated.", x: 15, y: 65 },
-    { id: "ndvi", label: "Canopy NDVI", value: activeNDVI.toFixed(2) + (isPrediction ? ` (${prediction?.trend_direction})` : ""), interpretation: "High foliar density and chlorophyll absorption.", x: 80, y: 60 },
-    { id: "health", label: "Foliar Health", value: `${realFoliar}%`, interpretation: "Index against historical canopy twin.", x: 50, y: 20 },
-    { id: "wind", label: "Wind Velocity", value: "11 km/h", interpretation: "Low risk of fungal spore migration.", x: 45, y: 75 }
+    {
+      id: "temp",
+      label: "Temperature",
+      value: realTemp != null ? `${Math.round(realTemp)}°C` : "N/A",
+      interpretation: realTemp != null ? "Open-Meteo live surface temperature." : "Live weather feed offline.",
+      x: 25,
+      y: 35
+    },
+    {
+      id: "humidity",
+      label: "Humidity",
+      value: realHumidity != null ? `${Math.round(realHumidity)}%` : "N/A",
+      interpretation: realHumidity != null ? "Relative atmospheric humidity (Open-Meteo)." : "Live weather feed offline.",
+      x: 75,
+      y: 40
+    },
+    {
+      id: "moisture",
+      label: "Moisture",
+      value: "Not Connected",
+      interpretation: "No physical IoT soil moisture probe connected.",
+      x: 15,
+      y: 65
+    },
+    {
+      id: "ndvi",
+      label: "Canopy NDVI",
+      value: envData.ndvi?.available && envData.ndvi.mean_ndvi != null
+        ? envData.ndvi.mean_ndvi.toFixed(2)
+        : activeNDVI
+        ? activeNDVI.toFixed(2)
+        : "N/A",
+      interpretation: envData.ndvi?.available
+        ? `Sentinel-2 NDVI (${envData.ndvi.status ?? "Live"}).`
+        : "Satellite imagery pending configuration.",
+      x: 80,
+      y: 60
+    },
+    {
+      id: "health",
+      label: "Foliar Health",
+      value: `${realFoliar}%`,
+      interpretation: "Index against biophysical canopy model.",
+      x: 50,
+      y: 20
+    },
+    {
+      id: "wind",
+      label: "Wind Velocity",
+      value: realWind != null ? `${Math.round(realWind)} km/h` : "N/A",
+      interpretation: realWind != null ? "Surface wind velocity from Open-Meteo." : "Live weather feed offline.",
+      x: 45,
+      y: 75
+    }
   ];
 
   const telemetryCards = [
     {
-      label: "Soil Moisture",
-      value: `${activeMoisture}% VWC`,
-      trend: "stable",
-      trendText: "Stable",
-      icon: <Droplets className="w-5 h-5 text-blue-500" />,
-      status: activeMoisture >= 35 ? "Optimal" : "Attention",
-      sparkline: [40, 41, 40.5, 42, activeMoisture, activeMoisture - 1, activeMoisture]
+      label: "Soil Moisture (IoT)",
+      value: "Not Connected",
+      trend: "neutral",
+      trendText: "No IoT probe",
+      icon: <Droplets className="w-5 h-5 text-gray-400" />,
+      status: "Unavailable",
+      sparkline: [0, 0, 0, 0, 0, 0, 0]
     },
     {
-      label: "Temperature",
-      value: `${(realTemp + fluctuateTemp).toFixed(1)}°C`,
-      trend: "up",
-      trendText: "+0.8°C",
+      label: "Temperature (Open-Meteo)",
+      value: realTemp != null ? `${Math.round(realTemp)}°C` : "Unavailable",
+      trend: realTemp != null ? "stable" : "neutral",
+      trendText: realTemp != null ? "Live feed" : "No coordinates",
       icon: <Thermometer className="w-5 h-5 text-amber-500" />,
-      status: "Optimal",
-      sparkline: [29.5, 30.1, 30.5, 31.0, 31.2, 31.1, realTemp]
+      status: realTemp != null ? "Live" : "Offline",
+      sparkline: [realTemp ?? 0, realTemp ?? 0, realTemp ?? 0, realTemp ?? 0, realTemp ?? 0, realTemp ?? 0, realTemp ?? 0]
     },
     {
-      label: "Humidity",
-      value: `${realHumidity.toFixed(1)}%`,
-      trend: "down",
-      trendText: "-2.4%",
+      label: "Humidity (Open-Meteo)",
+      value: realHumidity != null ? `${Math.round(realHumidity)}%` : "Unavailable",
+      trend: realHumidity != null ? "stable" : "neutral",
+      trendText: realHumidity != null ? "Live feed" : "No coordinates",
       icon: <Activity className="w-5 h-5 text-emerald-500" />,
-      status: "Optimal",
-      sparkline: [67, 66.5, 65.2, 64.8, 64.0, 64.5, realHumidity]
+      status: realHumidity != null ? "Live" : "Offline",
+      sparkline: [realHumidity ?? 0, realHumidity ?? 0, realHumidity ?? 0, realHumidity ?? 0, realHumidity ?? 0, realHumidity ?? 0, realHumidity ?? 0]
     }
   ];
 
@@ -237,14 +278,17 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       const last = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].crop_health_score ?? activeSoilHealth) : activeSoilHealth;
       return { path: path ?? `M 20 ${180 - activeSoilHealth * 1.5} L 380 ${150 - activeSoilHealth * 1.5}`, val: `${Math.round(last)}%` };
     }
-    if (activeChartTab === "Moisture") {
+        if (activeChartTab === "Moisture") {
       const path = buildPathFromHistory(r => r.water_stress_score, 2.5, 170);
-      const last = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].water_stress_score ?? activeMoisture) : activeMoisture;
-      return { path: path ?? `M 20 ${180 - activeMoisture * 2.5} L 380 ${165 - activeMoisture * 2.5}`, val: `${Math.round(last)}%` };
+      if (path && twinHistory.length > 0) {
+        const last = twinHistory[twinHistory.length - 1].water_stress_score ?? 0;
+        return { path, val: `${Math.round(last)}%` };
+      }
+      return { path: "M 20 170 L 380 170", val: "Not Connected" };
     }
     // Temp
     const path = buildPathFromHistory(r => r.temperature_c, 2.5, 160);
-    return { path: path ?? "M 20 80 L 100 95 L 200 90 L 300 85 L 380 75", val: `${(31.4 + fluctuateTemp).toFixed(1)}°C` };
+    return { path: path ?? "M 20 120 L 380 120", val: realTemp != null ? `${Math.round(realTemp)}°C` : "Unavailable" };
   };
 
   const chartData = getChartData();
@@ -782,12 +826,13 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>{t('digitaltwinscreen.water_status')}</span>
-                  <span className="text-primary"><AnimatedCounter value={activeMoisture} />%</span>
+                  <span className="text-gray-400 font-medium">Not Connected (IoT)</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeMoisture}%` }} />
+                  <div className="h-full bg-gray-200" style={{ width: `0%` }} />
                 </div>
               </div>
+
             </div>
           </div>
 
@@ -812,6 +857,62 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             </div>
             <p className="text-[9.5px] text-gray-450 leading-relaxed">
               Predictions are generated using historical soil conditions, weather patterns, crop growth models, and simulated telemetry.
+            </p>
+          </div>
+
+          {/* 3b. ENVIRONMENTAL CONTEXT (live weather + on-demand Sentinel-2 NDVI) */}
+          <div className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs text-left space-y-3.5">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Live Environmental Context
+              </h4>
+              {envData.centroid && (
+                <span className="text-[8px] font-mono text-gray-400">
+                  {envData.centroid.lat.toFixed(4)}, {envData.centroid.lng.toFixed(4)}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">Plot Area</span>
+                <span className="text-xs font-black text-primary">{activePlot.area?.toFixed(2) ?? "—"} ac</span>
+              </div>
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">Current Weather</span>
+                <span className="text-xs font-black text-primary">
+                  {envData.weather
+                    ? `${Math.round(envData.weather.current.temperatureC)}°C · ${envData.weather.current.conditionText}`
+                    : envData.weatherLoading
+                    ? "Loading…"
+                    : envData.weatherError
+                    ? "Unavailable"
+                    : "No coordinates"}
+                </span>
+              </div>
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">Sentinel-2 NDVI</span>
+                <span className="text-xs font-black text-primary">
+                  {envData.ndvi?.available
+                    ? envData.ndvi.mean_ndvi?.toFixed(2)
+                    : envData.ndviLoading
+                    ? "Loading…"
+                    : "Config required"}
+                </span>
+              </div>
+              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">Satellite Source</span>
+                <span className="text-[10px] font-black text-gray-700">
+                  {envData.ndvi?.source ?? "Sentinel-2 (via backend)"}
+                </span>
+              </div>
+            </div>
+            <p className="text-[9.5px] text-gray-450 leading-relaxed">
+              This panel calls live services on demand: weather from Open-Meteo for this
+              plot's boundary centroid, and Sentinel-2 NDVI from the backend geospatial
+              service when Sentinel Hub credentials are configured. It's separate from the
+              historical Past/Current/Prediction telemetry above, which is backfilled by the
+              satellite ingestion pipeline.
             </p>
           </div>
 
@@ -959,23 +1060,45 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="grid grid-cols-1 gap-3.5 text-xs font-semibold text-gray-700">
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.sensors_connected')}</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> 18 / 18</span>
+                <span className="inline-flex items-center gap-1.5 text-gray-400">
+                  <span className="w-2 h-2 rounded-full bg-gray-300" /> 0 Connected (No IoT hardware)
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.weather_feed')}</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500" /> {t('digitaltwinscreen.connected')}</span>
+                {envData.weather ? (
+                  <span className="inline-flex items-center gap-1.5 text-emerald-650">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live (Open-Meteo)
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-gray-400">
+                    <span className="w-2 h-2 rounded-full bg-gray-300" /> {envData.weatherLoading ? "Connecting..." : "Unavailable / No Coordinates"}
+                  </span>
+                )}
               </div>
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.satellite_feed')}</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t('digitaltwinscreen.active_sentinel2')}</span>
+                {envData.ndvi?.available ? (
+                  <span className="inline-flex items-center gap-1.5 text-emerald-650">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Active (Sentinel-2)
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-amber-650">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" /> Config Required
+                  </span>
+                )}
               </div>
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.drone_sync')}</span>
-                <span className="inline-flex items-center gap-1.5 text-indigo-650"><span className="w-2 h-2 rounded-full bg-indigo-500" /> {t('digitaltwinscreen.standby')}</span>
+                <span className="inline-flex items-center gap-1.5 text-gray-400">
+                  <span className="w-2 h-2 rounded-full bg-gray-300" /> Not Connected
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.ai_engine')}</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-650"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t('digitaltwinscreen.running')}</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-650">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t('digitaltwinscreen.running')}
+                </span>
               </div>
             </div>
           </div>
