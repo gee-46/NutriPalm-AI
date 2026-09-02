@@ -228,3 +228,45 @@ export function parseGeoJSONFile(text: string): GeoJSONParseResult {
 
   throw new Error("Unsupported GeoJSON format. Must be Polygon, Feature, or FeatureCollection.");
 }
+
+// ---------------------------------------------------------------------------
+// Coordinate string parsing & GeoJSON polygon builder
+// ---------------------------------------------------------------------------
+
+export function parseCoordinateString(coordStr: string): [number, number] | null {
+  if (!coordStr) return null;
+  // e.g. "17.3881 N, 78.4892 E" or "17.3881° N, 78.4948° E" or "17.3881, 78.4892"
+  const clean = coordStr.replace(/[°NSEW]/gi, " ").trim();
+  const parts = clean.split(/[,\s]+/).map((p) => parseFloat(p.trim())).filter((n) => !isNaN(n));
+  if (parts.length >= 2) {
+    let lat = parts[0];
+    let lng = parts[1];
+    if (/S/i.test(coordStr)) lat = -Math.abs(lat);
+    if (/W/i.test(coordStr)) lng = -Math.abs(lng);
+    return [lng, lat]; // GeoJSON format [lng, lat]
+  }
+  return null;
+}
+
+export function plotCoordinatesToGeoJSON(coords: string[]): GeoJSONPolygon | null {
+  if (!coords || coords.length < 3) return null;
+  const points = coords
+    .map(parseCoordinateString)
+    .filter((p): p is [number, number] => p !== null);
+
+  if (points.length >= 3) {
+    const ring = [...points];
+    // Ensure polygon ring is closed
+    const first = ring[0];
+    const last = ring[ring.length - 1];
+    if (first[0] !== last[0] || first[1] !== last[1]) {
+      ring.push([first[0], first[1]]);
+    }
+    return {
+      type: "Polygon",
+      coordinates: [ring],
+    };
+  }
+  return null;
+}
+
