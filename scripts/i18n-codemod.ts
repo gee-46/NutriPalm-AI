@@ -52,7 +52,7 @@ function isSkippedUsage(node: StringLiteral): string | null {
     }
 
     // Check ancestors but stop if we hit a JSX element/attribute/fragment
-    let current = node.getParent();
+    let current: Node | undefined = parent;
     while (current && !Node.isJsxElement(current) && !Node.isJsxFragment(current) && !Node.isJsxAttribute(current)) {
         if (Node.isBinaryExpression(current)) return 'Comparison or binary expression';
         if (Node.isCaseClause(current)) return 'Switch case';
@@ -209,11 +209,13 @@ for (const sourceFile of sourceFiles) {
     
     if (isApply && fileModified) {
         for (const func of componentsToInject) {
-            const block = func.getBody();
-            if (Node.isBlock(block)) {
-                const text = block.getText();
-                if (!text.includes('useTranslation()')) {
-                    block.insertStatements(0, 'const { t } = useTranslation();');
+            if (Node.hasBody(func)) {
+                const block = func.getBody();
+                if (Node.isBlock(block)) {
+                    const text = block.getText();
+                    if (!text.includes('useTranslation()')) {
+                        block.insertStatements(0, 'const { t } = useTranslation();');
+                    }
                 }
             }
         }
