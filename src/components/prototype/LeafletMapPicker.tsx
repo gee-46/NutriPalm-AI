@@ -14,7 +14,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Navigation, AlertTriangle, PenTool, Edit3, Trash2, RefreshCw, Search } from "lucide-react";
+import { MapPin, Navigation, AlertTriangle, PenTool, Edit3, Trash2, RefreshCw, Search, Layers as LayersIcon, Crosshair } from "lucide-react";
 import { AnimatedCounter } from "./FarmPlotScreen";
 import {
   computePolygonAreaAcres,
@@ -60,6 +60,49 @@ const DEFAULT_CENTER: [number, number] = [17.3912, 78.4948];
 const DEFAULT_ZOOM = 14;
 
 // ---------------------------------------------------------------------------
+// Real basemap providers
+//
+// Standard map: OpenStreetMap (free, no key).
+//
+// Satellite/aerial: Esri World Imagery is used by default -- it is a real,
+// legitimate aerial/satellite imagery service that is free to use for
+// non-commercial/demo purposes without an API key
+// (https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9).
+//
+// If VITE_MAPTILER_API_KEY is set, we upgrade to MapTiler's higher-resolution
+// commercial satellite tiles instead. The key is a public/publishable Vite
+// key embedded in the built frontend bundle (same trust model as the
+// existing VITE_SUPABASE_ANON_KEY) -- MapTiler tile keys are designed to be
+// used client-side and are domain-restricted on the provider's dashboard,
+// not a secret. If the key is absent or the tile layer fails to load, the
+// app falls back to Esri World Imagery and never breaks.
+// ---------------------------------------------------------------------------
+
+type BasemapId = "standard" | "satellite";
+
+const MAPTILER_KEY = (import.meta as any).env?.VITE_MAPTILER_API_KEY as string | undefined;
+
+function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number } {
+  if (MAPTILER_KEY) {
+    return {
+      url: `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+      attribution: "© MapTiler © Airbus, Maxar, CNES/Airbus",
+      maxZoom: 20,
+    };
+  }
+  // No key configured -- fall back to the free, keyless Esri World Imagery
+  // service. This is real satellite/aerial imagery, not a placeholder.
+  return {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: "© Esri, Maxar, Earthstar Geographics",
+    maxZoom: 19,
+  };
+}
+
+const STANDARD_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const STANDARD_ATTRIBUTION = "© OpenStreetMap contributors";
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -72,6 +115,13 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const drawnLayerRef = useRef<import("leaflet").Layer | null>(null);
+  const standardLayerRef = useRef<import("leaflet").TileLayer | null>(null);
+  const satelliteLayerRef = useRef<import("leaflet").TileLayer | null>(null);
+  const accuracyCircleRef = useRef<import("leaflet").Circle | null>(null);
+  const triggerToastRef = useRef<((msg: string, type?: "success" | "info" | "warning") => void) | null>(null);
+
+  const [basemap, setBasemapState] = useState<BasemapId>("satellite");
+  const [gpsAccuracyM, setGpsAccuracyM] = useState<number | null>(null);
 
   const [mapReady, setMapReady] = useState(false);
   const [polygonError, setPolygonError] = useState<string | null>(null);
@@ -93,6 +143,25 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
 
   const triggerToast = (msg: string, type: "success" | "info" | "warning" = "info") => {
     if (showToast) showToast(msg, type);
+  };
+  triggerToastRef.current = triggerToast;
+
+  // ---------------------------------------------------------------------------
+  // Basemap switching -- toggles between the real standard and satellite layers
+  // ---------------------------------------------------------------------------
+  const setBasemap = (next: BasemapId) => {
+    const map = mapRef.current;
+    if (!map || !standardLayerRef.current || !satelliteLayerRef.current) return;
+    if (next === basemap) return;
+
+    if (next === "satellite") {
+      if (map.hasLayer(standardLayerRef.current)) map.removeLayer(standardLayerRef.current);
+      satelliteLayerRef.current.addTo(map);
+    } else {
+      if (map.hasLayer(satelliteLayerRef.current)) map.removeLayer(satelliteLayerRef.current);
+      standardLayerRef.current.addTo(map);
+    }
+    setBasemapState(next);
   };
 
   // ---------------------------------------------------------------------------
@@ -121,11 +190,41 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         attributionControl: false,
       });
 
-      // Satellite/hybrid tile layer (OpenStreetMap fallback — always free)
-      L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { maxZoom: 19, attribution: "© OpenStreetMap" }
-      ).addTo(map);
+      // Real basemap layers -- standard (OSM) and satellite/aerial (Esri
+      // World Imagery, or MapTiler if VITE_MAPTILER_API_KEY is configured).
+      // Only one is attached to the map at a time; switching is handled by
+      // the toolbar buttons via setBasemap() below.
+      const satConfig = getSatelliteTileConfig();
+      const standardLayer = L.tileLayer(STANDARD_TILE_URL, {
+        maxZoom: 19,
+        attribution: STANDARD_ATTRIBUTION,
+      });
+      const satelliteLayer = L.tileLayer(satConfig.url, {
+        maxZoom: satConfig.maxZoom,
+        attribution: satConfig.attribution,
+      });
+
+      // If the satellite provider fails to load tiles (bad/missing key,
+      // network block), fall back to the standard layer instead of showing
+      // a blank/broken map.
+      let satelliteFailed = false;
+      satelliteLayer.on("tileerror", () => {
+        if (satelliteFailed) return;
+        satelliteFailed = true;
+        if (map.hasLayer(satelliteLayer)) {
+          map.removeLayer(satelliteLayer);
+          standardLayer.addTo(map);
+          setBasemapState("standard");
+          triggerToastRef.current?.(
+            "Satellite imagery unavailable right now — showing standard map.",
+            "warning"
+          );
+        }
+      });
+
+      standardLayerRef.current = standardLayer;
+      satelliteLayerRef.current = satelliteLayer;
+      satelliteLayer.addTo(map); // default view: satellite/aerial
 
       // Initialize Geoman options but DO NOT add default controls
       // Style drawn layers to match the existing map card's visual language
@@ -243,6 +342,9 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         mapRef.current.remove();
         mapRef.current = null;
       }
+      accuracyCircleRef.current = null;
+      standardLayerRef.current = null;
+      satelliteLayerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -305,7 +407,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
   // ---------------------------------------------------------------------------
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
-      setGpsError("Geolocation is not supported by your browser.");
+      setGpsError("Geolocation is not supported by your browser. Pan/search the map manually.");
       return;
     }
     setIsLocating(true);
@@ -314,23 +416,61 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setIsLocating(false);
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
+        setGpsAccuracyM(typeof accuracy === "number" ? accuracy : null);
+
         if (mapRef.current) {
           mapRef.current.setView([latitude, longitude], DEFAULT_ZOOM);
+
+          // Draw/update a small accuracy circle so the user can see how
+          // trustworthy this GPS fix is. This is browser/device GPS, not
+          // survey-grade positioning.
+          if (accuracyCircleRef.current) {
+            mapRef.current.removeLayer(accuracyCircleRef.current);
+            accuracyCircleRef.current = null;
+          }
+          if (typeof accuracy === "number") {
+            accuracyCircleRef.current = L.circle([latitude, longitude], {
+              radius: accuracy,
+              color: "#3b82f6",
+              fillColor: "#3b82f6",
+              fillOpacity: 0.12,
+              weight: 1.5,
+              dashArray: "3 3",
+            }).addTo(mapRef.current);
+          }
         }
-        triggerToast(`Location acquired: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`, "success");
+
+        const accuracyText =
+          typeof accuracy === "number" ? ` (±${Math.round(accuracy)} m accuracy)` : "";
+        triggerToast(
+          `Location acquired: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E${accuracyText}`,
+          "success"
+        );
       },
       (err) => {
         setIsLocating(false);
-        let msg = "Location access denied.";
-        if (err.code === err.TIMEOUT) msg = "Location request timed out.";
-        if (err.code === err.POSITION_UNAVAILABLE) msg = "Location unavailable.";
-        msg += " Pan/search the map manually to find your plot.";
+        setGpsAccuracyM(null);
+        let msg: string;
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            msg = "Location permission denied. Enable location access in your browser/device settings, or pan/search the map manually.";
+            break;
+          case err.TIMEOUT:
+            msg = "Location request timed out. Try again, or pan/search the map manually.";
+            break;
+          case err.POSITION_UNAVAILABLE:
+            msg = "Location unavailable right now (weak signal indoors, etc.). Pan/search the map manually.";
+            break;
+          default:
+            msg = "Could not get your location. Pan/search the map manually to find your plot.";
+        }
         setGpsError(msg);
         triggerToast(msg, "warning");
-        // Already centered on default — no action needed
+        // Already centered on default — no action needed; manual
+        // positioning (pan/zoom/search) remains fully available.
       },
-      { timeout: 8000, enableHighAccuracy: true }
+      { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
     );
   };
 
@@ -481,6 +621,34 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
             >
               <Trash2 className="w-4 h-4" />
             </button>
+
+            {/* Basemap switcher: Standard / Satellite */}
+            <div className="flex flex-col rounded-xl border border-slate-700 overflow-hidden bg-slate-900/90">
+              <button
+                type="button"
+                title="Satellite/aerial imagery"
+                onClick={() => setBasemap("satellite")}
+                className={`min-h-[36px] min-w-[44px] p-2 flex items-center justify-center transition-all cursor-pointer ${
+                  basemap === "satellite"
+                    ? "bg-emerald-500 text-slate-950"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                <LayersIcon className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                title="Standard map"
+                onClick={() => setBasemap("standard")}
+                className={`min-h-[36px] min-w-[44px] p-2 flex items-center justify-center border-t border-slate-700 transition-all cursor-pointer ${
+                  basemap === "standard"
+                    ? "bg-emerald-500 text-slate-950"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Right side: Use My Location & Live Area */}
@@ -500,6 +668,17 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
               )}
               {isLocating ? "Locating..." : "Use GPS Instead"}
             </button>
+
+            {/* GPS accuracy indicator -- browser/device GPS, not survey-grade */}
+            {gpsAccuracyM !== null && (
+              <div
+                title="Device/browser GPS estimate — not survey-grade (RTK) accuracy."
+                className="pointer-events-none bg-slate-900/95 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700 text-[9px] text-blue-300 font-mono flex items-center gap-1"
+              >
+                <Crosshair className="w-3 h-3" />
+                ±{Math.round(gpsAccuracyM)} m accuracy
+              </div>
+            )}
 
             {/* Live Area Readout */}
             <AnimatePresence>
@@ -525,7 +704,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
 
         {/* Bottom coordinate overlay */}
         <div className="absolute bottom-3 left-3 text-[9px] font-mono text-slate-500 z-[1000] pointer-events-none">
-          WGS 84 / EPSG:4326 | Draw a polygon to map your boundary
+          WGS 84 / EPSG:4326 | {basemap === "satellite" ? "Satellite/aerial imagery" : "Standard map"} | Draw a polygon to map your boundary
         </div>
       </div>
 
