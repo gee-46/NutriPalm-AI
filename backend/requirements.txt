@@ -17,3 +17,8 @@ pdf2image>=1.17
 pdfplumber>=0.11
 Pillow>=10.0
 pytz>=2024.1
+
+# --- Geospatial / satellite ingestion ---
+# Required by app/services/satellite_ingestion_service.py (Open-Meteo +
+# Sentinel Hub HTTP calls) and backend/scripts/ingest_real_data.py.
+requests>=2.31,<3
