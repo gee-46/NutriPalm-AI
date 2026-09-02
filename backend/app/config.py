@@ -34,6 +34,15 @@ class Settings(BaseSettings):
     # --- Satellite / External APIs ---
     sentinel_hub_client_id: str = ""
     sentinel_hub_client_secret: str = ""
+    # Create an OAuth client at https://apps.sentinel-hub.com/dashboard/#/account/settings
+    # ("User settings" -> "OAuth clients"). Leave client id/secret unset to
+    # run with Sentinel-2 NDVI reported as unavailable/configuration-required
+    # rather than fabricating values.
+    sentinel_hub_base_url: str = "https://services.sentinel-hub.com"
+
+    # --- OCR / System Paths (optional override) ---
+    poppler_path: str = ""
+    tesseract_cmd: str = ""
 
     # --- App ---
     environment: str = "development"
