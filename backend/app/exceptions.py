@@ -45,3 +45,14 @@ class RepositoryNotConfigured(NutriPalmError):
     This is intentionally NOT silently swallowed or replaced with fake data.
     See backend/docs/integration_contract.md.
     """
+
+
+class GeospatialServiceUnavailable(NutriPalmError):
+    """
+    Raised when a real geospatial data provider (Sentinel-2/Sentinel Hub,
+    a cadastral/Bhu-Naksha service, etc.) cannot be reached or is not
+    configured for this deployment.
+
+    Routers catch this and return an explicit "unavailable / configuration
+    required" response instead of fabricating data or crashing.
+    """
