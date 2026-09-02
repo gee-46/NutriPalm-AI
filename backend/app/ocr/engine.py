@@ -79,11 +79,55 @@ class OcrEngineUnavailable(RuntimeError):
     """Raised when the Tesseract binary / pytesseract cannot run at all."""
 
 
+def _find_tesseract_cmd() -> str | None:
+    """
+    Resolve the tesseract executable path across platforms:
+    1. TESSERACT_PATH or TESSERACT_CMD environment variable
+    2. PATH / system binaries
+    3. Common Windows installation locations (Desktop, Program Files, LocalAppData)
+    """
+    import glob
+    import os
+    import shutil
+
+    env_cmd = os.environ.get("TESSERACT_PATH") or os.environ.get("TESSERACT_CMD")
+    if env_cmd and os.path.exists(env_cmd):
+        return env_cmd
+
+    if shutil.which("tesseract"):
+        return "tesseract"
+
+    candidates = [
+        r"C:\Users\Dell\Desktop\Resumes\tesseract.exe",
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+        *glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\Programs\Tesseract-OCR\tesseract.exe")),
+        *glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\Tesseract-OCR\tesseract.exe")),
+    ]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+
+    return None
+
+
 class OcrEngine:
     """Runs Tesseract OCR on a preprocessed page image."""
 
     def __init__(self, lang: str = TESSERACT_LANG):
         self.lang = lang
+
+    def _ensure_tesseract_configured(self) -> None:
+        import os
+        import pytesseract
+
+        cmd = _find_tesseract_cmd()
+        if cmd:
+            pytesseract.pytesseract.tesseract_cmd = cmd
+            tess_dir = os.path.dirname(cmd)
+            tessdata_dir = os.path.join(tess_dir, "tessdata")
+            if os.path.exists(tessdata_dir) and not os.environ.get("TESSDATA_PREFIX"):
+                os.environ["TESSDATA_PREFIX"] = tessdata_dir
 
     def run(self, image: Image.Image) -> tuple[str, float | None]:
         """
@@ -101,6 +145,8 @@ class OcrEngine:
                 "and install the tesseract-ocr system package."
             ) from exc
 
+        self._ensure_tesseract_configured()
+
         try:
             text = pytesseract.image_to_string(
                 image, lang=self.lang, config=TESSERACT_CONFIG
@@ -108,11 +154,12 @@ class OcrEngine:
         except pytesseract.TesseractNotFoundError as exc:
             raise OcrEngineUnavailable(
                 "The tesseract binary was not found on PATH. Install the "
-                "tesseract-ocr system package."
+                "tesseract-ocr system package or configure TESSERACT_CMD."
             ) from exc
 
         mean_conf = self._mean_confidence(image)
         return text, mean_conf
+
 
     def _mean_confidence(self, image: Image.Image) -> float | None:
         try:
