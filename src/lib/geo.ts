@@ -30,6 +30,50 @@ export function hectaresToAcres(ha: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Geodesic distance & perimeter calculations (Haversine formula)
+// ---------------------------------------------------------------------------
+
+/**
+ * Calculates the great-circle distance between two [lat, lng] points in meters using Haversine formula.
+ */
+export function computeDistanceMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371008.8; // Earth's mean radius in meters
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Computes the total perimeter in meters for a GeoJSON Polygon ring.
+ */
+export function computePolygonPerimeterMeters(geoJSON: GeoJSONPolygon): number {
+  if (!geoJSON.coordinates || geoJSON.coordinates.length === 0) return 0;
+  const ring = geoJSON.coordinates[0];
+  if (!ring || ring.length < 2) return 0;
+
+  let totalMeters = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    const [lng1, lat1] = ring[i];
+    const [lng2, lat2] = ring[i + 1];
+    totalMeters += computeDistanceMeters(lat1, lng1, lat2, lng2);
+  }
+  return totalMeters;
+}
+
+
+// ---------------------------------------------------------------------------
 // Polygon area via @turf/area (dynamically imported so Phase 1 doesn't break
 // when the package isn't installed yet)
 // ---------------------------------------------------------------------------
