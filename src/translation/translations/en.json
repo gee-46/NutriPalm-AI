@@ -1863,5 +1863,12 @@
   "dashboardpreview.live_environment": "Live Environment",
   "dashboardpreview.an_intuitive_digital_twin": "An intuitive digital twin control dashboard built for venture operators. Toggle parameters, track live soil sensors, and review crop health.",
   "dashboardpreview.syncing": "Syncing...",
-  "dashboardpreview.sync_telemetry": "Sync Telemetry"
+  "dashboardpreview.sync_telemetry": "Sync Telemetry",
+  "surveyor.fullscreen_satellite": "Survey Boundary (Full-Screen Satellite)",
+  "surveyor.open_fullscreen": "Open Full-Screen Map",
+  "surveyor.confirm_boundary": "Confirm Boundary",
+  "surveyor.clear": "Clear",
+  "surveyor.undo": "Undo",
+  "surveyor.gps_location": "GPS Location",
+  "surveyor.satellite_view": "Satellite Imagery"
 }

@@ -1863,5 +1863,12 @@
   "dashboardpreview.live_environment": "ಲೈವ್ ಪರಿಸರ",
   "dashboardpreview.an_intuitive_digital_twin": "ಸಾಹಸೋದ್ಯಮ ನಿರ್ವಾಹಕರಿಗಾಗಿ ನಿರ್ಮಿಸಲಾದ ಅರ್ಥಗರ್ಭಿತ ಡಿಜಿಟಲ್ ಅವಳಿ ನಿಯಂತ್ರಣ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್. ನಿಯತಾಂಕಗಳನ್ನು ಟಾಗಲ್ ಮಾಡಿ, ಲೈವ್ ಮಣ್ಣಿನ ಸಂವೇದಕಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ ಮತ್ತು ಬೆಳೆ ಆರೋಗ್ಯವನ್ನು ಪರಿಶೀಲಿಸಿ.",
   "dashboardpreview.syncing": "ಸಿಂಕ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
-  "dashboardpreview.sync_telemetry": "ಟೆಲಿಮೆಟ್ರಿಯನ್ನು ಸಿಂಕ್ ಮಾಡಿ"
+  "dashboardpreview.sync_telemetry": "ಟೆಲಿಮೆಟ್ರಿಯನ್ನು ಸಿಂಕ್ ಮಾಡಿ",
+  "surveyor.fullscreen_satellite": "ಗಡಿ ಸಮೀಕ್ಷೆ (ಪೂರ್ಣ-ಪರದೆ ಉಪಗ್ರಹ)",
+  "surveyor.open_fullscreen": "ಪೂರ್ಣ-ಪರದೆ ನಕ್ಷೆಯನ್ನು ತೆರೆಯಿರಿ",
+  "surveyor.confirm_boundary": "ಗಡಿಯನ್ನು ದೃಢೀಕರಿಸಿ",
+  "surveyor.clear": "ತೆರವುಗೊಳಿಸಿ",
+  "surveyor.undo": "ರದ್ದುಮಾಡಿ",
+  "surveyor.gps_location": "GPS ಸ್ಥಳ",
+  "surveyor.satellite_view": "ಉಪಗ್ರಹ ಚಿತ್ರಣ"
 }
