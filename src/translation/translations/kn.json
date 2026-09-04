@@ -1870,5 +1870,8 @@
   "surveyor.clear": "ತೆರವುಗೊಳಿಸಿ",
   "surveyor.undo": "ರದ್ದುಮಾಡಿ",
   "surveyor.gps_location": "GPS ಸ್ಥಳ",
-  "surveyor.satellite_view": "ಉಪಗ್ರಹ ಚಿತ್ರಣ"
-}
+  "surveyor.satellite_view": "ಉಪಗ್ರಹ ಚಿತ್ರಣ",
+  "weather.severe_alert": "ತೀವ್ರ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆ",
+  "weather.precipitation_forecast": "ಮಳೆಯ ಮುನ್ಸೂಚನೆ",
+  "weather.live_telemetry": "ಲೈವ್ ಟೆಲಿಮೆಟ್ರಿ ಫೀಡ್"
+}

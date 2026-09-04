@@ -1870,5 +1870,8 @@
   "surveyor.clear": "Clear",
   "surveyor.undo": "Undo",
   "surveyor.gps_location": "GPS Location",
-  "surveyor.satellite_view": "Satellite Imagery"
-}
+  "surveyor.satellite_view": "Satellite Imagery",
+  "weather.severe_alert": "Severe Weather Alert",
+  "weather.precipitation_forecast": "Precipitation Forecast",
+  "weather.live_telemetry": "Live Telemetry Feed"
+}
