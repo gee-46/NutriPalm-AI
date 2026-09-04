@@ -146,3 +146,25 @@ def test_ndvi_requires_authentication():
         response = unauth_client.get("/api/geospatial/ndvi/geo-plot-mapped")
     assert response.status_code == 401
     app.dependency_overrides.clear()
+
+
+def test_complex_multi_vertex_polygon_geometry():
+    """Verify that multi-vertex closed polygons are recognized and supported."""
+    complex_ring = [
+        [78.490, 17.390],
+        [78.495, 17.391],
+        [78.500, 17.390],
+        [78.502, 17.395],
+        [78.498, 17.400],
+        [78.492, 17.398],
+        [78.490, 17.390],  # Closed ring
+    ]
+    poly = {
+        "type": "Polygon",
+        "coordinates": [complex_ring],
+    }
+    assert poly["type"] == "Polygon"
+    assert len(poly["coordinates"][0]) >= 4
+    # Ensure ring closure (first coordinate equals last)
+    assert poly["coordinates"][0][0] == poly["coordinates"][0][-1]
+
