@@ -324,3 +324,26 @@ export function useLiveTwin(plotId: string) {
 
   return { liveData, isLoading, lastUpdated, secondsUntilRefresh, error };
 }
+
+/** Returns appropriate badge style classes based on twin risk level. */
+export function getRiskBadgeColor(riskLevel: string | null | undefined): {
+  bg: string;
+  text: string;
+  border: string;
+} {
+  const risk = (riskLevel || "").toLowerCase();
+  if (risk === "critical" || risk === "high") {
+    return { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/20" };
+  }
+  if (risk === "moderate" || risk === "medium") {
+    return { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" };
+  }
+  return { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" };
+}
+
+/** Formats twin score numbers with standard fallback. */
+export function formatTwinScore(score: number | null | undefined, fallback = "--"): string {
+  if (score === null || score === undefined || Number.isNaN(score)) return fallback;
+  return `${Math.round(score)}%`;
+}
+
