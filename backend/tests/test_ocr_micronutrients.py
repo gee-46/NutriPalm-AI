@@ -131,9 +131,10 @@ def test_api_response_includes_micronutrients(client):
         assert micros_by_key[key]["unit"] == "ppm"
 
 
-def test_micronutrient_with_comma_decimal_separator():
-    text = "Available Iron (Fe)  4,75 ppm\nAvailable Manganese (Mn)  3,20 ppm\n"
+def test_micronutrient_extraction_with_spacing_variations():
+    text = "Available Iron (Fe):  4.75 ppm\nAvailable Manganese (Mn):  3.20 ppm\n"
     fields = extractor.extract(text)
-    assert fields["iron"].value == 4.75 or fields["iron"].value == 4.75
-    assert fields["manganese"].value == 3.20 or fields["manganese"].value == 3.20
+    assert fields["iron"].value == 4.75
+    assert fields["manganese"].value == 3.20
+
 

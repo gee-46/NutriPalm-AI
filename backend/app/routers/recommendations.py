@@ -182,11 +182,14 @@ def create_recommendation(
         extra={
             "owner_id": current_user.user_id,
             "plot_id": plot.plot_id,
-            "crop": plot.crop_type.value,
-            "actions_count": len(result.actions),
+            "crop": plot.crop,
+            "dosages_count": len(result.dosage_plan.dosages),
             "recommendation_id": saved_row.get("id"),
         },
     )
+
+
+
 
     return to_response(
         result,

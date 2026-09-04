@@ -40,8 +40,13 @@ def test_ph_and_oc_limiting_flags_set_and_penalty_applied_to_both():
 
 
 def test_yield_predictions_are_strictly_non_negative():
-    for sample in [deficient_oil_palm_soil(), healthy_rice_soil(), acidic_low_oc_maize_soil()]:
-        requirement = crop_rules.get_crop_requirement(sample.crop_type.value)
+    samples = [
+        ("oil_palm", deficient_oil_palm_soil()),
+        ("rice", healthy_rice_soil()),
+        ("maize", acidic_low_oc_maize_soil()),
+    ]
+    for crop_name, sample in samples:
+        requirement = crop_rules.get_crop_requirement(crop_name)
         analysis = nutrient_analyzer.analyze(sample, requirement)
         severity = severity_calculator.calculate(analysis)
         prediction = yield_predictor.predict(requirement, analysis, severity)
@@ -49,4 +54,5 @@ def test_yield_predictions_are_strictly_non_negative():
         assert prediction.current_yield_t_ha >= 0
         assert prediction.expected_yield_t_ha >= 0
         assert prediction.additional_yield_t_ha >= 0
+
 

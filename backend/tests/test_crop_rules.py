@@ -32,6 +32,7 @@ def test_all_supported_crops_have_valid_target_ranges():
         assert req.n_target_kg_ha >= 0
         assert req.p_target_kg_ha >= 0
         assert req.k_target_kg_ha >= 0
-        assert req.oc_target_percent > 0
+        assert req.organic_carbon_min_percent > 0
         assert req.ph_min < req.ph_max
+
 
