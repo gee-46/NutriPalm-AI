@@ -26,3 +26,27 @@ def test_severity_calculator_does_not_import_prediction():
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 assert "twin_prediction" not in node.module, "severity_calculator must not import twin_prediction"
+
+
+def test_recommendation_service_architecture_isolation():
+    """
+    Ensures that recommendation_service maintains domain isolation and relies on
+    repository abstractions instead of direct raw database drivers.
+    """
+    import ast
+    from pathlib import Path
+
+    service_path = Path("app/services/recommendation_service.py")
+    if not service_path.exists():
+        return
+
+    tree = ast.parse(service_path.read_text())
+    forbidden_drivers = ["psycopg2", "asyncpg", "pymongo", "sqlite3"]
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for name in node.names:
+                assert name.name not in forbidden_drivers, f"Forbidden direct DB driver {name.name} found"
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                assert node.module not in forbidden_drivers, f"Forbidden direct DB driver {node.module} found"
+
