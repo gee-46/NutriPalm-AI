@@ -182,6 +182,9 @@ def create_recommendation(
         extra={
             "owner_id": current_user.user_id,
             "plot_id": plot.plot_id,
+            "crop": plot.crop_type.value,
+            "actions_count": len(result.actions),
+            "recommendation_id": saved_row.get("id"),
         },
     )
 
@@ -191,6 +194,7 @@ def create_recommendation(
         status=saved_row.get("status", "generated"),
         created_at=saved_row.get("created_at"),
     )
+
 
 
 @router.get(
