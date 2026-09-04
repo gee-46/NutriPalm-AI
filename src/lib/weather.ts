@@ -251,3 +251,33 @@ export async function fetchWeather(
 export function clearWeatherCache(): void {
   _cache.clear();
 }
+
+/** Convert Celsius to Fahrenheit. */
+export function celsiusToFahrenheit(celsius: number): number {
+  return (celsius * 9) / 5 + 32;
+}
+
+/** Format temperature with degree symbol and specified unit. */
+export function formatTemperature(celsius: number, unit: "C" | "F" = "C"): string {
+  if (Number.isNaN(celsius)) return "N/A";
+  if (unit === "F") {
+    return `${Math.round(celsiusToFahrenheit(celsius))}°F`;
+  }
+  return `${Math.round(celsius)}°C`;
+}
+
+export type WeatherSeverity = "low" | "moderate" | "severe";
+
+/** Determine weather risk severity from WMO code and rain mm. */
+export function getWeatherSeverityLevel(conditionCode: number, precipitationMm?: number | null): WeatherSeverity {
+  // Severe weather codes: violent rain, heavy snow, thunderstorm
+  if ([82, 86, 95, 96, 99].includes(conditionCode) || (precipitationMm !== null && precipitationMm !== undefined && precipitationMm > 50)) {
+    return "severe";
+  }
+  // Moderate weather codes: moderate rain, dense fog, heavy showers
+  if ([45, 48, 55, 63, 65, 81, 85].includes(conditionCode) || (precipitationMm !== null && precipitationMm !== undefined && precipitationMm > 15)) {
+    return "moderate";
+  }
+  return "low";
+}
+
