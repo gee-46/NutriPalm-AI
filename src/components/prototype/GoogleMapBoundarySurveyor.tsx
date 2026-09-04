@@ -142,8 +142,34 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
   );
 
   // ---------------------------------------------------------------------------
+  // Keyboard Shortcuts (Escape to close, Ctrl+Z to undo)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showKeyModal) {
+          setShowKeyModal(false);
+        } else if (showHelpGuide) {
+          setShowHelpGuide(false);
+        } else {
+          onClose();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, showKeyModal, showHelpGuide, onClose]);
+
+  // ---------------------------------------------------------------------------
   // Parse initial GeoJSON if provided
   // ---------------------------------------------------------------------------
+
   const getInitialCoordinates = useCallback((): Array<{ lat: number; lng: number }> => {
     if (!initialGeoJSON || !initialGeoJSON.coordinates || !initialGeoJSON.coordinates[0]) {
       return [];
