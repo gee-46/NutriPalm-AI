@@ -72,6 +72,38 @@ export function computePolygonPerimeterMeters(geoJSON: GeoJSONPolygon): number {
   return totalMeters;
 }
 
+export interface BoundingBox {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+}
+
+/**
+ * Computes the geographic bounding box (min/max latitude and longitude) of a GeoJSON polygon.
+ */
+export function computeBoundingBox(geoJSON: GeoJSONPolygon): BoundingBox | null {
+  if (!geoJSON.coordinates || geoJSON.coordinates.length === 0) return null;
+  const ring = geoJSON.coordinates[0];
+  if (!ring || ring.length === 0) return null;
+
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+
+  for (const [lng, lat] of ring) {
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+
+  if (minLng === Infinity || minLat === Infinity) return null;
+
+  return { minLat, maxLat, minLng, maxLng };
+}
+
 
 // ---------------------------------------------------------------------------
 // Polygon area via @turf/area (dynamically imported so Phase 1 doesn't break
