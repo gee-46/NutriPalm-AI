@@ -356,8 +356,12 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
     }
 
     // Auto fit viewport bounds to all plots if available
-    if (allPolygons.length > 0 && polygonGroup.getBounds().isValid()) {
-      map.fitBounds(polygonGroup.getBounds(), { padding: [40, 40], maxZoom: 16 });
+    try {
+      if (allPolygons.length > 0 && polygonGroup.getBounds().isValid() && mapContainerRef.current) {
+        map.fitBounds(polygonGroup.getBounds(), { padding: [40, 40], maxZoom: 16 });
+      }
+    } catch {
+      // Ignore if map DOM pane is rendering
     }
   }, [plots, selectedPlotId, activeLayer, onSelectPlot]);
 
