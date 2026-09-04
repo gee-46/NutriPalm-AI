@@ -24,3 +24,14 @@ def test_get_crop_requirement_is_case_and_space_insensitive():
 def test_get_crop_requirement_unknown_crop_raises():
     with pytest.raises(UnsupportedCrop):
         crop_rules.get_crop_requirement("dragonfruit")
+
+
+def test_all_supported_crops_have_valid_target_ranges():
+    for crop_name in crop_rules.list_supported_crops():
+        req = crop_rules.get_crop_requirement(crop_name)
+        assert req.n_target_kg_ha >= 0
+        assert req.p_target_kg_ha >= 0
+        assert req.k_target_kg_ha >= 0
+        assert req.oc_target_percent > 0
+        assert req.ph_min < req.ph_max
+
