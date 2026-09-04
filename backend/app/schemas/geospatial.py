@@ -35,3 +35,12 @@ class CadastralResponse(BaseModel):
     geometry: dict[str, Any] | None = None
     source: str = "Karnataka Bhu-Naksha"
     reason: str | None = None
+
+
+class GeoJsonPolygonModel(BaseModel):
+    """Strict schema for validating GeoJSON polygon structures."""
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["Polygon"]
+    coordinates: list[list[list[float]]]
+
