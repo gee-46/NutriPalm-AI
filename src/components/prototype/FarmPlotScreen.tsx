@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, RefreshCw, MapPin, Layers, Sparkles, Activity, 
   Plus, Download, X, CheckCircle2, ChevronRight, Wind, Sun, 
-  Thermometer, Droplets, FileText, Cpu, FlaskConical
+  Thermometer, Droplets, FileText, Cpu, FlaskConical, Maximize2
 } from "lucide-react";
 import { usePlots, type Plot, getStatusColor, getStatusDotColor } from "../../data/plots";
 import LeafletMapPicker, { type BoundaryData } from "./LeafletMapPicker";
+import GoogleMapBoundarySurveyor from "./GoogleMapBoundarySurveyor";
 import { FarmPlotOverviewMap, type BasemapMode, type DataOverlayLayer } from "./FarmPlotOverviewMap";
 import { reverseGeocode, getElevation, parseGeoJSONFile, type GeoJSONPolygon } from "../../lib/geo";
 import { boundaryToSvgPath, generatePlaceholderSvgPath } from "../../lib/svgPath";
@@ -113,10 +114,29 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const geoJSONFileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Shared store ─────────────────────────────────────────────────────────
-  const { plots, isLoading: isDbLoading, addPlot: storAddPlot } = usePlots();
+  const { plots, isLoading: isDbLoading, addPlot: storAddPlot, updatePlot } = usePlots();
+  const [isDirectSurveyOpen, setIsDirectSurveyOpen] = useState(false);
 
   const selectedPlot = plots.find((p) => p.id === selectedPlotId) || plots[0];
   const envData = useEnvironmentalData(selectedPlot);
+
+  const handleDirectSurveyConfirm = async (data: BoundaryData) => {
+    if (!selectedPlot) return;
+    const ring = data.geoJSON.coordinates[0] as number[][];
+    const coordStrings = ring.map(
+      ([lng, lat]) => `${Math.abs(lat).toFixed(4)} ${lat >= 0 ? "N" : "S"}, ${Math.abs(lng).toFixed(4)} ${lng >= 0 ? "E" : "W"}`
+    );
+    await updatePlot(selectedPlot.id, {
+      geoJSON: data.geoJSON,
+      area: Number(data.areaAcres.toFixed(2)),
+      boundaryMapped: true,
+      coordinates: coordStrings,
+      svgPath: boundaryToSvgPath(data.geoJSON),
+    });
+    if (showToast) {
+      showToast(`Boundary updated for ${selectedPlot.name} (${data.areaAcres.toFixed(2)} acres)`, "success");
+    }
+  };
 
   // Dynamic KPI calculations
   const totalArea = plots.reduce((sum, plot) => sum + (plot.area || 0), 0);
@@ -733,15 +753,26 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
               <div className="flex justify-between items-center py-1 border-b border-gray-50">
                 <span className="text-gray-400">Boundary Geometry</span>
-                {selectedPlot.boundaryMapped && selectedPlot.geoJSON ? (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Mapped (GPS/GIS)
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                    ⚠️ Not Mapped
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {selectedPlot.boundaryMapped && selectedPlot.geoJSON ? (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Mapped (GPS/GIS)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      ⚠️ Not Mapped
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsDirectSurveyOpen(true)}
+                    className="p-1 px-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1 transition-all cursor-pointer"
+                    title="Open Full-Screen Satellite Survey"
+                  >
+                    <Maximize2 className="w-3 h-3 text-emerald-600" />
+                    <span>Survey</span>
+                  </button>
+                </div>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.landholder')}</span>
@@ -952,6 +983,14 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
             {/* ================= 11. Quick Plot Actions ================= */}
             <div className="space-y-2 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setIsDirectSurveyOpen(true)}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-emerald-400 font-extrabold py-3 rounded-xl transition-all border border-emerald-500/30 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                <Maximize2 className="w-4 h-4 text-emerald-400" />
+                <span>{selectedPlot?.boundaryMapped ? "Re-Survey Boundary (Full-Screen Satellite)" : "Survey Boundary (Full-Screen Satellite)"}</span>
+              </button>
+
               <button
                 onClick={() => onNavigate && onNavigate("Digital Twin")}
                 className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
@@ -1252,7 +1291,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         </div>
                       </div>
 
-                      {/* Real Leaflet map */}
+                      {/* Real Leaflet map & Full-Screen Satellite Survey launcher */}
                       <LeafletMapPicker
                         onBoundaryChange={(data) => {
                           setWizardBoundary(data);
@@ -1266,6 +1305,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         initialGeoJSON={importedGeoJSON}
                         areaUnit={wizardAreaUnit}
                         showToast={showToast}
+                        plotName={newPlotData.name || "New Farm Plot"}
                       />
 
                       <div className="grid grid-cols-2 gap-4">
@@ -1358,6 +1398,17 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Full-Screen Google Maps Boundary Surveyor for selected plot */}
+      <GoogleMapBoundarySurveyor
+        isOpen={isDirectSurveyOpen}
+        onClose={() => setIsDirectSurveyOpen(false)}
+        onConfirm={handleDirectSurveyConfirm}
+        initialGeoJSON={selectedPlot?.geoJSON}
+        plotName={selectedPlot?.name || "Farm Plot Boundary"}
+        defaultAreaUnit={wizardAreaUnit}
+        showToast={showToast}
+      />
 
     </motion.div>
   );
