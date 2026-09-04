@@ -414,16 +414,17 @@ export function useFarmerAnalytics() {
       let totalAreaForHealth = 0;
       plots.forEach((p) => {
         const twin = p.digital_twins?.[0];
-        const health = twin ? Number(twin.crop_health_score) : 75;
-        weightedHealthSum += health * p.area;
-        totalAreaForHealth += p.area;
+        const health = twin && !Number.isNaN(Number(twin.crop_health_score)) ? Number(twin.crop_health_score) : 75;
+        weightedHealthSum += health * (p.area || 1);
+        totalAreaForHealth += (p.area || 1);
       });
-      const avgCropHealth = totalAreaForHealth > 0 ? weightedHealthSum / totalAreaForHealth : 0;
+      const avgCropHealth = totalAreaForHealth > 0 ? Math.round(weightedHealthSum / totalAreaForHealth) : 75;
 
       // 3. Crop Distribution
       const cropMap: Record<string, number> = {};
       plots.forEach((p) => {
-        cropMap[p.crop] = (cropMap[p.crop] || 0) + p.area;
+        const cropName = p.crop || "Unknown Crop";
+        cropMap[cropName] = (cropMap[cropName] || 0) + (p.area || 0);
       });
       const cropDistribution = Object.keys(cropMap).map((crop) => ({
         name: crop,
@@ -437,11 +438,11 @@ export function useFarmerAnalytics() {
       plots.forEach((p) => {
         const report = p.soil_reports?.[0];
         if (report) {
-          sumN += Number(report.nitrogen);
-          sumP += Number(report.phosphorus);
-          sumK += Number(report.potassium);
-          sumOC += Number(report.organic_carbon);
-          sumPH += Number(report.ph);
+          sumN += Number(report.nitrogen) || 0;
+          sumP += Number(report.phosphorus) || 0;
+          sumK += Number(report.potassium) || 0;
+          sumOC += Number(report.organic_carbon) || 0;
+          sumPH += Number(report.ph) || 0;
           reportCount++;
         }
       });
@@ -457,21 +458,18 @@ export function useFarmerAnalytics() {
       let sumYield = 0;
       plots.forEach((p) => {
         const twin = p.digital_twins?.[0];
-        const val = twin ? Number(twin.yield_prediction) : 18.2;
-        // If it's stored directly as dynamic crop weight prediction tons/ac vs percentage,
-        // project standard yield increase value
+        const val = twin && !Number.isNaN(Number(twin.yield_prediction)) ? Number(twin.yield_prediction) : 18.2;
         sumYield += val > 100 ? val / 10 : val; 
       });
-      // Fallback yield delta calculation
-      const yieldDelta = plots.length > 0 ? sumYield / plots.length : 18.2;
+      const yieldDelta = plots.length > 0 ? Number((sumYield / plots.length).toFixed(1)) : 18.2;
 
       // 6. Water stress
       let sumWater = 0;
       plots.forEach((p) => {
         const twin = p.digital_twins?.[0];
-        sumWater += twin ? Number(twin.water_stress_score) : 40;
+        sumWater += twin && !Number.isNaN(Number(twin.water_stress_score)) ? Number(twin.water_stress_score) : 40;
       });
-      const avgWaterDeficit = plots.length > 0 ? sumWater / plots.length : 40;
+      const avgWaterDeficit = plots.length > 0 ? Math.round(sumWater / plots.length) : 40;
       let canopyStress = "Optimal";
       if (avgWaterDeficit < 30) canopyStress = "High Stress";
       else if (avgWaterDeficit < 60) canopyStress = "Moderate Risk";
