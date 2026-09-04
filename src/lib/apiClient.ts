@@ -2,6 +2,10 @@ import { supabase } from "./supabaseClient";
 
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL as string) || "http://localhost:8000";
 
+export function getApiBaseUrl(): string {
+  return API_BASE_URL;
+}
+
 async function getHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data?.session?.access_token;
@@ -16,6 +20,7 @@ async function getHeaders(): Promise<Record<string, string>> {
 
   return headers;
 }
+
 
 export interface RecommendationRequestPayload {
   plot_id: string;
