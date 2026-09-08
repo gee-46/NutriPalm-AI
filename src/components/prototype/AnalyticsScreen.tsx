@@ -465,21 +465,13 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
         })}
       </div>
 
-      {/* ================= 4. MIDDLE SECTION: DUAL-COLUMN VISUALIZATIONS ================= */}
+      {/* ================= 4. SATELLITE BIOPHYSICAL & CANOPY VIGOR (DUAL COLUMN) ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         
-        {/* Left Column: Crop-aware Modular Soil Nutrient Analytics Card */}
-        <SoilNutrientAnalyticsCard
-          report={soilAnalyticsReport}
-          cropType={soilAnalyticsCrop}
-          title={t("analytics.soil_nutrient_balance") || "Nutrient Deficiency Breakdown"}
-          showMiniRadar={true}
-        />
-
-        {/* Right Column: Synced Crop Donut OR Biophysical Concentric Rings */}
-        <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
+        {/* Column 1: Biophysical Stress Gauge (or Crop Distribution in ALL mode) */}
+        <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between">
           {selectedPlotId === "ALL" ? (
-            <div className="flex flex-col justify-between h-full">
+            <div className="flex flex-col justify-between h-full space-y-4">
               <div>
                 <div className="flex justify-between items-start border-b border-gray-100 pb-3 mb-4">
                   <div>
@@ -497,8 +489,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
                 </div>
 
                 {/* Donut SVG */}
-                <div className="w-full min-h-[220px] relative flex items-center justify-center bg-gray-50/60 border border-gray-150 rounded-2xl p-4 select-none flex-grow">
-                  <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 170 170">
+                <div className="w-full h-48 relative flex items-center justify-center bg-gray-50/60 border border-gray-150 rounded-2xl p-3 select-none">
+                  <svg className="w-44 h-44 transform -rotate-90" viewBox="0 0 170 170">
                     <circle cx="85" cy="85" r={donutRadius} fill="transparent" stroke="#E2E8F0" strokeWidth="15" />
                     {pieSlices.map((slice, i) => {
                       const isHovered = hoveredPieIndex === i;
@@ -561,11 +553,11 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
               </div>
 
               {/* Synchronized Legend Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                 {pieSlices.map((s, i) => (
                   <div 
                     key={i} 
-                    className={`bg-gray-50/70 border p-2.5 rounded-xl text-gray-700 flex items-center gap-2.5 cursor-pointer transition-all duration-200 ${
+                    className={`bg-gray-50/70 border p-2 rounded-xl text-gray-700 flex items-center gap-2 cursor-pointer transition-all duration-200 ${
                       hoveredPieIndex === i 
                         ? "border-primary bg-primary/5 scale-102 shadow-xs" 
                         : "border-gray-200/70 hover:border-gray-300"
@@ -584,9 +576,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
             </div>
           ) : (
             // Single Plot Mode: Apple Watch-style Biophysical Stress Concentric Gauges
-            <div className="flex flex-col justify-between h-full">
+            <div className="flex flex-col justify-between h-full space-y-4">
               <div>
-                <div className="flex justify-between items-start border-b border-gray-100 pb-3 mb-4">
+                <div className="flex justify-between items-start border-b border-gray-100 pb-3 mb-3">
                   <div>
                     <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
                       <Activity className="w-4.5 h-4.5 text-primary" />
@@ -601,8 +593,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
                   </span>
                 </div>
 
-                <div className="w-full min-h-[220px] relative flex items-center justify-center bg-gray-50/60 border border-gray-150 rounded-2xl p-4 flex-grow select-none">
-                  <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 120 120">
+                <div className="w-full h-48 relative flex items-center justify-center bg-gray-50/60 border border-gray-150 rounded-2xl p-3 select-none">
+                  <svg className="w-44 h-44 transform -rotate-90" viewBox="0 0 120 120">
                     {/* Ring 1 background */}
                     <circle cx="60" cy="60" r="46" fill="transparent" stroke="#E2E8F0" strokeWidth="7" />
                     {/* Ring 1 Canopy Health */}
@@ -638,14 +630,14 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
                   <div className="absolute text-center w-28">
                     <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest block">Twin Stage</span>
                     <span className="text-xs font-black text-gray-900 block truncate mt-0.5">{analyticsData.growthStage}</span>
-                    <span className="text-[9px] font-bold text-primary block mt-1">Optimal Status</span>
+                    <span className="text-[9px] font-bold text-primary block mt-0.5">Optimal Status</span>
                   </div>
                 </div>
               </div>
 
               {/* Legends & Readouts */}
-              <div className="grid grid-cols-2 gap-3 mt-4 text-xs font-bold text-left">
-                <div className="bg-emerald-50/60 border border-emerald-150 p-3.5 rounded-2xl space-y-1">
+              <div className="grid grid-cols-2 gap-3 text-xs font-bold text-left">
+                <div className="bg-emerald-50/60 border border-emerald-150 p-3 rounded-2xl space-y-1">
                   <span className="text-emerald-800 flex items-center gap-1.5 font-bold text-xs">
                     <span className="w-2 h-2 rounded-full bg-primary" />
                     {t("analytics.crop_health_index")}
@@ -654,7 +646,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
                     {Math.round(analyticsData.avgCropHealth)}%
                   </span>
                 </div>
-                <div className="bg-sky-50/60 border border-sky-150 p-3.5 rounded-2xl space-y-1">
+                <div className="bg-sky-50/60 border border-sky-150 p-3 rounded-2xl space-y-1">
                   <span className="text-sky-800 flex items-center gap-1.5 font-bold text-xs">
                     <span className="w-2 h-2 rounded-full bg-sky-500" />
                     {t("analytics.hydration_index")}
@@ -667,9 +659,181 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
             </div>
           )}
         </div>
+
+        {/* Column 2: Sub-Zone Canopy Matrix (in Single Plot mode) OR Farm Health Matrix (in ALL mode) */}
+        <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 text-left flex flex-col justify-between">
+          {selectedPlotId === "ALL" ? (
+            <div className="flex flex-col justify-between h-full space-y-4">
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-3 mb-3">
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
+                      <LayoutGrid className="w-4.5 h-4.5 text-primary" />
+                      {t("analytics.plot_health_matrix")}
+                    </h3>
+                    <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                      Click any tile to focus diagnostic analytics
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] font-bold text-gray-500">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> ≥80%</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> 60–79%</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> &lt;60%</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                  {plots.map((plot, i) => {
+                    const twin = plot.digital_twins?.[0];
+                    const score = twin ? Number(twin.crop_health_score) : 75;
+                    const isHovered = hoveredPlotIndex === i;
+
+                    let cardBg = "border-rose-150 bg-rose-50/20 hover:bg-rose-50/30";
+                    let badgeColor = "text-rose-700 bg-rose-50 border-rose-200";
+                    let statusLabel = t("analytics.critical");
+
+                    if (score >= 80) {
+                      cardBg = "border-emerald-150 bg-emerald-50/15 hover:bg-emerald-50/25";
+                      badgeColor = "text-emerald-800 bg-emerald-50 border-emerald-200";
+                      statusLabel = t("analytics.optimal");
+                    } else if (score >= 60) {
+                      cardBg = "border-amber-150 bg-amber-50/15 hover:bg-amber-50/25";
+                      badgeColor = "text-amber-800 bg-amber-50 border-amber-200";
+                      statusLabel = t("analytics.warning");
+                    }
+
+                    return (
+                      <div
+                        key={plot.id}
+                        onClick={() => setSelectedPlotId(plot.id)}
+                        className={`border rounded-2xl p-3.5 text-left transition-all duration-300 transform hover:scale-102 flex flex-col justify-between cursor-pointer relative overflow-hidden ${cardBg}`}
+                        onMouseEnter={() => setHoveredPlotIndex(i)}
+                        onMouseLeave={() => setHoveredPlotIndex(null)}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-[9px] font-bold text-gray-400 tracking-wider truncate max-w-[80px]">{plot.name}</span>
+                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${badgeColor}`}>
+                              {statusLabel}
+                            </span>
+                          </div>
+                          <h4 className="font-black text-gray-900 text-xs mt-1 leading-snug truncate">{plot.crop}</h4>
+                        </div>
+
+                        <div className="flex justify-between items-center text-[10px] font-semibold text-gray-500 border-t border-gray-100/70 pt-2 mt-2">
+                          <span className="text-gray-600">{plot.area} ac</span>
+                          <span className="font-black text-gray-900">{score}%</span>
+                        </div>
+
+                        {/* Pop-out overlay on hover */}
+                        <AnimatePresence>
+                          {isHovered && (
+                            <motion.div
+                              className="absolute inset-0 bg-slate-900/95 backdrop-blur-xs p-3 flex flex-col justify-between text-white text-[9px]"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            >
+                              <div>
+                                <span className="text-emerald-400 font-bold text-xs block border-b border-white/10 pb-0.5">{plot.name}</span>
+                                <div className="mt-1 space-y-0.5 text-slate-300">
+                                  <div>Area: <span className="text-white font-bold">{plot.area} ac</span></div>
+                                  <div>Soil: <span className="text-white font-bold">{plot.soil}</span></div>
+                                </div>
+                              </div>
+                              <span className="text-[8px] text-emerald-400 font-bold">Click to filter →</span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Single Plot Mode: Sub-Zone Canopy Health Matrix
+            <div className="flex flex-col justify-between h-full space-y-4">
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-3 mb-3">
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
+                      <LayoutGrid className="w-4.5 h-4.5 text-primary" />
+                      {t("analytics.sub_zone_canopy")}
+                    </h3>
+                    <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                      Sentinel-2 NDVI vegetative vigor index across plot quadrants
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-[9px] font-bold text-gray-500">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> &gt;0.72</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> 0.55–0.71</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> &lt;0.55</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {getSubZones().map((zone, i) => {
+                    const isHovered = hoveredSubZone === i;
+                    return (
+                      <div
+                        key={i}
+                        className="bg-gray-50/70 border border-gray-200 rounded-2xl p-3 text-center cursor-pointer transition-all duration-200 transform hover:scale-102 flex flex-col justify-between min-h-[95px] relative overflow-hidden"
+                        onMouseEnter={() => setHoveredSubZone(i)}
+                        onMouseLeave={() => setHoveredSubZone(null)}
+                      >
+                        <div>
+                          <span className="block text-[8px] font-bold text-gray-400 uppercase tracking-wider truncate">{zone.name}</span>
+                          <span className="block text-lg font-black text-gray-900 mt-1">
+                            {zone.ndvi}
+                          </span>
+                        </div>
+
+                        <div className="mt-1.5 flex items-center justify-center gap-1">
+                          <span className={`w-1.5 h-1.5 rounded-full ${zone.colorClass}`} />
+                          <span className="text-[9px] font-bold text-gray-600 truncate">{zone.health}</span>
+                        </div>
+
+                        {/* Sub-zone detailed overlay on hover */}
+                        <AnimatePresence>
+                          {isHovered && (
+                            <motion.div 
+                              className="absolute inset-0 bg-slate-900/95 backdrop-blur-xs p-2.5 flex flex-col justify-between text-white text-[8px] text-left"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            >
+                              <div>
+                                <span className="text-emerald-400 font-bold block border-b border-white/10 pb-0.5 text-[9px]">{zone.name}</span>
+                                <div className="mt-1 space-y-0.5 text-slate-300">
+                                  <div>Vigor: <span className="text-white font-bold">{zone.ndvi}</span></div>
+                                  <div>Status: <span className="text-white font-bold">{zone.health}</span></div>
+                                </div>
+                              </div>
+                              <span className="text-[7px] text-slate-400">Sentinel-2 Sync</span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* ================= 5. DUAL-AXIS 12-MONTH YIELD & SOIL RECOVERY TIMELINE ================= */}
+      {/* ================= 5. FULL-WIDTH SOIL NUTRIENT BALANCE & AGRONOMIC CALIBRATION ================= */}
+      <SoilNutrientAnalyticsCard
+        report={soilAnalyticsReport}
+        cropType={soilAnalyticsCrop}
+        title={t("analytics.soil_nutrient_balance") || "Nutrient Deficiency Breakdown & Soil Chemistry Balance"}
+        showMiniRadar={true}
+      />
+
+      {/* ================= 6. DUAL-AXIS 12-MONTH YIELD & SOIL RECOVERY TIMELINE ================= */}
       <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 text-left space-y-4 relative">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-3">
           <div>
@@ -823,165 +987,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
             )}
           </AnimatePresence>
         </div>
-      </div>
-
-      {/* ================= 6. FARM HEALTH TELEMETRY MATRIX (CROSS-FILTER HEATMAP) ================= */}
-      <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 text-left">
-        {selectedPlotId === "ALL" ? (
-          <div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-3 mb-4">
-              <div>
-                <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
-                  <LayoutGrid className="w-4.5 h-4.5 text-primary" />
-                  {t("analytics.plot_health_matrix")}
-                </h3>
-                <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
-                  Interactive plot health tiles. Click any card to filter analytics across the entire dashboard.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-[10px] font-bold text-gray-500">
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> ≥80% Optimal</span>
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> 60–79% Warning</span>
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> &lt;60% Critical</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {plots.map((plot, i) => {
-                const twin = plot.digital_twins?.[0];
-                const score = twin ? Number(twin.crop_health_score) : 75;
-                const isHovered = hoveredPlotIndex === i;
-
-                let cardBg = "border-rose-150 bg-rose-50/20 hover:bg-rose-50/30";
-                let badgeColor = "text-rose-700 bg-rose-50 border-rose-200";
-                let statusLabel = t("analytics.critical");
-
-                if (score >= 80) {
-                  cardBg = "border-emerald-150 bg-emerald-50/15 hover:bg-emerald-50/25";
-                  badgeColor = "text-emerald-800 bg-emerald-50 border-emerald-200";
-                  statusLabel = t("analytics.optimal");
-                } else if (score >= 60) {
-                  cardBg = "border-amber-150 bg-amber-50/15 hover:bg-amber-50/25";
-                  badgeColor = "text-amber-800 bg-amber-50 border-amber-200";
-                  statusLabel = t("analytics.warning");
-                }
-
-                return (
-                  <div
-                    key={plot.id}
-                    onClick={() => setSelectedPlotId(plot.id)}
-                    className={`border rounded-2xl p-4.5 text-left transition-all duration-300 transform hover:scale-102 flex flex-col justify-between min-h-[130px] cursor-pointer relative overflow-hidden ${cardBg}`}
-                    onMouseEnter={() => setHoveredPlotIndex(i)}
-                    onMouseLeave={() => setHoveredPlotIndex(null)}
-                  >
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-bold text-gray-400 tracking-wider">{plot.id}</span>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-                      <h4 className="font-extrabold text-gray-900 text-sm mt-2 leading-snug truncate pr-4">{plot.name}</h4>
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs font-semibold text-gray-500 border-t border-gray-100/70 pt-2.5 mt-3">
-                      <span className="font-bold text-gray-700 text-xs">{plot.crop}</span>
-                      <span className="font-black text-gray-900">{score}% Score</span>
-                    </div>
-
-                    {/* Pop-out overlay on hover */}
-                    <AnimatePresence>
-                      {isHovered && (
-                        <motion.div
-                          className="absolute inset-0 bg-slate-900/95 backdrop-blur-xs p-4 flex flex-col justify-between text-white text-[10px]"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                        >
-                          <div>
-                            <span className="text-emerald-400 font-bold text-xs block border-b border-white/10 pb-1">{plot.name}</span>
-                            <div className="mt-2 space-y-1 text-slate-300 font-medium">
-                              <div>Acreage: <span className="text-white font-bold">{plot.area} ac</span></div>
-                              <div>Soil: <span className="text-white font-bold">{plot.soil}</span></div>
-                            </div>
-                          </div>
-                          <span className="text-[9px] text-emerald-400 font-bold">Click to filter dashboard →</span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          // Single Plot Mode: Sub-Zone Canopy Health Matrix
-          <div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-3 mb-4">
-              <div>
-                <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
-                  <LayoutGrid className="w-4.5 h-4.5 text-primary" />
-                  {t("analytics.sub_zone_canopy")}
-                </h3>
-                <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
-                  High-resolution Sentinel-2 NDVI vegetative vigor index grids across plot quadrants
-                </p>
-              </div>
-              <div className="flex items-center gap-3 text-[10px] font-bold text-gray-500">
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> &gt;0.72 Vigor</span>
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> 0.55–0.71 Alert</span>
-                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> &lt;0.55 Deficit</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-              {getSubZones().map((zone, i) => {
-                const isHovered = hoveredSubZone === i;
-                return (
-                  <div
-                    key={i}
-                    className="bg-gray-50/70 border border-gray-200 rounded-2xl p-4 text-center cursor-pointer transition-all duration-200 transform hover:scale-102 flex flex-col justify-between min-h-[115px] relative overflow-hidden"
-                    onMouseEnter={() => setHoveredSubZone(i)}
-                    onMouseLeave={() => setHoveredSubZone(null)}
-                  >
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">{zone.name}</span>
-                      <span className="block text-xl font-black text-gray-900 mt-2">
-                        {zone.ndvi}
-                      </span>
-                    </div>
-
-                    <div className="mt-2.5 flex items-center justify-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${zone.colorClass}`} />
-                      <span className="text-[10px] font-bold text-gray-600">{zone.health}</span>
-                    </div>
-
-                    {/* Sub-zone detailed overlay on hover */}
-                    <AnimatePresence>
-                      {isHovered && (
-                        <motion.div 
-                          className="absolute inset-0 bg-slate-900/95 backdrop-blur-xs p-3.5 flex flex-col justify-between text-white text-[9px] text-left"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                        >
-                          <div>
-                            <span className="text-emerald-400 font-bold block border-b border-white/10 pb-0.5 text-[10px]">{zone.name}</span>
-                            <div className="mt-1.5 space-y-1 text-slate-300">
-                              <div>Vigor Score: <span className="text-white font-bold">{zone.ndvi}</span></div>
-                              <div>Condition: <span className="text-white font-bold">{zone.health}</span></div>
-                            </div>
-                          </div>
-                          <span className="text-[8px] text-slate-400">Calibrated via Sentinel-2</span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ================= 7. AI AGRONOMY INSIGHTS STRIP ================= */}

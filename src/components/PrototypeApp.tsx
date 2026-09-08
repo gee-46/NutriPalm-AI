@@ -150,6 +150,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [lastUploadedReport, setLastUploadedReport] = useState<any>(null);
+  const [recommendationPlotId, setRecommendationPlotId] = useState<string>("");
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
@@ -427,6 +428,19 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     showToast("Soil report PDF uploaded & chemical levels extracted.", "success");
   }, [showToast]);
 
+  const handleRecommendationNavigate = useCallback((plotId?: string, reportData?: any) => {
+    if (plotId) {
+      setRecommendationPlotId(plotId);
+    }
+    if (reportData) {
+      setLastUploadedReport(reportData);
+      try {
+        localStorage.setItem("nutripalm:lastUploadedReport", JSON.stringify(reportData));
+      } catch {}
+    }
+    changeScreen("Recommendations");
+  }, [changeScreen]);
+
   // Navigations mapping
   const sidebarItems = [
     { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -504,7 +518,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       case "Soil Reports":
         return (
           <SoilReportScreen
-            onRecommendationClick={() => changeScreen("Recommendations")}
+            onRecommendationClick={handleRecommendationNavigate}
             onUploadSuccess={handleSoilReportUploaded}
             showToast={showToast}
           />
@@ -512,6 +526,8 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       case "Recommendations":
         return (
           <RecommendationScreen
+            selectedPlotId={recommendationPlotId}
+            onPlotChange={(plotId) => setRecommendationPlotId(plotId)}
             lastUploadedReport={lastUploadedReport}
             onClearReport={() => {
               setLastUploadedReport(null);
@@ -520,6 +536,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             }}
             showToast={showToast}
             farmerName={displayName}
+            onNavigate={changeScreen}
           />
         );
       case "Analytics":
