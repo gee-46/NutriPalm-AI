@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
 import {
@@ -415,7 +415,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     showToast(`Farmer "${formatted.name}" registered successfully.`, "success");
   };
 
-  const handleSoilReportUploaded = (data: any) => {
+  const handleSoilReportUploaded = useCallback((data: any) => {
     if (data) {
       setLastUploadedReport(data);
     }
@@ -425,7 +425,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       ...prev
     ]);
     showToast("Soil report PDF uploaded & chemical levels extracted.", "success");
-  };
+  }, [showToast]);
 
   // Navigations mapping
   const sidebarItems = [

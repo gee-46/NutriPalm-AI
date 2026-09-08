@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "../../translation/useTranslation";
 import { useFarmerAnalytics } from "../../hooks/useFarmerAnalytics";
+import { SoilNutrientAnalyticsCard } from "../analytics/SoilNutrientAnalyticsCard";
 
 // Animated counter component for smooth metric count-ups
 const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: number }> = ({ 
@@ -112,10 +113,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
   const [hoveredSubZone, setHoveredSubZone] = useState<number | null>(null);
   const [hoveredPlotIndex, setHoveredPlotIndex] = useState<number | null>(null);
-
-  // Radar Interactive States
-  const [hoveredRadarAxis, setHoveredRadarAxis] = useState<number | null>(null);
-  const [radarTooltipPos, setRadarTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   // Scrub Interactive States
   const timelineSvgRef = useRef<SVGSVGElement | null>(null);
@@ -264,53 +261,16 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
     ? [...analyticsData.cropDistribution].sort((a,b) => b.acres - a.acres)[0].name
     : "None";
 
-  // ---------------------------------------------------------------------------
-  // 5-Axis Radar Chart Coordinates
-  // ---------------------------------------------------------------------------
-  const radarAxes = [
-    { key: "N", label: "Nitrogen", fullName: "Available Nitrogen (N)", target: 150, unit: " kg/ha", desc: "Vegetative vigor & chlorophyll formation" },
-    { key: "P", label: "Phosphorus", fullName: "Phosphorus (P₂O₅)", target: 25, unit: " kg/ha", desc: "Root elongation & early crop establishment" },
-    { key: "K", label: "Potassium", fullName: "Potassium (K₂O)", target: 180, unit: " kg/ha", desc: "Enzyme activation & fruit bunch swelling" },
-    { key: "OC", label: "Organic C", fullName: "Organic Carbon (OC)", target: 2.0, unit: "%", desc: "Microbial humus & cation-exchange capacity" },
-    { key: "pH", label: "Soil pH", fullName: "Soil pH Reaction", target: 6.5, unit: " pH", desc: "Nutrient bioavailability buffer zone" }
-  ] as const;
+  const selectedPlot = plots.find(p => p.id === selectedPlotId);
+  const currentPlotReport = selectedPlot?.soil_reports?.[0] || null;
 
-  const radarCx = 160;
-  const radarCy = 135;
-  const radarMaxRadius = 92;
+  const soilAnalyticsReport = selectedPlotId === "ALL"
+    ? analyticsData.soilNutrients
+    : (currentPlotReport || analyticsData.soilNutrients);
 
-  const getRadarCoordinates = (useTargets: boolean) => {
-    return radarAxes.map((axis, i) => {
-      const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-      const val = analyticsData.soilNutrients[axis.key];
-      const target = axis.target;
-      
-      const ratio = useTargets ? 1.0 : Math.min(1.2, val / target);
-      const r = radarMaxRadius * 0.8 * ratio;
-      const x = radarCx + r * Math.cos(angle);
-      const y = radarCy + r * Math.sin(angle);
-      return { x, y, val };
-    });
-  };
-
-  const targetCoords = getRadarCoordinates(true);
-  const actualCoords = getRadarCoordinates(false);
-
-  const targetPointsStr = targetCoords.map(c => `${c.x},${c.y}`).join(" ");
-  const actualPointsStr = actualCoords.map(c => `${c.x},${c.y}`).join(" ");
-
-  const handleRadarHover = (idx: number, e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const svgEl = e.currentTarget.closest("svg");
-    if (!svgEl) return;
-    const svgRect = svgEl.getBoundingClientRect();
-    
-    setHoveredRadarAxis(idx);
-    setRadarTooltipPos({
-      x: rect.left - svgRect.left + rect.width / 2,
-      y: rect.top - svgRect.top - 10
-    });
-  };
+  const soilAnalyticsCrop = selectedPlotId === "ALL"
+    ? (dominantCrop !== "None" ? dominantCrop : "Oil Palm")
+    : (selectedPlot?.crop || "Oil Palm");
 
   // ---------------------------------------------------------------------------
   // Timeline Scrub Calculations
@@ -508,204 +468,13 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
       {/* ================= 4. MIDDLE SECTION: DUAL-COLUMN VISUALIZATIONS ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         
-        {/* Left Column: 5-Axis Soil Chemistry Radar */}
-        <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full relative">
-          <div>
-            <div className="flex justify-between items-start border-b border-gray-100 pb-3 mb-4">
-              <div>
-                <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
-                  <Bot className="w-4.5 h-4.5 text-primary" />
-                  {t("analytics.soil_nutrient_balance")}
-                </h3>
-                <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
-                  Multi-parameter polar radar comparing current field chemistry to agronomic targets
-                </p>
-              </div>
-              <span className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/10 shrink-0">
-                5-Axis Matrix
-              </span>
-            </div>
-
-            {/* Radar SVG Visual */}
-            <div className="relative w-full flex items-center justify-center py-2 select-none min-h-[270px]">
-              <svg className="w-80 h-72 overflow-visible" viewBox="0 0 320 270">
-                {/* Concentric Grid Polygons */}
-                {[0.25, 0.5, 0.75, 1.0].map((scale, gridIdx) => {
-                  const r = radarMaxRadius * 0.8 * scale;
-                  const pts = radarAxes.map((_, i) => {
-                    const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-                    return `${radarCx + r * Math.cos(angle)},${radarCy + r * Math.sin(angle)}`;
-                  }).join(" ");
-                  return (
-                    <polygon 
-                      key={gridIdx} 
-                      points={pts} 
-                      fill="none" 
-                      stroke="#E2E8F0" 
-                      strokeWidth="1.2" 
-                      strokeDasharray={scale < 1.0 ? "2 2" : "none"}
-                    />
-                  );
-                })}
-
-                {/* Radar Spokes */}
-                {radarAxes.map((_, i) => {
-                  const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-                  const x = radarCx + radarMaxRadius * Math.cos(angle);
-                  const y = radarCy + radarMaxRadius * Math.sin(angle);
-                  return (
-                    <line 
-                      key={i} 
-                      x1={radarCx} 
-                      y1={radarCy} 
-                      x2={x} 
-                      y2={y} 
-                      stroke="#E2E8F0" 
-                      strokeWidth="1.2" 
-                    />
-                  );
-                })}
-
-                {/* Target Baseline Dotted Line */}
-                <polygon 
-                  points={targetPointsStr} 
-                  fill="none" 
-                  stroke="#94A3B8" 
-                  strokeDasharray="4 3" 
-                  strokeWidth="1.5" 
-                />
-
-                {/* Actual Soil Chemistry Polygon */}
-                <polygon 
-                  points={actualPointsStr} 
-                  fill="rgba(46, 125, 50, 0.22)" 
-                  stroke="#2E7D32" 
-                  strokeWidth="2.5" 
-                />
-
-                {/* Interactive Anchor Points */}
-                {actualCoords.map((coord, i) => {
-                  const axis = radarAxes[i];
-                  const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-                  const labelX = radarCx + (radarMaxRadius + 22) * Math.cos(angle);
-                  const labelY = radarCy + (radarMaxRadius + 14) * Math.sin(angle);
-                  const isHovered = hoveredRadarAxis === i;
-
-                  return (
-                    <g key={i}>
-                      {/* Node Circle */}
-                      <circle 
-                        cx={coord.x} 
-                        cy={coord.y} 
-                        r={isHovered ? "6" : "4.5"} 
-                        fill="#2E7D32" 
-                        stroke="#ffffff" 
-                        strokeWidth="2" 
-                        className="transition-all duration-200"
-                      />
-                      
-                      {/* Invisible Larger Hover Area */}
-                      <circle 
-                        cx={coord.x} 
-                        cy={coord.y} 
-                        r="18" 
-                        fill="transparent" 
-                        className="cursor-pointer"
-                        onMouseEnter={(e) => handleRadarHover(i, e)}
-                        onMouseLeave={() => setHoveredRadarAxis(null)}
-                      />
-
-                      {/* Axis Label */}
-                      <text 
-                        x={labelX} 
-                        y={labelY} 
-                        fill={isHovered ? "#2E7D32" : "#475569"} 
-                        fontSize="10" 
-                        fontWeight="bold" 
-                        textAnchor="middle" 
-                        className="select-none transition-colors"
-                      >
-                        {axis.label}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-
-              {/* Interactive Tooltip Card */}
-              <AnimatePresence>
-                {hoveredRadarAxis !== null && radarTooltipPos && (
-                  <motion.div
-                    className="absolute bg-slate-900 text-white rounded-2xl p-3.5 shadow-xl z-30 text-xs w-52 space-y-2 pointer-events-none text-left"
-                    style={{
-                      left: `${radarTooltipPos.x}px`,
-                      top: `${radarTooltipPos.y - 75}px`,
-                      transform: "translateX(-50%)"
-                    }}
-                    initial={{ opacity: 0, scale: 0.92, y: 6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.92, y: 6 }}
-                  >
-                    <div className="border-b border-white/10 pb-1.5">
-                      <span className="font-bold text-emerald-400 block text-xs">
-                        {radarAxes[hoveredRadarAxis].fullName}
-                      </span>
-                      <span className="text-[9px] text-slate-400 block mt-0.5 leading-tight">
-                        {radarAxes[hoveredRadarAxis].desc}
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-slate-200 text-[10px] leading-tight">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Current Value:</span>
-                        <span className="text-white font-bold">
-                          {analyticsData.soilNutrients[radarAxes[hoveredRadarAxis].key]}
-                          {radarAxes[hoveredRadarAxis].unit}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Optimal Benchmark:</span>
-                        <span className="text-slate-300 font-bold">
-                          {radarAxes[hoveredRadarAxis].target}
-                          {radarAxes[hoveredRadarAxis].unit}
-                        </span>
-                      </div>
-                      <div className="flex justify-between border-t border-white/10 pt-1 font-bold">
-                        <span className="text-slate-400">Target Fulfillment:</span>
-                        <span className="text-emerald-400">
-                          {Math.round((analyticsData.soilNutrients[radarAxes[hoveredRadarAxis].key] / radarAxes[hoveredRadarAxis].target) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Bottom Breakdown Mini-Pills */}
-            <div className="grid grid-cols-5 gap-2 mt-2">
-              {radarAxes.map((axis) => {
-                const val = analyticsData.soilNutrients[axis.key];
-                const pct = Math.round((val / axis.target) * 100);
-                const isOptimal = pct >= 85;
-                const isWarning = pct >= 65 && pct < 85;
-                return (
-                  <div 
-                    key={axis.key} 
-                    className={`p-2 rounded-xl text-center border transition-all ${
-                      isOptimal ? "bg-emerald-50/70 border-emerald-200 text-emerald-800" :
-                      isWarning ? "bg-amber-50/70 border-amber-200 text-amber-800" :
-                      "bg-rose-50/70 border-rose-200 text-rose-800"
-                    }`}
-                  >
-                    <span className="block text-[8px] font-bold uppercase tracking-wider text-gray-500">{axis.key}</span>
-                    <span className="block text-xs font-black mt-0.5">{val}</span>
-                    <span className="block text-[8px] font-bold mt-0.5">{pct}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        {/* Left Column: Crop-aware Modular Soil Nutrient Analytics Card */}
+        <SoilNutrientAnalyticsCard
+          report={soilAnalyticsReport}
+          cropType={soilAnalyticsCrop}
+          title={t("analytics.soil_nutrient_balance") || "Nutrient Deficiency Breakdown"}
+          showMiniRadar={true}
+        />
 
         {/* Right Column: Synced Crop Donut OR Biophysical Concentric Rings */}
         <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
