@@ -12,6 +12,7 @@ Keeping these as separate Pydantic models means:
   teammate schemas -> these input models
 """
 from __future__ import annotations
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -33,6 +34,17 @@ class SoilTestInput(BaseModel):
 
     organic_carbon_percent: float = Field(ge=0, le=100)
     ph: float = Field(ge=0, le=14)
+    
+    # Electrical Conductivity (EC) - Canonical field
+    ec: Optional[float] = Field(default=None, ge=0) 
+
+    # Micronutrients extracted by OCR
+    zn: Optional[float] = Field(default=None, ge=0)
+    fe: Optional[float] = Field(default=None, ge=0)
+    mn: Optional[float] = Field(default=None, ge=0)
+    cu: Optional[float] = Field(default=None, ge=0)
+    b: Optional[float] = Field(default=None, ge=0)
+    s: Optional[float] = Field(default=None, ge=0)
 
     @field_validator("ph")
     @classmethod
@@ -55,6 +67,11 @@ class PlotInput(BaseModel):
     crop: str
     area: float = Field(gt=0)
     area_unit: str = Field(default="hectare")
+    
+    # Crop profile extensions for accurate deterministic rules
+    crop_variety: Optional[str] = None
+    crop_age_stage: Optional[str] = None
+    plant_density: Optional[int] = Field(default=None, ge=0)
 
     @field_validator("area_unit")
     @classmethod

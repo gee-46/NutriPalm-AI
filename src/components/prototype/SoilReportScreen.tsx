@@ -172,6 +172,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   };
 
   const startUpload = (selectedFile: File) => {
+    
+    console.log("selectedPlotId:", selectedPlotId);
     if (!selectedPlotId || selectedPlotId.startsWith("plot-")) {
       triggerToast("Select a real farm plot before uploading a report.", "warning");
       return;
