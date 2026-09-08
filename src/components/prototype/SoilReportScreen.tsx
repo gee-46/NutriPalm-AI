@@ -367,6 +367,21 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     created_at: new Date().toISOString()
   } : null);
 
+  const getNumVal = (val: any): number | null => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === 'number') return isNaN(val) ? null : val;
+    if (typeof val === 'object' && val !== null && 'value' in val) return getNumVal(val.value);
+    const parsed = parseFloat(String(val).replace(/[^\d.-]/g, ''));
+    return isNaN(parsed) ? null : parsed;
+  };
+
+  const rawN = getNumVal(activeDisplayReport?.nitrogen_kg_ha ?? activeDisplayReport?.nitrogen ?? ocrResult?.nitrogen?.value);
+  const rawP = getNumVal(activeDisplayReport?.phosphorus_kg_ha ?? activeDisplayReport?.phosphorus ?? ocrResult?.phosphorus?.value);
+  const rawK = getNumVal(activeDisplayReport?.potassium_kg_ha ?? activeDisplayReport?.potassium ?? ocrResult?.potassium?.value);
+  const rawOC = getNumVal(activeDisplayReport?.organic_carbon_percent ?? activeDisplayReport?.organic_carbon ?? ocrResult?.organic_carbon?.value);
+  const rawPH = getNumVal(activeDisplayReport?.ph ?? ocrResult?.ph?.value);
+  const rawEC = getNumVal(activeDisplayReport?.electrical_conductivity ?? ocrResult?.electrical_conductivity?.value);
+
   const isShowingDashboard = (savedReport || stage === "results") && !isUpdatingReport && stage !== "processing";
 
   return (
@@ -709,13 +724,77 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
                   </div>
 
-                  {/* REPLACED STATIC BREAKDOWN WITH MODULAR SoilNutrientAnalyticsCard */}
-                  <SoilNutrientAnalyticsCard
-                    report={activeDisplayReport}
-                    cropType={plot?.crop || "Oil Palm"}
-                    title={t('soilreportscreen.nutrient_density_breakdown') || "Nutrient Deficiency Breakdown"}
-                    showMiniRadar={true}
-                  />
+                  {/* 1. Original Extracted Nutrient Density Breakdown Chart */}
+                  <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">{t('soilreportscreen.nutrient_density_breakdown')}</h4>
+                      <span className="text-[10px] font-bold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-0.5 rounded-full">
+                        Lab Extracted Values
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3.5 text-xs text-gray-700 font-semibold">
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span>{t('soilreportscreen.nitrogen_n')}</span>
+                          <span className="font-bold text-emerald-700">
+                            {rawN !== null ? `${rawN} kg/ha` : "Not Found"}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(5, Math.round(((rawN || 0) / 800) * 100)))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span>{t('soilreportscreen.phosphorus_p')}</span>
+                          <span className="font-bold text-emerald-700">
+                            {rawP !== null ? `${rawP} kg/ha` : "Not Found"}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(5, Math.round(((rawP || 0) / 100) * 100)))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span>{t('soilreportscreen.potassium_k')}</span>
+                          <span className="font-bold text-emerald-700">
+                            {rawK !== null ? `${rawK} kg/ha` : "Not Found"}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(5, Math.round(((rawK || 0) / 900) * 100)))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span>{t('soilreportscreen.organic_carbon_c')}</span>
+                          <span className="font-bold text-emerald-700">
+                            {rawOC !== null ? `${rawOC} %` : "Not Found"}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(5, Math.round(((rawOC || 0) / 2.0) * 100)))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Extracted Soil Parameters */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -731,7 +810,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       <div className="mt-4">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.acidity_ph')}</span>
                         <span className="text-lg font-black text-gray-950 mt-0.5">
-                          {activeDisplayReport.ph !== null && activeDisplayReport.ph !== undefined ? `${activeDisplayReport.ph}` : 'N/A'}
+                          {rawPH !== null ? `${rawPH}` : 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -747,9 +826,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       <div className="mt-4">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.electrical_conductivity')}</span>
                         <span className="text-lg font-black text-gray-950 mt-0.5">
-                          {activeDisplayReport.electrical_conductivity !== null && activeDisplayReport.electrical_conductivity !== undefined 
-                            ? `${activeDisplayReport.electrical_conductivity} dS/m` 
-                            : 'N/A'}
+                          {rawEC !== null ? `${rawEC} dS/m` : 'N/A'}
                         </span>
                       </div>
                     </div>
@@ -812,8 +889,9 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 </div>
 
                 {/* RIGHT COLUMN: AI Treatment Advice & Quick Actions (4/12 width) */}
-                <div className="lg:col-span-4 space-y-6">
+                <div className="lg:col-span-4 flex flex-col gap-4">
                   
+                  {/* Card 1: Soil Macronutrient Advice */}
                   <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
                     <div className="border-b border-gray-100 pb-3">
                       <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
@@ -851,7 +929,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </div>
 
                       {/* Potassium Advice */}
-                      <div className="space-y-2 border-b border-gray-50 pb-3">
+                      <div className="space-y-2">
                         <div className="flex justify-between text-xs">
                           <span className="font-extrabold text-gray-800">{t('soilreportscreen.potassium_correction')}</span>
                           {(activeDisplayReport.potassium_kg_ha ?? activeDisplayReport.potassium ?? 300) < 200 ? (
@@ -879,8 +957,62 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="space-y-2.5">
+                  {/* Card 2: Micronutrient Treatment Advice */}
+                  <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
+                    <div className="border-b border-gray-100 pb-3">
+                      <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
+                        <Activity className="w-4.5 h-4.5 text-emerald-600" /> Micronutrient Treatment Advice
+                      </h4>
+                      <p className="text-[10px] text-gray-450 mt-1">Trace element calibration & foliar recommendations</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Boron Advice */}
+                      <div className="space-y-2 border-b border-gray-50 pb-3">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-extrabold text-gray-800">Boron (B) Calibration</span>
+                          {(b?.value ?? 0.75) < 0.5 ? (
+                            <span className="text-[10px] font-bold text-rose-600 animate-pulse">HIGH PRIORITY</span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-600">BALANCED</span>
+                          )}
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
+                          <p className="font-bold text-gray-900">
+                            {(b?.value ?? 0.75) < 0.5 ? "Apply Borax / Disodium Octaborate" : "Optimal Boron Levels"}
+                          </p>
+                          <p className="text-[10px] text-gray-500 leading-normal">
+                            <strong>Dosage:</strong> 50 g / palm tree applied to soil ring basin.<br/>
+                            <strong>Impact:</strong> Prevents hook leaves, stabilizes bunch formation, and improves fruit set.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Zinc & Sulphur Advice */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-extrabold text-gray-800">Zinc (Zn) & Sulphur (S)</span>
+                          {(zn?.value ?? 0.85) < 0.6 ? (
+                            <span className="text-[10px] font-bold text-amber-600">MODERATE</span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-600">OPTIMAL</span>
+                          )}
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
+                          <p className="font-bold text-gray-900">
+                            {(zn?.value ?? 0.85) < 0.6 ? "Chelated Zinc (Zn-EDTA) + Sulphur" : "Trace Minerals Balanced"}
+                          </p>
+                          <p className="text-[10px] text-gray-500 leading-normal">
+                            <strong>Dosage:</strong> 100 g Zinc Sulphate + 250 g Bentonite Sulphur / tree.<br/>
+                            <strong>Impact:</strong> Catalyzes enzyme synthesis and restores active chlorophyll formulation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions (Directly below the Micronutrient advice box) */}
+                  <div className="space-y-2.5 pt-1">
                     <button
                       onClick={onRecommendationClick}
                       className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
@@ -900,6 +1032,26 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
                 </div>
 
+              </div>
+
+              {/* ================= EXTRA SECTION: AGRONOMIC CROP DEFICIENCY & TARGET CALIBRATION ================= */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">
+                    Agronomic Crop Deficiency & Benchmark Calibration
+                  </h3>
+                  <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    AI Evaluated
+                  </span>
+                </div>
+
+                <SoilNutrientAnalyticsCard
+                  report={activeDisplayReport}
+                  cropType={plot?.crop || "Oil Palm"}
+                  title="Nutrient Deficiency Breakdown & Polar Radar Footprint"
+                  showMiniRadar={true}
+                />
               </div>
 
             </motion.div>
