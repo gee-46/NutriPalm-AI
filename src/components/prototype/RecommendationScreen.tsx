@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Sparkles, Calendar, AlertTriangle, Leaf, DollarSign,
   Download, Share2, ClipboardCheck, CloudRain, X, ChevronDown,
-  FileText, ArrowRight
+  FileText
 } from "lucide-react";
 import { usePlots } from "../../data/plots";
 import { supabase } from "../../lib/supabaseClient";
@@ -76,7 +76,6 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
     return selectedPlotId || (plots.length > 0 ? plots[0].id : "");
   });
   const [activeSoilReport, setActiveSoilReport] = useState<any | null>(null);
-  const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
   const [recommendationData, setRecommendationData] = useState<any>(() => {
     try {
       const cached = localStorage.getItem("nutripalm:lastRecommendation");
@@ -415,7 +414,6 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
       }
 
       // 3. Otherwise, fetch the latest soil_reports row for this plot from Supabase
-      setIsLoadingReport(true);
       try {
         let dbReport: any = null;
         if (!activePlotId.startsWith("plot-")) {
@@ -460,7 +458,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
         } else if (isMounted) {
           // Check if plot has embedded report in memory
           const plotObj = plots.find((p) => p.id === activePlotId);
-          const embedded = plotObj?.soil_reports?.[0];
+          const embedded = (plotObj as any)?.soil_reports?.[0];
           if (embedded) {
             const formatted = {
               id: embedded.id,
@@ -494,8 +492,6 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
         }
       } catch (err) {
         console.error("Error loading soil report for plot:", err);
-      } finally {
-        if (isMounted) setIsLoadingReport(false);
       }
     };
 

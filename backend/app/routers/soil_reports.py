@@ -65,14 +65,24 @@ async def upload_soil_report(
     # ---------------------------------------------------------
     # Check if the plot exists and belongs to the caller.
     # ---------------------------------------------------------
-    is_real_plot = False
     try:
         plot = plot_repo.get_plot(plot_id)
-        if plot and plot.owner_id == current_user.user_id:
-            is_real_plot = True
-    except (PlotNotFound, RepositoryNotConfigured, Exception) as exc:
-        logger.info("Non-database or demo plot '%s': %s", plot_id, exc)
-        is_real_plot = False
+    except PlotNotFound as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plot not found.",
+        ) from exc
+    except RepositoryNotConfigured as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Plot data source is not yet configured.",
+        ) from exc
+
+    if plot.owner_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plot not found.",
+        )
 
     # ---------------------------------------------------------
     # Basic upload validation.
@@ -126,7 +136,7 @@ async def upload_soil_report(
     soil_report_id: str | None = None
     persisted = False
 
-    if is_real_plot and result.ready_for_persistence:
+    if result.ready_for_persistence:
         params = result.soil_parameters
         try:
             row = await run_in_threadpool(

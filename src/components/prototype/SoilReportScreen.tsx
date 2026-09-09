@@ -326,43 +326,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
       const phVal = ocrResult.ph.value ?? 6.5;
       const ecVal = ocrResult.electrical_conductivity.value ?? 0.60;
 
-      const fullReportRecord = {
-        id: ocrResult.soil_report_id || `soil-rep-${Date.now()}`,
-        plot_id: selectedPlotId,
-        plotId: selectedPlotId,
-        nitrogen_kg_ha: nVal,
-        phosphorus_kg_ha: pVal,
-        potassium_kg_ha: kVal,
-        organic_carbon_percent: ocVal,
-        ph: phVal,
-        electrical_conductivity: ecVal,
-        status: "Completed",
-        created_at: new Date().toISOString(),
-        zinc: zn ?? { value: 0.85, unit: "mg/kg", validation: "valid" },
-        sulphur: s ?? { value: 14.2, unit: "mg/kg", validation: "valid" },
-        boron: b ?? { value: 0.75, unit: "mg/kg", validation: "valid" },
-        iron: fe ?? { value: 6.4, unit: "mg/kg", validation: "valid" },
-        manganese: mn ?? { value: 3.8, unit: "ppm", validation: "valid" },
-        copper: cu ?? { value: 1.1, unit: "mg/kg", validation: "valid" },
-      };
-
-      const formattedPayload = {
-        id: fullReportRecord.id,
-        plotId: selectedPlotId,
-        nitrogen: ocrResult.nitrogen.value !== null ? ocrResult.nitrogen : { value: nVal, unit: "kg/ha", validation: "valid" },
-        phosphorus: ocrResult.phosphorus.value !== null ? ocrResult.phosphorus : { value: pVal, unit: "kg/ha", validation: "valid" },
-        potassium: ocrResult.potassium.value !== null ? ocrResult.potassium : { value: kVal, unit: "kg/ha", validation: "valid" },
-        organic_carbon: ocrResult.organic_carbon.value !== null ? ocrResult.organic_carbon : { value: ocVal, unit: "%", validation: "valid" },
-        ph: ocrResult.ph.value !== null ? ocrResult.ph : { value: phVal, unit: "pH", validation: "valid" },
-        electrical_conductivity: ocrResult.electrical_conductivity.value !== null ? ocrResult.electrical_conductivity : { value: ecVal, unit: "dS/m", validation: "valid" },
-        zinc: zn ?? { value: 0.85, unit: "mg/kg", validation: "valid" },
-        sulphur: s ?? { value: 14.2, unit: "mg/kg", validation: "valid" },
-        boron: b ?? { value: 0.75, unit: "mg/kg", validation: "valid" },
-        iron: fe ?? { value: 6.4, unit: "mg/kg", validation: "valid" },
-        manganese: mn ?? { value: 3.8, unit: "ppm", validation: "valid" },
-        copper: cu ?? { value: 1.1, unit: "mg/kg", validation: "valid" },
-        persisted: true
-      };
 
       if (ocrResult.persisted) {
         // High confidence: Report is persisted in Supabase
