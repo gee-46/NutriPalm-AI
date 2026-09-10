@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { getPlotTwinPrediction, type TwinPredictionResponsePayload } from "../lib/apiClient";
+import { getApiBaseUrl, getPlotTwinPrediction, type TwinPredictionResponsePayload } from "../lib/apiClient";
 
 export interface DataCompleteness {
   ndvi: boolean;
@@ -280,7 +280,7 @@ export function useLiveTwin(plotId: string) {
         const token = sessionData?.session?.access_token;
 
         const resp = await fetch(
-          `http://localhost:8000/api/plots/${plotId}/twin/live`,
+          `${getApiBaseUrl()}/api/plots/${encodeURIComponent(plotId)}/twin/live`,
           token ? { headers: { Authorization: `Bearer ${token}` } } : {}
         );
 

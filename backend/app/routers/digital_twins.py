@@ -85,8 +85,10 @@ def get_live_twin(
     if not plot_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plot not found.")
 
-    # Note: owner_id from DB, current_user.user_id from JWT
-    # For prototype we allow access; enforce strict ownership in production
+    if plot_data.get("owner_id") != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Plot not found."
+        )
 
     service = LiveTwinService(client)
     result = service.compute_live_state(str(plot_id))

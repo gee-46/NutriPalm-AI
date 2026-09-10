@@ -63,8 +63,7 @@ async def upload_soil_report(
 ) -> SoilReportUploadResponse:
 
     # ---------------------------------------------------------
-    # Verify the plot exists and belongs to the caller before doing any
-    # expensive OCR work.
+    # Check if the plot exists and belongs to the caller.
     # ---------------------------------------------------------
     try:
         plot = plot_repo.get_plot(plot_id)
@@ -76,11 +75,7 @@ async def upload_soil_report(
     except RepositoryNotConfigured as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "Plot data source is not yet configured "
-                "(BLOCKED BY TEAMMATE CONTRACT - see "
-                "integration_contract.md)."
-            ),
+            detail="Plot data source is not yet configured.",
         ) from exc
 
     if plot.owner_id != current_user.user_id:
@@ -155,7 +150,7 @@ async def upload_soil_report(
                 ph=params.ph.value,
                 electrical_conductivity=(
                     params.electrical_conductivity.value
-                    if params.electrical_conductivity.validation == "valid"
+                    if params.electrical_conductivity.value is not None
                     else None
                 ),
             )
@@ -165,11 +160,9 @@ async def upload_soil_report(
                 "soil_report.created",
                 extra={"owner_id": current_user.user_id, "plot_id": plot_id},
             )
-        except RepositoryNotConfigured as exc:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Soil report database is not configured.",
-            ) from exc
+        except Exception as exc:
+            logger.warning("Failed to persist soil report in DB: %s", exc)
+            persisted = False
 
     return SoilReportUploadResponse(
         success=True,
