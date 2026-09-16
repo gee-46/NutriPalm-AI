@@ -423,8 +423,31 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
 
       if (activeEngine === "google" && googleMapRef.current && window.google?.maps) {
         const latLng = new window.google.maps.LatLng(lat, lng);
-        googleMapRef.current.panTo(latLng);
-        googleMapRef.current.setZoom(zoomLevel);
+
+console.log("MAP REF:", googleMapRef.current);
+
+console.log(
+  "MAP CENTER BEFORE:",
+  googleMapRef.current.getCenter()?.lat(),
+  googleMapRef.current.getCenter()?.lng()
+);
+
+googleMapRef.current.setCenter(latLng);
+googleMapRef.current.setZoom(zoomLevel);
+console.log(
+  "CENTER IMMEDIATELY AFTER SETCENTER:",
+  googleMapRef.current.getCenter()?.lat(),
+  googleMapRef.current.getCenter()?.lng()
+);
+setTimeout(() => {
+  console.log(
+    "MAP CENTER AFTER:",
+    googleMapRef.current?.getCenter()?.lat(),
+    googleMapRef.current?.getCenter()?.lng(),
+    "ZOOM:",
+    googleMapRef.current?.getZoom()
+  );
+}, 1000);
 
         if (googleSearchMarkerRef.current) {
           googleSearchMarkerRef.current.setMap(null);
@@ -478,7 +501,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
         if (initialCoords.length > 0) {
           center = initialCoords[0];
         }
-
+console.log("CREATING GOOGLE MAP WITH CENTER:", center);
         const map = new google.maps.Map(mapContainerRef.current, {
           center,
           zoom,
@@ -566,29 +589,6 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
         });
 
         // Initialize Places Autocomplete if available with India bias
-        if (google.maps.places && searchInputRef.current) {
-          try {
-            const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
-              types: ["geocode", "establishment"],
-              fields: ["geometry", "name", "formatted_address"],
-              componentRestrictions: { country: ["in"] },
-            });
-            autocomplete.bindTo("bounds", map);
-
-            autocomplete.addListener("place_changed", () => {
-              const place = autocomplete.getPlace();
-              if (place.geometry && place.geometry.location) {
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-                const name = place.name || place.formatted_address || "Searched Farm Location";
-                navigateMapToCoordinates(lat, lng, name, 18);
-              }
-            });
-            googlePlacesAutocompleteRef.current = autocomplete;
-          } catch (e) {
-            console.warn("Places autocomplete init bypassed:", e);
-          }
-        }
 
         // Handle initial GeoJSON geometry if existing plot
         if (initialCoords.length >= 3) {
@@ -638,6 +638,9 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
   // Lifecycle Hook
   // ---------------------------------------------------------------------------
   useEffect(() => {
+    console.log("MAP LIFECYCLE EFFECT RUNNING", {
+  isOpen,
+});
     if (isOpen) {
       const initialCoords = getInitialCoordinates();
       setVertices(initialCoords);
@@ -679,7 +682,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
       }
       googleMapRef.current = null;
     };
-  }, [isOpen, initGoogleMaps, getInitialCoordinates, stopGpsWatch]);
+  },  [isOpen]);
 
   // Keyboard Shortcuts (Escape to close, Ctrl+Z to undo)
   useEffect(() => {
@@ -1007,47 +1010,98 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
       // Ignore background suggestion network errors
     }
   };
+const handleSearch = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!searchQuery.trim()) return;
+  if (!searchQuery.trim()) return;
 
-    setIsSearching(true);
-    setGpsError(null);
-    setShowSuggestionsDropdown(false);
+  setIsSearching(true);
+  setGpsError(null);
+  setShowSuggestionsDropdown(false);
 
-    // Try Google Maps Geocoder if Google is active
-    if (activeEngine === "google" && window.google?.maps?.Geocoder) {
-      try {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode(
-          { address: searchQuery.trim(), componentRestrictions: { country: "IN" } },
-          (results: any, status: any) => {
+  console.log("SEARCHING:", searchQuery.trim());
+  console.log("ACTIVE ENGINE:", activeEngine);
+  console.log("GOOGLE AVAILABLE:", !!window.google?.maps);
+  console.log("GEOCODER AVAILABLE:", !!window.google?.maps?.Geocoder);
+
+  if (activeEngine === "google" && window.google?.maps?.Geocoder) {
+    try {
+      const geocoder = new window.google.maps.Geocoder();
+
+      geocoder.geocode(
+        {
+          address: searchQuery.trim(),
+          componentRestrictions: { country: "IN" },
+        },
+        (results: any, status: any) => {
+          console.log("GOOGLE GEOCODER RESULT:", results);
+          console.log("GOOGLE GEOCODER STATUS:", status);
+
+          if (status === "OK" && results && results[0]) {
+            const loc = results[0].geometry.location;
+
+            console.log(
+              "MOVING MAP TO:",
+              loc.lat(),
+              loc.lng(),
+              results[0].formatted_address
+            );
+
             setIsSearching(false);
-            if (status === "OK" && results && results[0]) {
-              const loc = results[0].geometry.location;
-              navigateMapToCoordinates(loc.lat(), loc.lng(), results[0].formatted_address.split(",")[0], 18);
-            } else {
-              // Try unconstrained Google Geocoder or fallback to Nominatim
-              geocoder.geocode({ address: searchQuery.trim() }, (r2: any, s2: any) => {
+
+            navigateMapToCoordinates(
+              loc.lat(),
+              loc.lng(),
+              results[0].formatted_address.split(",")[0],
+              18
+            );
+          } else {
+            console.log("GOOGLE INDIA SEARCH FAILED:", status);
+
+            // Try Google without country restriction
+            geocoder.geocode(
+              { address: searchQuery.trim() },
+              (r2: any, s2: any) => {
+                console.log("GOOGLE SECOND RESULT:", r2);
+                console.log("GOOGLE SECOND STATUS:", s2);
+
                 if (s2 === "OK" && r2 && r2[0]) {
                   const loc2 = r2[0].geometry.location;
-                  navigateMapToCoordinates(loc2.lat(), loc2.lng(), r2[0].formatted_address.split(",")[0], 18);
+
+                  console.log(
+                    "MOVING MAP TO SECOND RESULT:",
+                    loc2.lat(),
+                    loc2.lng(),
+                    r2[0].formatted_address
+                  );
+
+                  setIsSearching(false);
+
+                  navigateMapToCoordinates(
+                    loc2.lat(),
+                    loc2.lng(),
+                    r2[0].formatted_address.split(",")[0],
+                    18
+                  );
                 } else {
+                  console.log("GOOGLE GEOCODING FAILED:", s2);
+                  setIsSearching(false);
                   fallbackOsmSearch(searchQuery.trim());
                 }
-              });
-            }
+              }
+            );
           }
-        );
-        return;
-      } catch {
-        // Fall back to OSM Nominatim
-      }
-    }
+        }
+      );
 
-    fallbackOsmSearch(searchQuery.trim());
-  };
+      return;
+    } catch (error) {
+      console.error("GOOGLE GEOCODER EXCEPTION:", error);
+    }
+  }
+
+  fallbackOsmSearch(searchQuery.trim());
+};
 
   const fallbackOsmSearch = async (query: string) => {
     try {
