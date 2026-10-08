@@ -3,6 +3,14 @@
   "private": true,
   "type": "module",
   "description": "Repeatable migration + RLS verification on a throwaway Postgres (PGlite). Not part of the app bundle.",
-  "scripts": { "verify": "node verify.mjs" },
-  "devDependencies": { "@electric-sql/pglite": "^0.3.0" }
+  "scripts": {
+    "verify": "node verify.mjs",
+    "verify:remote": "node verify-remote.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2"
+  }
 }
