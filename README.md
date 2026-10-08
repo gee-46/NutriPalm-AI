@@ -182,7 +182,7 @@ The current V1 workflow is designed around authenticated, user-owned agricultura
 | Google OAuth                       | ✅ Working     |
 | User-specific data                 | ✅ Working     |
 | Farmer profile                     | ✅ Working     |
-| Farmer management                  | ✅ Working     |
+| Farmer management (Supabase `farmers` table, migration 011) | ✅ Working (needs migration 011) |
 | Farm plot creation                 | ✅ Working     |
 | Plot ownership                     | ✅ Working     |
 | Plot persistence                   | ✅ Working     |
@@ -206,13 +206,14 @@ The current V1 workflow is designed around authenticated, user-owned agricultura
 | Account-specific dashboard         | ✅ Working     |
 | Dynamic farmer identity            | ✅ Working     |
 | PDF advisory export                | ✅ Working     |
-| Backend automated tests            | ✅ 97 passed   |
+| Backend automated tests            | ✅ 155 passed, 6 need Tesseract/Poppler installed |
+| Frontend automated tests           | ✅ 17 passed (Vitest) |
 | Frontend production build          | ✅ Passing     |
 | Real PDF testing                   | ✅ Tested      |
 | Physical IoT telemetry             | 🚧 Future     |
-| Live satellite intelligence        | 🚧 Future     |
-| Live weather intelligence          | 🚧 Future     |
-| GPS farm-boundary capture          | 🚧 Future     |
+| Sentinel-2 NDVI                    | ⚙️ Implemented; needs Sentinel Hub credentials (reports "unavailable" otherwise) |
+| Weather at the plot centroid (Open-Meteo) | ✅ Implemented |
+| GPS + satellite boundary survey (Google Maps optional, Esri/Leaflet fallback) | ✅ Implemented |
 | Disease detection                  | 🚧 Future     |
 
 ---

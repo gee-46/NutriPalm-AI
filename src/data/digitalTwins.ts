@@ -79,7 +79,8 @@ export function useDigitalTwinSnapshots(plotId: string) {
           let Prediction = null;
 
           // data is ordered newest to oldest
-          for (const row of data as DigitalTwinRow[]) {
+          // Synthetic (test) snapshots are never presented as the plot's real twin state.
+          for (const row of (data as DigitalTwinRow[]).filter((r) => r.is_synthetic !== true)) {
             const rowDate = new Date(row.analysis_date);
             if (rowDate > now) {
               // Future -> Prediction (take the nearest future one if multiple exist)
@@ -183,7 +184,7 @@ export function useDigitalTwinHistory(plotId: string, days: 7 | 30 | 90 = 30) {
         }
 
         if (isMounted && data) {
-          setHistory(data as DigitalTwinRow[]);
+          setHistory((data as DigitalTwinRow[]).filter((r) => r.is_synthetic !== true));
         }
       } catch (err) {
         console.error("Exception fetching digital twin history:", err);
