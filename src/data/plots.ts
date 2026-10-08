@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { supabase } from "../lib/supabaseClient";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import turfCentroid from "@turf/centroid";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,6 +21,8 @@ export interface Plot {
   isDemo?: boolean;
   /** Optional - DB plots key off owner_id (auth user). Kept for AnalyticsScreen display. */
   farmer?: string;
+  /** public.plots.farmer_id -- the farmer this plot belongs to (optional). */
+  farmerId?: string;
   name: string;
   crop: string;
   stage: string;
@@ -44,7 +47,8 @@ export interface Plot {
 
   // Soil / irrigation
   soil: string;
-  soilHealth?: { Past: number; Current: number; Prediction: number };
+  /** Only `Current` is real (latest digital twin). Past/Prediction are not available yet. */
+  soilHealth?: { Past?: number; Current: number; Prediction?: number };
   irrigation: string;
 
   // FarmPlotScreen display fields
@@ -90,311 +94,22 @@ export interface Plot {
 // Seed data -- used ONLY for logged-out demo state. Explicitly marked isDemo: true.
 // ---------------------------------------------------------------------------
 
-const SEED_PLOTS: Plot[] = [
-  {
-    id: "plot-1",
-    isDemo: true,
-    name: "Swamy North Plot (Plot 2A)",
-    farmer: "Swaminathan Gowda",
-    crop: "Oil Palm",
-    stage: "Fruit Development",
-    age: 6,
-    area: 12.5,
-    elevation: 152,
-    coordinates: [
-      "17.3881 N, 78.4892 E",
-      "17.3895 N, 78.4910 E",
-      "17.3872 N, 78.4925 E",
-      "17.3860 N, 78.4900 E",
-    ],
-    geoJSON: {
-      type: "Polygon",
-      coordinates: [
-        [
-          [78.4892, 17.3881],
-          [78.4910, 17.3895],
-          [78.4925, 17.3872],
-          [78.4900, 17.3860],
-          [78.4892, 17.3881],
-        ],
-      ],
-    },
-    soil: "Loamy (Optimal)",
-    soilHealth: { Past: 84, Current: 88, Prediction: 92 },
-    irrigation: "Precision Drip (94%)",
-    ndvi: 0.82,
-    moisture: 42,
-    lastInspection: "2 hours ago",
-    status: "Healthy",
-    statusColor: "text-emerald-600 bg-emerald-50 border border-emerald-100",
-    statusDotColor: "bg-emerald-500",
-    temp: "32 C",
-    humidity: "62%",
-    rainProb: "15%",
-    windSpeed: "11 km/h",
-    solarRad: "340 W/m2",
-    uvIndex: "2.4",
-    svgPath: "M 80 40 L 220 30 L 260 110 L 130 120 Z",
-    fillGradient: "url(#healthyGrad)",
-    strokeColor: "#10b981",
-    glowColor: "rgba(16, 185, 129, 0.4)",
-    ndviTimeline: { Past: 0.74, Current: 0.82, Prediction: 0.88 },
-    moistureTimeline: { Past: 45, Current: 42, Prediction: 36 },
-    yieldEst: { Past: "14.2 Tons", Current: "18.6 Tons", Prediction: "21.5 Tons" },
-    confidence: 96,
-    diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
-    diseasePct: { Past: 2, Current: 4, Prediction: 3 },
-    whyDisease: "Foliar canopy vigor limits pathogen spore reproduction.",
-    recommendedAction: "Apply Phosphorus Enrichment and Optimize Micro-Drip Timing",
-    advisoryReason:
-      "Soil Nitrogen and Potassium complexes are highly saturated; phosphorus optimizes fruit bunch sizes.",
-    boundaryMapped: true,
-    soilReportAttached: false,
-    createdAt: "2026-01-15T00:00:00Z",
-  },
-  {
-    id: "plot-2",
-    isDemo: true,
-    name: "Kothagudem South Field",
-    farmer: "K. Ramachandra Rao",
-    crop: "Oil Palm",
-    stage: "Flowering",
-    age: 8,
-    area: 8.2,
-    elevation: 145,
-    coordinates: [
-      "17.3898 N, 78.4912 E",
-      "17.3920 N, 78.4930 E",
-      "17.3905 N, 78.4950 E",
-      "17.3885 N, 78.4928 E",
-    ],
-    geoJSON: {
-      type: "Polygon",
-      coordinates: [
-        [
-          [78.4912, 17.3898],
-          [78.4930, 17.3920],
-          [78.4950, 17.3905],
-          [78.4928, 17.3885],
-          [78.4912, 17.3898],
-        ],
-      ],
-    },
-    soil: "Red Clayey",
-    soilHealth: { Past: 68, Current: 72, Prediction: 76 },
-    irrigation: "Precision Drip",
-    ndvi: 0.74,
-    moisture: 38,
-    lastInspection: "5 hours ago",
-    status: "Moderate",
-    statusColor: "text-amber-600 bg-amber-50 border border-amber-100",
-    statusDotColor: "bg-lime-500",
-    temp: "31 C",
-    humidity: "64%",
-    rainProb: "10%",
-    windSpeed: "12 km/h",
-    solarRad: "330 W/m2",
-    uvIndex: "2.1",
-    svgPath: "M 235 28 L 360 20 L 380 100 L 270 105 Z",
-    fillGradient: "url(#stableGrad)",
-    strokeColor: "#84cc16",
-    glowColor: "rgba(132, 204, 22, 0.3)",
-    ndviTimeline: { Past: 0.70, Current: 0.74, Prediction: 0.79 },
-    moistureTimeline: { Past: 40, Current: 38, Prediction: 34 },
-    yieldEst: { Past: "11.0 Tons", Current: "13.0 Tons", Prediction: "15.2 Tons" },
-    confidence: 94,
-    diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
-    diseasePct: { Past: 4, Current: 5, Prediction: 4 },
-    whyDisease: "Clay texture holds humidity steady around trunk bases.",
-    recommendedAction: "Local Nitrate supplement to sustain vegetative greening",
-    advisoryReason: "Pre-empt nitrogen leeching before the wet monsoon cycle begins.",
-    boundaryMapped: true,
-    soilReportAttached: false,
-    createdAt: "2026-01-20T00:00:00Z",
-  },
-  {
-    id: "plot-3",
-    isDemo: true,
-    name: "Devamma Palm Zone 1",
-    farmer: "M. Devamma",
-    crop: "Coconut Palm",
-    stage: "Flowering",
-    age: 4,
-    area: 5.0,
-    elevation: 160,
-    coordinates: [
-      "17.3855 N, 78.4902 E",
-      "17.3868 N, 78.4924 E",
-      "17.3848 N, 78.4935 E",
-      "17.3838 N, 78.4915 E",
-    ],
-    geoJSON: {
-      type: "Polygon",
-      coordinates: [
-        [
-          [78.4902, 17.3855],
-          [78.4924, 17.3868],
-          [78.4935, 17.3848],
-          [78.4915, 17.3838],
-          [78.4902, 17.3855],
-        ],
-      ],
-    },
-    soil: "Sandy Clay",
-    soilHealth: { Past: 52, Current: 55, Prediction: 60 },
-    irrigation: "Drip Irrigation",
-    ndvi: 0.68,
-    moisture: 46,
-    lastInspection: "1 day ago",
-    status: "Needs Attention",
-    statusColor: "text-orange-600 bg-orange-50 border border-orange-100",
-    statusDotColor: "bg-orange-500",
-    temp: "33 C",
-    humidity: "60%",
-    rainProb: "18%",
-    windSpeed: "9 km/h",
-    solarRad: "350 W/m2",
-    uvIndex: "2.8",
-    svgPath: "M 140 125 L 255 118 L 285 185 L 160 190 Z",
-    fillGradient: "url(#deficientGrad)",
-    strokeColor: "#f59e0b",
-    glowColor: "rgba(245, 158, 11, 0.3)",
-    ndviTimeline: { Past: 0.62, Current: 0.68, Prediction: 0.73 },
-    moistureTimeline: { Past: 48, Current: 46, Prediction: 40 },
-    yieldEst: { Past: "5.5 Tons", Current: "6.5 Tons", Prediction: "7.8 Tons" },
-    confidence: 89,
-    diseaseRisk: { Past: "Moderate", Current: "Attention", Prediction: "Moderate" },
-    diseasePct: { Past: 12, Current: 18, Prediction: 15 },
-    whyDisease: "Fungal leaf spots detected in satellite spectrum profiles.",
-    recommendedAction: "Schedule copper-based fungicide spray",
-    advisoryReason: "NDVI reduction correlates directly to early-stage bud rot symptoms.",
-    boundaryMapped: true,
-    soilReportAttached: false,
-    createdAt: "2026-02-01T00:00:00Z",
-  },
-  {
-    id: "plot-4",
-    isDemo: true,
-    name: "Swamy East Plantation",
-    farmer: "Swaminathan Gowda",
-    crop: "Oil Palm",
-    stage: "Fruiting",
-    age: 5,
-    area: 7.8,
-    elevation: 152,
-    coordinates: [
-      "17.3870 N, 78.4927 E",
-      "17.3883 N, 78.4948 E",
-      "17.3860 N, 78.4960 E",
-      "17.3850 N, 78.4938 E",
-    ],
-    geoJSON: {
-      type: "Polygon",
-      coordinates: [
-        [
-          [78.4927, 17.3870],
-          [78.4948, 17.3883],
-          [78.4960, 17.3860],
-          [78.4938, 17.3850],
-          [78.4927, 17.3870],
-        ],
-      ],
-    },
-    soil: "Loamy (Optimal)",
-    soilHealth: { Past: 76, Current: 79, Prediction: 84 },
-    irrigation: "Precision Drip",
-    ndvi: 0.79,
-    moisture: 40,
-    lastInspection: "1 day ago",
-    status: "Healthy",
-    statusColor: "text-emerald-600 bg-emerald-50 border border-emerald-100",
-    statusDotColor: "bg-emerald-500",
-    temp: "32 C",
-    humidity: "62%",
-    rainProb: "15%",
-    windSpeed: "11 km/h",
-    solarRad: "340 W/m2",
-    uvIndex: "2.4",
-    svgPath: "M 278 112 L 390 105 L 430 180 L 290 175 Z",
-    fillGradient: "url(#stableGrad)",
-    strokeColor: "#84cc16",
-    glowColor: "rgba(132, 204, 22, 0.3)",
-    ndviTimeline: { Past: 0.75, Current: 0.79, Prediction: 0.84 },
-    moistureTimeline: { Past: 42, Current: 40, Prediction: 35 },
-    yieldEst: { Past: "8.5 Tons", Current: "10.2 Tons", Prediction: "12.0 Tons" },
-    confidence: 93,
-    diseaseRisk: { Past: "Low", Current: "Low", Prediction: "Low" },
-    diseasePct: { Past: 3, Current: 4, Prediction: 3 },
-    whyDisease: "Optimal spacing maximizes daylight capture and airflow.",
-    recommendedAction: "Routine potassium top-up during cell division",
-    advisoryReason: "Maintains optimal moisture uptake metrics across leaves.",
-    boundaryMapped: true,
-    soilReportAttached: false,
-    createdAt: "2026-02-10T00:00:00Z",
-  },
-  {
-    id: "plot-5",
-    isDemo: true,
-    name: "Hassan Cocoa Plot",
-    farmer: "Rajesh Kumar",
-    crop: "Cocoa",
-    stage: "Vegetative",
-    age: 3,
-    area: 6.0,
-    elevation: 138,
-    coordinates: [
-      "17.3912 N, 78.4948 E",
-      "17.3930 N, 78.4965 E",
-      "17.3915 N, 78.4985 E",
-      "17.3895 N, 78.4962 E",
-    ],
-    geoJSON: {
-      type: "Polygon",
-      coordinates: [
-        [
-          [78.4948, 17.3912],
-          [78.4965, 17.3930],
-          [78.4985, 17.3915],
-          [78.4962, 17.3895],
-          [78.4948, 17.3912],
-        ],
-      ],
-    },
-    soil: "Sandy Loam",
-    soilHealth: { Past: 42, Current: 38, Prediction: 45 },
-    irrigation: "Manual Drip",
-    ndvi: 0.55,
-    moisture: 28,
-    lastInspection: "2 days ago",
-    status: "Critical",
-    statusColor: "text-rose-650 bg-rose-50 border border-rose-100",
-    statusDotColor: "bg-rose-500",
-    temp: "30 C",
-    humidity: "66%",
-    rainProb: "22%",
-    windSpeed: "14 km/h",
-    solarRad: "310 W/m2",
-    uvIndex: "1.9",
-    svgPath: "M 380 20 L 470 15 L 490 85 L 395 95 Z",
-    fillGradient: "url(#criticalGrad)",
-    strokeColor: "#e11d48",
-    glowColor: "rgba(225, 29, 72, 0.4)",
-    ndviTimeline: { Past: 0.58, Current: 0.55, Prediction: 0.62 },
-    moistureTimeline: { Past: 32, Current: 28, Prediction: 30 },
-    yieldEst: { Past: "1.8 Tons", Current: "2.1 Tons", Prediction: "2.6 Tons" },
-    confidence: 91,
-    diseaseRisk: { Past: "Attention", Current: "Critical", Prediction: "Attention" },
-    diseasePct: { Past: 22, Current: 38, Prediction: 25 },
-    whyDisease: "Critical water stress weakens sapling vascular immunity.",
-    recommendedAction: "Execute emergency moisture recovery drip",
-    advisoryReason:
-      "Water deficit triggers leaf drop, reducing chlorophyll conversion efficiency.",
-    boundaryMapped: true,
-    soilReportAttached: false,
-    createdAt: "2026-02-15T00:00:00Z",
-  },
-];
-
+/**
+ * Centroid of a GeoJSON polygon as { lat, lng } (WGS84), or null when the
+ * polygon is invalid. This is the point used for weather / live-twin lookups.
+ */
+export function polygonCentroid(geo: GeoJSONPolygon | undefined | null): { lat: number; lng: number } | null {
+  try {
+    if (!geo || geo.type !== "Polygon") return null;
+    const ring = geo.coordinates?.[0];
+    if (!Array.isArray(ring) || ring.length < 4) return null;
+    const [lng, lat] = turfCentroid(geo).geometry.coordinates;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  } catch {
+    return null;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // DB -> Frontend mapper (snake_case DB row -> camelCase Plot)
@@ -433,11 +148,7 @@ function dbRowToPlot(row: Record<string, any>): Plot {
 
   const soilHealth =
     latestTwin && typeof latestTwin.crop_health_score === "number"
-      ? {
-          Past: Math.max(0, Math.round(latestTwin.crop_health_score - 4)),
-          Current: Math.round(latestTwin.crop_health_score),
-          Prediction: Math.min(100, Math.round(latestTwin.crop_health_score + 4)),
-        }
+      ? { Current: Math.round(latestTwin.crop_health_score) }
       : undefined;
 
   const ndvi =
@@ -475,6 +186,8 @@ function dbRowToPlot(row: Record<string, any>): Plot {
   return {
     id: row.id as string,
     isDemo: false,
+    farmerId: (row.farmer_id as string | null) || undefined,
+    farmer: (row.farmers && row.farmers.name) || undefined,
     name: row.name as string,
     crop: row.crop || "",
     stage: row.stage || "Seedling",
@@ -512,7 +225,7 @@ function dbRowToPlot(row: Record<string, any>): Plot {
 // Module-level external store (useSyncExternalStore compatible)
 // ---------------------------------------------------------------------------
 
-let _plots: Plot[] = [...SEED_PLOTS];
+let _plots: Plot[] = [];
 let _isLoading = false;
 let _fetchInitiated = false;
 const _listeners = new Set<() => void>();
@@ -555,7 +268,7 @@ async function _fetchFromDb(userId: string) {
   try {
     const { data, error } = await supabase
       .from("plots")
-      .select("*, digital_twins(*)")
+      .select("*, digital_twins(*), farmers(name)")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -563,8 +276,8 @@ async function _fetchFromDb(userId: string) {
     _plots = data && data.length > 0 ? data.map(dbRowToPlot) : [];
   } catch (err) {
     console.error("[plots] fetch error:", err);
-    _plots = [...SEED_PLOTS];
-    _toast("Could not load your plots from the server. Showing example data.", "warning");
+    _plots = [];
+    _toast("Could not load your plots from the server. Please refresh to retry.", "warning");
   } finally {
     _isLoading = false;
     _notify();
@@ -582,7 +295,7 @@ supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null
     _fetchFromDb(session.user.id);
   } else if (event === "SIGNED_OUT") {
     _fetchInitiated = false;
-    _plots = [...SEED_PLOTS];
+    _plots = [];
     _isLoading = false;
     _notify();
   }
@@ -606,16 +319,25 @@ supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }
  * VISIBLE TOAST on local-only fallback -- never silently fabricates a save.
  */
 export async function addPlot(plotInput: Omit<Plot, "id" | "createdAt">): Promise<Plot> {
-  const createdAt = new Date().toISOString();
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData?.session?.user;
+  if (!user) {
+    throw new Error("You must be signed in to save a plot.");
+  }
+
+  const centroid = polygonCentroid(plotInput.geoJSON);
 
   const dbRow: Record<string, unknown> = {
+    owner_id: user.id,
+    farmer_id: plotInput.farmerId ?? null,
     name: plotInput.name,
     crop: plotInput.crop,
     area: plotInput.area,
     area_unit: "acres",
     boundary: plotInput.geoJSON ?? null,
-    latitude: plotInput.geoJSON?.coordinates?.[0]?.[0]?.[1] ?? null,
-    longitude: plotInput.geoJSON?.coordinates?.[0]?.[0]?.[0] ?? null,
+    // Plot location = centroid of the surveyed boundary (WGS84); null when unmapped.
+    latitude: centroid?.lat ?? null,
+    longitude: centroid?.lng ?? null,
     village: plotInput.village ?? null,
     taluk: plotInput.taluk ?? null,
     district: plotInput.district ?? null,
@@ -633,32 +355,19 @@ export async function addPlot(plotInput: Omit<Plot, "id" | "createdAt">): Promis
     soil_report_attached: plotInput.soilReportAttached,
   };
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (sessionData?.session?.user) {
-    dbRow.owner_id = sessionData.session.user.id;
-    const { data, error } = await supabase
-      .from("plots")
-      .insert(dbRow)
-      .select()
-      .single();
+  const { data, error } = await supabase
+    .from("plots")
+    .insert(dbRow)
+    .select("*, farmers(name)")
+    .single();
 
-    if (!error && data) {
-      const newPlot = dbRowToPlot(data as Record<string, unknown>);
-      _plots = [newPlot, ..._plots];
-      _notify();
-      return newPlot;
-    }
-    // Supabase returned an error -- fall through to local-only with VISIBLE warning
+  if (error || !data) {
     console.error("[plots] insert error:", error);
-    _toast(
-      "Saved locally only -- could not reach the server. This plot will not persist after refresh.",
-      "warning"
-    );
+    // Never pretend a plot was saved: the caller shows the failure.
+    throw new Error(error?.message || "The plot could not be saved to the server.");
   }
 
-  // Local-only fallback (no session, or insert failed)
-  const nextIndex = _plots.length + 1;
-  const newPlot: Plot = { ...plotInput, id: `plot-${nextIndex}`, createdAt };
+  const newPlot = dbRowToPlot(data as Record<string, unknown>);
   _plots = [newPlot, ..._plots];
   _notify();
   return newPlot;
@@ -682,7 +391,13 @@ export async function updatePlot(id: string, updates: Partial<Plot>): Promise<bo
   if (updates.name !== undefined) dbUpdates.name = updates.name;
   if (updates.crop !== undefined) dbUpdates.crop = updates.crop;
   if (updates.area !== undefined) dbUpdates.area = updates.area;
-  if (updates.geoJSON !== undefined) dbUpdates.boundary = updates.geoJSON;
+  if (updates.geoJSON !== undefined) {
+    dbUpdates.boundary = updates.geoJSON;
+    const c = polygonCentroid(updates.geoJSON);
+    dbUpdates.latitude = c?.lat ?? null;
+    dbUpdates.longitude = c?.lng ?? null;
+  }
+  if (updates.farmerId !== undefined) dbUpdates.farmer_id = updates.farmerId;
   if (updates.village !== undefined) dbUpdates.village = updates.village;
   if (updates.taluk !== undefined) dbUpdates.taluk = updates.taluk;
   if (updates.district !== undefined) dbUpdates.district = updates.district;
@@ -699,8 +414,7 @@ export async function updatePlot(id: string, updates: Partial<Plot>): Promise<bo
   if (updates.boundaryMapped !== undefined) dbUpdates.boundary_mapped = updates.boundaryMapped;
   if (updates.soilReportAttached !== undefined) dbUpdates.soil_report_attached = updates.soilReportAttached;
 
-  // Only push to DB for real UUID rows (seed plots use "plot-N" string ids)
-  if (Object.keys(dbUpdates).length > 0 && !id.startsWith("plot-")) {
+  if (Object.keys(dbUpdates).length > 0) {
     const { error } = await supabase.from("plots").update(dbUpdates).eq("id", id);
     if (error) {
       console.error("[plots] update error:", error);

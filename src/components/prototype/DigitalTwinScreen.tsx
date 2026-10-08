@@ -7,6 +7,8 @@ import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
 import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory, useLiveTwin } from "../../data/digitalTwins";
 import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
+import { supabase } from "../../lib/supabaseClient";
+import { getCropBaseline } from "../../constants/cropBaselines";
 
 
 
@@ -39,7 +41,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
 
   // Living updates states
-  const [lastSyncMinutes, setLastSyncMinutes] = useState(2);
+  const [lastSyncMinutes, setLastSyncMinutes] = useState(0);
   const [isChangingPlot, setIsChangingPlot] = useState(false);
 
   const triggerToast = (msg: string, type: "success" | "info" | "warning" = "success") => {
@@ -102,6 +104,33 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   const activePlot = plots.find((p) => p.id === activePlotId) || plots[0];
 
+  const [soilRow, setSoilRow] = useState<{
+    ph: number | null;
+    nitrogen_kg_ha: number | null;
+    phosphorus_kg_ha: number | null;
+    potassium_kg_ha: number | null;
+    organic_carbon_percent: number | null;
+    electrical_conductivity: number | null;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setSoilRow(null);
+    if (!activePlotId) return;
+    supabase
+      .from("soil_reports")
+      .select("ph, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, electrical_conductivity")
+      .eq("plot_id", activePlotId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: { data: typeof soilRow }) => {
+        if (!cancelled) setSoilRow(data ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePlotId]);
+
   const { snapshots, isLoading: isTwinsLoading } =
     useDigitalTwinSnapshots(activePlotId);
   const { prediction, isLoading: isPredictionLoading } = useTwinPrediction(activePlotId);
@@ -135,14 +164,16 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
   const isPrediction = simMode === "Prediction";
   const activeNDVI = isPrediction ? (prediction?.predicted_ndvi ?? 0) : (activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0));
-  const activeSoilHealth = activeSnapshot?.crop_health_score ?? (activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0);
+  const activeSoilHealthOrNull: number | null =
+    activeSnapshot?.crop_health_score ?? activePlot?.soilHealth?.[simMode] ?? null;
+  const activeSoilHealth = activeSoilHealthOrNull ?? 0;
   const activeYield = activeSnapshot?.yield_prediction
     ? `${activeSnapshot.yield_prediction} Tons`
     : (activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A");
   const activeDiseasePct = activeSnapshot?.disease_probability ?? (activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0);
   const activeDiseaseRisk = activeSnapshot?.risk_level ?? (activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending");
   
-  const activeConfidence = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? 0;
+  const activeConfidence: number | null = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? null;
   const activeWhyDisease = activeSnapshot?.disease_explanation ?? activePlot?.whyDisease;
   const activeRecommendedAction = activeSnapshot?.recommended_action ?? activePlot?.recommendedAction;
   const activeAdvisoryReason = activeSnapshot?.advisory_reason ?? activePlot?.advisoryReason;
@@ -151,7 +182,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const realTemp = liveData?.live_weather.temperature_c ?? (envData.weather ? envData.weather.current.temperatureC : null);
   const realHumidity = liveData?.live_weather.humidity_pct ?? (envData.weather ? envData.weather.current.humidityPercent : null);
   const realWind = liveData?.live_weather.wind_kph ?? (envData.weather ? envData.weather.current.windSpeedKmh : null);
-  const realFoliar = activeSnapshot?.crop_health_score ?? 98;
+  const realFoliar: number | null = activeSnapshot?.crop_health_score ?? null;
 
   // Live AI scores — prefer live computed, fallback to DB snapshot
   const liveWaterStress = liveData?.scores.water_stress ?? 0;
@@ -159,7 +190,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const liveCropHealth = liveData?.scores.crop_health ?? activeSoilHealth;
   const liveYieldEst = liveData?.scores.yield_estimate_t_ha ?? null;
   const liveSoilState = liveData?.soil_state ?? "Unknown";
-  const liveRiskLevel = liveData?.risk_level ?? "Low";
+  const liveAvailable = !!liveData;
+  const liveRiskLevel = liveData?.risk_level ?? null;
   const liveDiseaseName = liveData?.disease_name ?? "Data Pending";
   const liveDiseaseExplanation = liveData?.disease_explanation ?? "";
 
@@ -172,7 +204,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     : "Loading...";
 
   // Dynamic average for the main Twin Health donut (uses live score when available)
-  const overallTwinHealth = Math.round(liveCropHealth || (activeSoilHealth + activeNDVI * 100) / 2 || 0);
+  const overallTwinHealth = Math.round(liveCropHealth || activeSoilHealth || 0);
+  const hasTwinHealth = liveAvailable || activeSoilHealthOrNull !== null;
 
   const telemetryBadges: TelemetryBadge[] = [
     {
@@ -216,8 +249,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     {
       id: "health",
       label: "Foliar Health",
-      value: `${realFoliar}%`,
-      interpretation: "Index against biophysical canopy model.",
+      value: realFoliar !== null ? `${Math.round(realFoliar)}%` : "N/A",
+      interpretation: realFoliar !== null ? "Latest stored Digital Twin crop-health score." : "No Digital Twin snapshot stored for this plot yet.",
       x: 50,
       y: 20
     },
@@ -261,15 +294,32 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     }
   ];
 
-  // Soil Nutrient horizontal values
-  const soilNutrients = [
-    { label: t('digitaltwinscreen.ph_score'), val: "6.2", pct: 85, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_slightly_acidic') },
-    { label: t('digitaltwinscreen.nitrogen_n'), val: "72 ppm", pct: 72, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_concentration') },
-    { label: t('digitaltwinscreen.phosphorus_p'), val: "48 ppm", pct: 48, color: "bg-amber-500", text: t('digitaltwinscreen.deficient__recommended_boost') },
-    { label: t('digitaltwinscreen.potassium_k'), val: "85 ppm", pct: 85, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_content') },
-    { label: t('digitaltwinscreen.organic_carbon'), val: "1.4%", pct: 78, color: "bg-emerald-500", text: t('digitaltwinscreen.excellent_microbial_base') },
-    { label: t('digitaltwinscreen.ec_electrical_conductivity'), val: "0.28 dS/m", pct: 52, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_salinity') }
-  ];
+  // Soil chemistry comes from the plot's latest saved soil report; nothing is assumed.
+  const baseline = getCropBaseline(activePlot?.crop || "");
+  const rangeNote = (v: number, min: number, max: number) =>
+    v < min ? "Below reference range" : v > max ? "Above reference range" : "Within reference range";
+  const soilNutrients: Array<{ label: string; val: string; pct: number; color: string; text: string }> = [];
+  if (soilRow) {
+    const rows: Array<[string, number | null, string, { target: number; min: number; max: number } | null]> = [
+      [t('digitaltwinscreen.ph_score'), soilRow.ph, "", baseline.ph],
+      [t('digitaltwinscreen.nitrogen_n'), soilRow.nitrogen_kg_ha, " kg/ha", baseline.nitrogen],
+      [t('digitaltwinscreen.phosphorus_p'), soilRow.phosphorus_kg_ha, " kg/ha", baseline.phosphorus],
+      [t('digitaltwinscreen.potassium_k'), soilRow.potassium_kg_ha, " kg/ha", baseline.potassium],
+      [t('digitaltwinscreen.organic_carbon'), soilRow.organic_carbon_percent, " %", baseline.organic_carbon],
+      [t('digitaltwinscreen.ec_electrical_conductivity'), soilRow.electrical_conductivity, " dS/m", null],
+    ];
+    for (const [label, value, unit, ref] of rows) {
+      if (value === null || value === undefined) continue;
+      const within = ref ? value >= ref.min && value <= ref.max : true;
+      soilNutrients.push({
+        label,
+        val: `${value}${unit}`,
+        pct: ref ? Math.min(100, Math.max(3, Math.round((value / (ref.max * 1.2)) * 100))) : 0,
+        color: within ? "bg-emerald-500" : "bg-amber-500",
+        text: ref ? rangeNote(value, ref.min, ref.max) : "No reference range",
+      });
+    }
+  }
 
   // Build a real SVG path from the history array for the chart
   const buildPathFromHistory = (getValue: (row: any) => number | null, scale: number, baseline: number) => {
@@ -526,7 +576,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         </div>
 
         {/* Disease Risk Alert Banner */}
-        {liveDiseaseRisk > 60 && (
+        {liveAvailable && liveDiseaseRisk > 60 && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -614,8 +664,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   </svg>
                   <span className="absolute text-base">{score.icon}</span>
                 </div>
-                <span className={`text-sm font-black ${score.color}`}>
-                  {isLiveLoading ? "—" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
+                <span className={`text-sm font-black ${liveAvailable ? score.color : "text-gray-400"}`}>
+                  {isLiveLoading ? "—" : !liveAvailable && score.label !== "Crop Health" ? "N/A" : score.label === "Crop Health" && !hasTwinHealth ? "N/A" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
                 </span>
                 {score.sublabel && (
                   <span className="text-[9px] font-bold text-gray-400">{score.sublabel}</span>
@@ -988,7 +1038,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>{t('digitaltwinscreen.soil_quality')}</span>
-                  <span className="text-primary"><AnimatedCounter value={activeSoilHealth} />%</span>
+                  <span className="text-primary">{activeSoilHealthOrNull !== null ? <><AnimatedCounter value={activeSoilHealth} />%</> : "N/A"}</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeSoilHealth}%` }} />
@@ -1024,7 +1074,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
                 <span className="block text-[8px] font-bold text-gray-400 uppercase">AI Confidence</span>
-                <span className="text-xs font-black text-primary">{activeConfidence}%</span>
+                <span className="text-xs font-black text-primary">{activeConfidence !== null ? `${activeConfidence}%` : "N/A"}</span>
               </div>
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
                 <span className="block text-[8px] font-bold text-gray-400 uppercase">Model Accuracy</span>
@@ -1109,7 +1159,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Expected Yield</span>
                 <p className="text-lg font-black text-gray-950">{activeYield}</p>
-                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activeConfidence}% Conf.</span>
+                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activeConfidence !== null ? `${activeConfidence}% Conf.` : "No confidence score"}</span>
               </div>
 
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
@@ -1168,6 +1218,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             </h4>
 
             <div className="space-y-3 text-xs">
+              {soilNutrients.length === 0 && (
+                <p className="text-xs font-semibold text-gray-500">
+                  No saved soil report for this plot. Upload one on the Soil Reports screen to see its chemistry here.
+                </p>
+              )}
               {soilNutrients.map((nut) => (
                 <div key={nut.label} className="space-y-1.5">
                   <div className="flex justify-between font-bold text-gray-700">
@@ -1190,7 +1245,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <FlaskConical className="w-4.5 h-4.5 text-primary" /> {t('digitaltwinscreen.ai_agronomy_advisory')}
               </h4>
               <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                {activeConfidence ?? "—"}% {t('digitaltwinscreen.confidence_1')}
+                {activeConfidence !== null ? `${activeConfidence}% ${t('digitaltwinscreen.confidence_1')}` : ""}
               </span>
             </div>
 
