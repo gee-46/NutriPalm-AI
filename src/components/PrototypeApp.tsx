@@ -100,6 +100,14 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Drop any per-browser cached data so the next account on this device starts clean.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("nutripalm"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // storage unavailable; nothing to clear
+    }
     onBackToLanding();
   };
 

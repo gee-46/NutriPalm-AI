@@ -116,26 +116,6 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleContinueAsDemo = async () => {
-    setIsSubmitting(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: "demo@samruddhiorganics.in",
-        password: "DemoUser123!",
-      });
-
-      if (error) throw error;
-      onAuthSuccess();
-    } catch (err: any) {
-      setErrorMessage(err.message || "Failed to sign in with demo credentials. Please ensure the demo user is seeded.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     setErrorMessage("");
@@ -177,7 +157,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
           options: {
             data: {
               full_name: fullName,
-              user_role: "Agronomist", // Default fallback role
+              user_role: "Farmer",
             },
           },
         });
@@ -681,16 +661,6 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                                                                           {t('prototypeauth.continue_with_google')}
                                                                         </button>
 
-                      {/* Demo Account button */}
-                      <button
-                        type="button"
-                        onClick={handleContinueAsDemo}
-                        disabled={isSubmitting}
-                        className="w-full bg-gray-50 hover:bg-gray-100 text-gray-800 font-extrabold px-6 py-3.5 rounded-xl border border-gray-250 hover:border-gray-350 active:scale-[0.99] transition-all duration-300 text-xs flex items-center justify-center gap-2 cursor-pointer pt-3.5 pb-3.5"
-                      >
-                        
-                                                                          {t('prototypeauth.continue_with_demo_account')}
-                                                                        </button>
                     </div>
                   )}
                 </form>
