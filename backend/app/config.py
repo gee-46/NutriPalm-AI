@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import ValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -94,6 +94,16 @@ class Settings(BaseSettings):
             )
 
         return value
+
+    @model_validator(mode="after")
+    def reject_wildcard_cors_outside_development(self) -> "Settings":
+        """Credentials are enabled, so '*' must not be accepted in deployments."""
+        if self.environment != "development" and "*" in self.cors_origins_list():
+            raise ValueError(
+                "CORS_ALLOW_ORIGINS must list explicit origins (no '*') in "
+                "staging and production."
+            )
+        return self
 
     def cors_origins_list(self) -> list[str]:
         """Return configured CORS origins as a cleaned list."""

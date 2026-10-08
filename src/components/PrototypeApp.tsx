@@ -220,13 +220,15 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   // Reusable Toast Notification System
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: "success" | "info" | "warning" }>>([]);
-  const showToast = (message: string, type: "success" | "info" | "warning" = "success") => {
+  // Stable identity: children (e.g. the boundary surveyor) list this in effect
+  // dependencies, and a new function every render would tear their state down.
+  const showToast = useCallback((message: string, type: "success" | "info" | "warning" = "success") => {
     const id = Date.now().toString() + Math.random().toString();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
-  };
+  }, []);
 
   // Shared state: list of farmers
   const [farmers, setFarmers] = useState<Farmer[]>([]);
