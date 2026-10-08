@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   UploadCloud, FileText, ArrowRight, Activity, Sparkles, 
-  Check, Download, RefreshCw, ChevronDown, AlertTriangle
+  Check, RefreshCw, ChevronDown, AlertTriangle
 } from "lucide-react";
 import { usePlots } from "../../data/plots";
 import { supabase } from "../../lib/supabaseClient";
@@ -54,21 +54,24 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const sqiValue = sqiMatch ? parseFloat(sqiMatch[1]) : null;
   const sqiCategory = sqiMatch ? sqiMatch[2] : null;
 
-  const healthPercent = sqiValue 
-    ? Math.round(sqiValue * 100) 
-    : savedReport 
-      ? 86 
-      : 84;
-  const healthStatus = sqiCategory 
-    ? sqiCategory.toUpperCase() 
-    : "HEALTHY";
+  const healthPercent: number | null = sqiValue ? Math.round(sqiValue * 100) : null;
+  const healthStatus = sqiCategory ? sqiCategory.toUpperCase() : "NOT REPORTED";
 
-  const zn = ocrResult?.micronutrients?.find(m => m.parameter === 'zinc');
-  const fe = ocrResult?.micronutrients?.find(m => m.parameter === 'iron');
-  const mn = ocrResult?.micronutrients?.find(m => m.parameter === 'manganese');
-  const cu = ocrResult?.micronutrients?.find(m => m.parameter === 'copper');
-  const b = ocrResult?.micronutrients?.find(m => m.parameter === 'boron');
-  const s = ocrResult?.micronutrients?.find(m => m.parameter === 'sulfur');
+  type MicroValue = { value: number | null; unit?: string | null; validation?: string };
+  const micro = (param: string): MicroValue | null =>
+    ocrResult?.micronutrients?.find(m => m.parameter === param) ??
+    (savedReport?.micronutrients?.[param] as MicroValue | undefined) ??
+    null;
+  const fmtMicro = (m: MicroValue | null) =>
+    m && m.value !== null && m.value !== undefined ? `${m.value} ${m.unit || "mg/kg"}` : "Not reported";
+  const microBadge = (m: MicroValue | null) =>
+    m && m.value !== null && m.value !== undefined ? (m.validation || "reported").toUpperCase() : "NOT REPORTED";
+  const zn = micro("zinc");
+  const fe = micro("iron");
+  const mn = micro("manganese");
+  const cu = micro("copper");
+  const b = micro("boron");
+  const s = micro("sulfur");
 
   const triggerToast = useCallback((msg: string, type: "success" | "info" | "warning" = "success") => {
     if (showToast) {
@@ -94,33 +97,14 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const fetchPlotReport = useCallback(async (plotId: string) => {
     if (!plotId) return;
 
-    // 1. Instantly check localStorage cache
-    const localKey = `nutripalm_soil_report_${plotId}`;
-    let cachedReport: any = null;
-    const cachedStr = localStorage.getItem(localKey);
-    if (cachedStr) {
-      try {
-        cachedReport = JSON.parse(cachedStr);
-        setSavedReport(cachedReport);
-      } catch (e) {
-        console.warn("Failed to parse cached soil report:", e);
-      }
-    }
-
-    // 2. If it's a demo/mock plot, check embedded reports
+    // Demo (non-database) plots keep their embedded sample report, if any.
     if (plotId.startsWith("plot-")) {
-      const mockPlot = plots.find(p => p.id === plotId);
-      if (mockPlot && (mockPlot as any).soil_reports?.[0]) {
-        const mockRep = (mockPlot as any).soil_reports[0];
-        setSavedReport(mockRep);
-        localStorage.setItem(localKey, JSON.stringify(mockRep));
-      } else if (!cachedReport) {
-        setSavedReport(null);
-      }
+      const demoPlot = plots.find(p => p.id === plotId) as any;
+      setSavedReport(demoPlot?.soil_reports?.[0] ?? null);
       return;
     }
 
-    // 3. For real plots, sync from Supabase
+    // Saved plots: the database (RLS-scoped to the signed-in user) is the only source.
     setIsLoadingReport(true);
     try {
       const { data: report, error } = await supabase
@@ -131,17 +115,10 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         .limit(1)
         .maybeSingle();
 
-      if (!error && report) {
-        setSavedReport(report);
-        localStorage.setItem(localKey, JSON.stringify(report));
-      } else if (!cachedReport) {
-        setSavedReport(null);
-      }
+      setSavedReport(!error && report ? report : null);
     } catch (err) {
       console.error("Failed to query plot soil report:", err);
-      if (!cachedReport) {
-        setSavedReport(null);
-      }
+      setSavedReport(null);
     } finally {
       setIsLoadingReport(false);
     }
@@ -319,60 +296,40 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         "[SYSTEM] Diagnostic parameters synchronized successfully."
       ]);
 
-      const nVal = ocrResult.nitrogen.value ?? 280;
-      const pVal = ocrResult.phosphorus.value ?? 35;
-      const kVal = ocrResult.potassium.value ?? 175;
-      const ocVal = ocrResult.organic_carbon.value ?? 0.65;
-      const phVal = ocrResult.ph.value ?? 6.5;
-      const ecVal = ocrResult.electrical_conductivity.value ?? 0.60;
-
+      const microForStorage = Object.fromEntries(
+        (ocrResult.micronutrients ?? [])
+          .filter(m => m.value !== null)
+          .map(m => [m.parameter, { value: m.value, unit: m.unit, validation: m.validation }])
+      );
 
       if (ocrResult.persisted) {
-        // High confidence: Report is persisted in Supabase
+        // The backend only saves a report when every required value was extracted and validated.
         const fullReportRecord = {
-          id: ocrResult.soil_report_id || `soil-rep-${Date.now()}`,
+          id: ocrResult.soil_report_id ?? undefined,
           plot_id: selectedPlotId,
-          plotId: selectedPlotId,
-          nitrogen_kg_ha: nVal,
-          phosphorus_kg_ha: pVal,
-          potassium_kg_ha: kVal,
-          organic_carbon_percent: ocVal,
-          ph: phVal,
-          electrical_conductivity: ecVal,
+          nitrogen_kg_ha: ocrResult.nitrogen.value,
+          phosphorus_kg_ha: ocrResult.phosphorus.value,
+          potassium_kg_ha: ocrResult.potassium.value,
+          organic_carbon_percent: ocrResult.organic_carbon.value,
+          ph: ocrResult.ph.value,
+          electrical_conductivity: ocrResult.electrical_conductivity.value,
+          micronutrients: Object.keys(microForStorage).length ? microForStorage : null,
           status: "Completed",
           created_at: new Date().toISOString(),
-          zinc: zn ?? { value: 0.85, unit: "mg/kg", validation: "valid" },
-          sulphur: s ?? { value: 14.2, unit: "mg/kg", validation: "valid" },
-          boron: b ?? { value: 0.75, unit: "mg/kg", validation: "valid" },
-          iron: fe ?? { value: 6.4, unit: "mg/kg", validation: "valid" },
-          manganese: mn ?? { value: 3.8, unit: "ppm", validation: "valid" },
-          copper: cu ?? { value: 1.1, unit: "mg/kg", validation: "valid" },
         };
 
-        const formattedPayload = {
+        onUploadSuccess({
           id: fullReportRecord.id,
           plotId: selectedPlotId,
-          nitrogen: ocrResult.nitrogen.value !== null ? ocrResult.nitrogen : { value: nVal, unit: "kg/ha", validation: "valid" },
-          phosphorus: ocrResult.phosphorus.value !== null ? ocrResult.phosphorus : { value: pVal, unit: "kg/ha", validation: "valid" },
-          potassium: ocrResult.potassium.value !== null ? ocrResult.potassium : { value: kVal, unit: "kg/ha", validation: "valid" },
-          organic_carbon: ocrResult.organic_carbon.value !== null ? ocrResult.organic_carbon : { value: ocVal, unit: "%", validation: "valid" },
-          ph: ocrResult.ph.value !== null ? ocrResult.ph : { value: phVal, unit: "pH", validation: "valid" },
-          electrical_conductivity: ocrResult.electrical_conductivity.value !== null ? ocrResult.electrical_conductivity : { value: ecVal, unit: "dS/m", validation: "valid" },
-          zinc: zn ?? { value: 0.85, unit: "mg/kg", validation: "valid" },
-          sulphur: s ?? { value: 14.2, unit: "mg/kg", validation: "valid" },
-          boron: b ?? { value: 0.75, unit: "mg/kg", validation: "valid" },
-          iron: fe ?? { value: 6.4, unit: "mg/kg", validation: "valid" },
-          manganese: mn ?? { value: 3.8, unit: "ppm", validation: "valid" },
-          copper: cu ?? { value: 1.1, unit: "mg/kg", validation: "valid" },
+          nitrogen: ocrResult.nitrogen,
+          phosphorus: ocrResult.phosphorus,
+          potassium: ocrResult.potassium,
+          organic_carbon: ocrResult.organic_carbon,
+          ph: ocrResult.ph,
+          electrical_conductivity: ocrResult.electrical_conductivity,
+          micronutrients: ocrResult.micronutrients,
           persisted: true
-        };
-
-        // Notify parent callback
-        onUploadSuccess(formattedPayload);
-
-        // Cache for instant navigation
-        const localKey = `nutripalm_soil_report_${selectedPlotId}`;
-        localStorage.setItem(localKey, JSON.stringify(fullReportRecord));
+        });
 
         // Update plot flag in DB
         if (!selectedPlotId.startsWith("plot-")) {
@@ -382,8 +339,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
             .eq("id", selectedPlotId)
             .then(() => {});
         }
-
-        // Update plot store
         updatePlot(selectedPlotId, { soilReportAttached: true });
 
         setSavedReport(fullReportRecord);
@@ -391,8 +346,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         setStage("results");
         triggerToast("Soil report verified and successfully saved to database.", "success");
       } else {
-        // Low confidence scenario: Do NOT save to Supabase
-        const unpersistedPayload = {
+        // Low confidence / missing required values: show what was read, save nothing.
+        onUploadSuccess({
           id: undefined,
           plotId: selectedPlotId,
           nitrogen: ocrResult.nitrogen,
@@ -401,25 +356,17 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
           organic_carbon: ocrResult.organic_carbon,
           ph: ocrResult.ph,
           electrical_conductivity: ocrResult.electrical_conductivity,
-          zinc: zn ?? null,
-          sulphur: s ?? null,
-          boron: b ?? null,
-          iron: fe ?? null,
-          manganese: mn ?? null,
-          copper: cu ?? null,
+          micronutrients: ocrResult.micronutrients,
           persisted: false
-        };
+        });
 
-        onUploadSuccess(unpersistedPayload);
-
-        // Display results for manual review on screen but do not persist
         setSavedReport(null);
         setIsUpdatingReport(false);
         setStage("results");
-        triggerToast("Confidence is low. The report is not saved.", "warning");
+        triggerToast("Some required values could not be read. The report was not saved.", "warning");
       }
     }
-  }, [stage, progress, ocrResult, uploadError, selectedPlotId, onUploadSuccess, triggerToast, zn, s, b, fe, mn, cu, updatePlot]);
+  }, [stage, progress, ocrResult, uploadError, selectedPlotId, onUploadSuccess, triggerToast, updatePlot]);
 
   const activeDisplayReport = savedReport || (ocrResult ? {
     nitrogen_kg_ha: ocrResult.nitrogen.value,
@@ -459,12 +406,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
       organic_carbon: activeDisplayReport.organic_carbon_percent ?? activeDisplayReport.organic_carbon ?? ocrResult?.organic_carbon,
       ph: activeDisplayReport.ph ?? ocrResult?.ph,
       electrical_conductivity: activeDisplayReport.electrical_conductivity ?? ocrResult?.electrical_conductivity,
-      zinc: zn ?? activeDisplayReport.zinc,
-      sulphur: s ?? activeDisplayReport.sulphur,
-      boron: b ?? activeDisplayReport.boron,
-      iron: fe ?? activeDisplayReport.iron,
-      manganese: mn ?? activeDisplayReport.manganese,
-      copper: cu ?? activeDisplayReport.copper,
       crop: activePlot?.crop,
       plotName: activePlot?.name
     } : {
@@ -815,11 +756,11 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                           <circle cx="56" cy="56" r="46" stroke="#F1F5F0" strokeWidth="8" fill="transparent" />
                           <circle cx="56" cy="56" r="46" stroke="#2E7D32" strokeWidth="8" fill="transparent"
                             strokeDasharray={2 * Math.PI * 46}
-                            strokeDashoffset={2 * Math.PI * 46 * (1 - healthPercent / 100)}
+                            strokeDashoffset={2 * Math.PI * 46 * (1 - (healthPercent ?? 0) / 100)}
                           />
                         </svg>
                         <div className="absolute">
-                          <span className="block text-2xl font-black text-gray-950">{healthPercent}%</span>
+                          <span className="block text-2xl font-black text-gray-950">{healthPercent !== null ? `${healthPercent}%` : "N/A"}</span>
                           <span className="text-[9px] font-black uppercase text-emerald-650">{healthStatus}</span>
                         </div>
                       </div>
@@ -833,7 +774,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <div className="flex justify-between items-center">
                           <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('soilreportscreen.ai_summary')}</h4>
                           <span className="text-[9px] font-black px-2 py-0.5 rounded-full border text-emerald-750 bg-emerald-50 border-emerald-100">
-                            CALIBRATED
+                            {savedReport ? "SAVED" : "NOT SAVED"}
                           </span>
                         </div>
                         <p className="text-xs text-gray-700 leading-relaxed font-semibold mt-3">
@@ -843,7 +784,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
                       <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 text-[10px] text-gray-450 uppercase font-black">
                         <div>Crop Context: <span className="text-gray-700 font-bold capitalize">{plot?.crop || "Oil Palm"}</span></div>
-                        <div className="text-right">Database Sync: <span className="text-gray-700 font-bold">Active</span></div>
+                        <div className="text-right">Database: <span className="text-gray-700 font-bold">{savedReport ? "Saved" : "Not saved"}</span></div>
                       </div>
                     </div>
 
@@ -928,7 +869,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="rounded-2xl p-4 border border-gray-150 bg-white shadow-xs text-left flex flex-col justify-between min-h-[120px]">
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-650 bg-emerald-50 border border-emerald-100">
-                          VALID
+                          {(ocrResult?.ph.validation ?? "saved").toUpperCase()}
                         </span>
                         <span className="text-[9px] font-bold text-gray-400 uppercase">range: 5.5 - 6.5</span>
                       </div>
@@ -944,7 +885,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="rounded-2xl p-4 border border-gray-150 bg-white shadow-xs text-left flex flex-col justify-between min-h-[120px]">
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-650 bg-emerald-50 border border-emerald-100">
-                          VALID
+                          {(ocrResult?.electrical_conductivity.validation ?? "saved").toUpperCase()}
                         </span>
                         <span className="text-[9px] font-bold text-gray-400 uppercase">range: 0.50 - 0.75</span>
                       </div>
@@ -960,14 +901,14 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="rounded-2xl p-4 border border-gray-150 bg-white shadow-xs text-left flex flex-col justify-between min-h-[120px]">
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-650 bg-emerald-50 border border-emerald-100">
-                          {zn?.validation?.toUpperCase() || 'VALID'}
+                          {microBadge(zn)}
                         </span>
                         <span className="text-[9px] font-bold text-gray-400 uppercase">range: &gt; 0.6</span>
                       </div>
                       <div className="mt-4">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.zinc_zn')}</span>
                         <span className="text-lg font-black text-gray-950 mt-0.5">
-                          {zn && zn.value !== null ? `${zn.value} ${zn.unit || 'mg/kg'}` : '0.85 mg/kg'}
+                          {fmtMicro(zn)}
                         </span>
                       </div>
                     </div>
@@ -981,32 +922,32 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       {/* Sulphur */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
                         <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Sulphur (S)</span>
-                        <span className="text-base font-black text-gray-950 mt-1.5">{s && s.value !== null ? `${s.value} ${s.unit || 'mg/kg'}` : '14.2 mg/kg'}</span>
-                        <span className="text-[8px] font-extrabold uppercase mt-1 text-emerald-600">(valid)</span>
+                        <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(s)}</span>
+                        <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(s).toLowerCase()})</span>
                       </div>
                       {/* Boron */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
                         <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Boron (B)</span>
-                        <span className="text-base font-black text-gray-950 mt-1.5">{b && b.value !== null ? `${b.value} ${b.unit || 'mg/kg'}` : '0.75 mg/kg'}</span>
-                        <span className="text-[8px] font-extrabold uppercase mt-1 text-emerald-600">(valid)</span>
+                        <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(b)}</span>
+                        <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(b).toLowerCase()})</span>
                       </div>
                       {/* Iron */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
                         <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Iron (Fe)</span>
-                        <span className="text-base font-black text-gray-950 mt-1.5">{fe && fe.value !== null ? `${fe.value} ${fe.unit || 'mg/kg'}` : '6.4 mg/kg'}</span>
-                        <span className="text-[8px] font-extrabold uppercase mt-1 text-emerald-600">(valid)</span>
+                        <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(fe)}</span>
+                        <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(fe).toLowerCase()})</span>
                       </div>
                       {/* Manganese */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
                         <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Manganese (Mn)</span>
-                        <span className="text-base font-black text-gray-950 mt-1.5">{mn && mn.value !== null ? `${mn.value} ${mn.unit || 'mg/kg'}` : '3.8 mg/kg'}</span>
-                        <span className="text-[8px] font-extrabold uppercase mt-1 text-emerald-600">(valid)</span>
+                        <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(mn)}</span>
+                        <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(mn).toLowerCase()})</span>
                       </div>
                       {/* Copper */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
                         <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Copper (Cu)</span>
-                        <span className="text-base font-black text-gray-950 mt-1.5">{cu && cu.value !== null ? `${cu.value} ${cu.unit || 'mg/kg'}` : '1.1 mg/kg'}</span>
-                        <span className="text-[8px] font-extrabold uppercase mt-1 text-emerald-600">(valid)</span>
+                        <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(cu)}</span>
+                        <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(cu).toLowerCase()})</span>
                       </div>
                     </div>
                   </div>
@@ -1016,124 +957,15 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 {/* RIGHT COLUMN: AI Treatment Advice & Quick Actions (4/12 width) */}
                 <div className="lg:col-span-4 flex flex-col gap-4">
                   
-                  {/* Card 1: Soil Macronutrient Advice */}
-                  <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
-                    <div className="border-b border-gray-100 pb-3">
-                      <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-                        <Sparkles className="w-4.5 h-4.5 text-primary" /> {t('soilreportscreen.soil_treatment_advice')}
-                      </h4>
-                      <p className="text-[10px] text-gray-450 mt-1">{t('soilreportscreen.recommended_chemical_corrections')}</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Nitrogen Advice */}
-                      <div className="space-y-2 border-b border-gray-50 pb-3">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-extrabold text-gray-800">{t('soilreportscreen.nitrogen_correction')}</span>
-                          {(activeDisplayReport.nitrogen_kg_ha ?? activeDisplayReport.nitrogen ?? 300) < 250 ? (
-                            <span className="text-[10px] font-bold text-amber-600">{t('soilreportscreen.priority_medium')}</span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-emerald-600">OPTIMAL</span>
-                          )}
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                          <p className="font-bold text-gray-900">
-                            {(activeDisplayReport.nitrogen_kg_ha ?? activeDisplayReport.nitrogen ?? 300) < 250 ? t('soilreportscreen.apply_urea') : "Optimal Nitrogen"}
-                          </p>
-                          <p className="text-[10px] text-gray-500 leading-normal">
-                            {(activeDisplayReport.nitrogen_kg_ha ?? activeDisplayReport.nitrogen ?? 300) < 250 ? (
-                              <>
-                                <strong>{t('soilreportscreen.quantity')}</strong> {t('soilreportscreen.1_5_kg_palm_tree')}<br/>
-                                <strong>{t('soilreportscreen.reason')}</strong> {t('soilreportscreen.compensates_for_slight_nitrogen_depletio')}
-                              </>
-                            ) : (
-                              "Nitrogen is within the optimal range for the active crop cycle."
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Potassium Advice */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-extrabold text-gray-800">{t('soilreportscreen.potassium_correction')}</span>
-                          {(activeDisplayReport.potassium_kg_ha ?? activeDisplayReport.potassium ?? 300) < 200 ? (
-                            <span className="text-[10px] font-bold text-rose-600 animate-pulse">{t('soilreportscreen.priority_critical')}</span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-emerald-600">OPTIMAL</span>
-                          )}
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                          <p className="font-bold text-gray-900">
-                            {(activeDisplayReport.potassium_kg_ha ?? activeDisplayReport.potassium ?? 300) < 200 ? t('soilreportscreen.apply_muriate_of_potash_mop') : "Optimal Potassium"}
-                          </p>
-                          <p className="text-[10px] text-gray-500 leading-normal">
-                            {(activeDisplayReport.potassium_kg_ha ?? activeDisplayReport.potassium ?? 300) < 200 ? (
-                              <>
-                                <strong>{t('soilreportscreen.quantity')}</strong> {t('soilreportscreen.2_2_kg_palm_tree')}<br/>
-                                <strong>{t('soilreportscreen.reason')}</strong> {t('soilreportscreen.extreme_deficit_identified_vital_to_prev')}
-                              </>
-                            ) : (
-                              "Potassium levels are sufficient. Maintain standard slow-release schedule."
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 2: Micronutrient Treatment Advice */}
-                  <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-5">
-                    <div className="border-b border-gray-100 pb-3">
-                      <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
-                        <Activity className="w-4.5 h-4.5 text-emerald-600" /> Micronutrient Treatment Advice
-                      </h4>
-                      <p className="text-[10px] text-gray-450 mt-1">Trace element calibration & foliar recommendations</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Boron Advice */}
-                      <div className="space-y-2 border-b border-gray-50 pb-3">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-extrabold text-gray-800">Boron (B) Calibration</span>
-                          {(b?.value ?? 0.75) < 0.5 ? (
-                            <span className="text-[10px] font-bold text-rose-600 animate-pulse">HIGH PRIORITY</span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-emerald-600">BALANCED</span>
-                          )}
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                          <p className="font-bold text-gray-900">
-                            {(b?.value ?? 0.75) < 0.5 ? "Apply Borax / Disodium Octaborate" : "Optimal Boron Levels"}
-                          </p>
-                          <p className="text-[10px] text-gray-500 leading-normal">
-                            <strong>Dosage:</strong> 50 g / palm tree applied to soil ring basin.<br/>
-                            <strong>Impact:</strong> Prevents hook leaves, stabilizes bunch formation, and improves fruit set.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Zinc & Sulphur Advice */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-extrabold text-gray-800">Zinc (Zn) & Sulphur (S)</span>
-                          {(zn?.value ?? 0.85) < 0.6 ? (
-                            <span className="text-[10px] font-bold text-amber-600">MODERATE</span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-emerald-600">OPTIMAL</span>
-                          )}
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-2xl space-y-1 text-xs">
-                          <p className="font-bold text-gray-900">
-                            {(zn?.value ?? 0.85) < 0.6 ? "Chelated Zinc (Zn-EDTA) + Sulphur" : "Trace Minerals Balanced"}
-                          </p>
-                          <p className="text-[10px] text-gray-500 leading-normal">
-                            <strong>Dosage:</strong> 100 g Zinc Sulphate + 250 g Bentonite Sulphur / tree.<br/>
-                            <strong>Impact:</strong> Catalyzes enzyme synthesis and restores active chlorophyll formulation.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Treatment advice comes only from the backend recommendation engine */}
+                  <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-3">
+                    <h4 className="text-xs font-black text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
+                      <Sparkles className="w-4.5 h-4.5 text-primary" /> {t('soilreportscreen.soil_treatment_advice')}
+                    </h4>
+                    <p className="text-xs font-semibold text-gray-600 leading-relaxed">
+                      Fertilizer doses and costs are calculated by the NutriPalm recommendation engine from this saved
+                      report. Open the Recommendations screen to generate and save them.
+                    </p>
                   </div>
 
                   {/* Actions (Directly below the Micronutrient advice box) */}
@@ -1146,13 +978,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       {t('soilreportscreen.generate_ai_recommendation')}
                     </button>
 
-                    <button
-                      onClick={() => triggerToast("Compiling complete laboratory diagnostic PDF...", "info")}
-                      className="w-full bg-white hover:bg-gray-50 border border-gray-250 text-gray-800 font-extrabold py-3.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Download className="w-4 h-4 text-primary" />
-                      {t('soilreportscreen.download_soil_analysis_report')}
-                    </button>
                   </div>
 
                 </div>
@@ -1167,7 +992,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     Agronomic Crop Deficiency & Benchmark Calibration
                   </h3>
                   <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                    AI Evaluated
+                    Reference ranges (V1 defaults)
                   </span>
                 </div>
 

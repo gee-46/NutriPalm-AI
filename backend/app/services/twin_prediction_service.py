@@ -19,19 +19,19 @@ class TwinPredictionService:
         now_ist = now_utc.replace(tzinfo=pytz.utc).astimezone(self.ist_tz)
         target_date = now_ist
         
-        # We exclude synthetic data by default from real predictions unless we are in testing.
-        # But for Phase 3 testing as per blueprint, we'll fetch them. We should filter `is_synthetic = false` for production.
-        # Blueprint: "Synthetic backfilled rows (is_synthetic = true) used for this phase's testing are excluded from any real prediction query by default"
-        
-        # Real production query (filter is_synthetic=false)
-        # Note: we might need a flag to allow synthetic for test mode, but standard predict should exclude it.
-        resp = self.client.table("digital_twins") \
-            .select("ndvi, analysis_date") \
-            .eq("plot_id", str(plot_id)) \
-            .order("analysis_date", desc=True) \
-            .limit(30) \
+        # Synthetic backfilled rows (is_synthetic = true) exist only for offline
+        # testing and must never feed a real prediction. Rows where the flag is
+        # NULL pre-date the column and are treated as real.
+        resp = (
+            self.client.table("digital_twins")
+            .select("ndvi, analysis_date")
+            .eq("plot_id", str(plot_id))
+            .or_("is_synthetic.is.null,is_synthetic.eq.false")
+            .order("analysis_date", desc=True)
+            .limit(30)
             .execute()
-            
+        )
+
         snapshots = getattr(resp, "data", [])
         
         if len(snapshots) < 3:

@@ -119,7 +119,7 @@ def test_upload_with_missing_required_fields_does_not_persist(client):
 
 
 def test_upload_never_fabricates_data_on_ocr_failure(client):
-    files = {"file": ("garbage.pdf", b"not a real pdf", "application/pdf")}
+    files = {"file": ("garbage.pdf", b"%PDF-1.4 not a real pdf body", "application/pdf")}
     response = client.post(
         "/api/soil-reports/upload",
         data={"plot_id": PLOT_ID},
@@ -139,3 +139,61 @@ def test_upload_never_fabricates_data_on_ocr_failure(client):
         "organic_carbon",
     ):
         assert body[key]["value"] is None
+
+
+def test_upload_rejects_content_that_does_not_match_declared_type(client):
+    """A text file renamed/declared as a PDF must be refused up front."""
+    files = {"file": ("report.pdf", b"not a real pdf", "application/pdf")}
+    response = client.post(
+        "/api/soil-reports/upload",
+        data={"plot_id": PLOT_ID},
+        files=files,
+    )
+    assert response.status_code == 415
+
+
+def test_upload_rejects_oversized_file(client, monkeypatch):
+    from app.routers import soil_reports
+
+    monkeypatch.setattr(soil_reports, "MAX_UPLOAD_BYTES", 1024)
+    files = {"file": ("big.pdf", b"%PDF-" + b"0" * 4096, "application/pdf")}
+    response = client.post(
+        "/api/soil-reports/upload",
+        data={"plot_id": PLOT_ID},
+        files=files,
+    )
+    assert response.status_code == 413
+
+
+def test_upload_to_another_users_plot_is_not_found(client):
+    """Plot owned by someone else must look identical to a missing plot."""
+    from app.dependencies import AuthenticatedUser, get_current_user
+    from app.main import app
+
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        user_id="a-different-user"
+    )
+    files = {"file": ("report.pdf", text_layer_pdf_bytes(), "application/pdf")}
+    response = client.post(
+        "/api/soil-reports/upload",
+        data={"plot_id": PLOT_ID},
+        files=files,
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Plot not found."
+
+
+def test_upload_persists_only_explicit_micronutrients(client, fake_soil_report_writer):
+    files = {"file": ("report.pdf", text_layer_pdf_bytes(), "application/pdf")}
+    response = client.post(
+        "/api/soil-reports/upload",
+        data={"plot_id": PLOT_ID},
+        files=files,
+    )
+    assert response.status_code == 200
+    assert response.json()["persisted"] is True
+    row = next(iter(fake_soil_report_writer.rows.values()))
+    stored = row["micronutrients"]
+    # Nothing is invented: only entries with a real extracted value are kept.
+    assert stored is None or all(v["value"] is not None for v in stored.values())
+    assert row["owner_id"] == "test-owner-1"

@@ -149,7 +149,6 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [lastUploadedReport, setLastUploadedReport] = useState<any>(null);
   const [recommendationPlotId, setRecommendationPlotId] = useState<string>("");
 
   useEffect(() => {
@@ -417,26 +416,17 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   };
 
   const handleSoilReportUploaded = useCallback((data: any) => {
-    if (data) {
-      setLastUploadedReport(data);
-    }
-    // Add a notification
+    // Only announce a saved report; unsaved/low-confidence results are shown on the Soil Reports screen.
+    if (!data?.persisted) return;
     setNotifications((prev) => [
-      { id: Date.now(), text: "New laboratory soil report successfully scanned.", read: false },
+      { id: Date.now(), text: "New laboratory soil report saved.", read: false },
       ...prev
     ]);
-    showToast("Soil report PDF uploaded & chemical levels extracted.", "success");
-  }, [showToast]);
+  }, []);
 
-  const handleRecommendationNavigate = useCallback((plotId?: string, reportData?: any) => {
+  const handleRecommendationNavigate = useCallback((plotId?: string) => {
     if (plotId) {
       setRecommendationPlotId(plotId);
-    }
-    if (reportData) {
-      setLastUploadedReport(reportData);
-      try {
-        localStorage.setItem("nutripalm:lastUploadedReport", JSON.stringify(reportData));
-      } catch {}
     }
     changeScreen("Recommendations");
   }, [changeScreen]);
@@ -528,12 +518,6 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           <RecommendationScreen
             selectedPlotId={recommendationPlotId}
             onPlotChange={(plotId) => setRecommendationPlotId(plotId)}
-            lastUploadedReport={lastUploadedReport}
-            onClearReport={() => {
-              setLastUploadedReport(null);
-              localStorage.removeItem("nutripalm:lastUploadedReport");
-              localStorage.removeItem("nutripalm:lastRecommendation");
-            }}
             showToast={showToast}
             farmerName={displayName}
             onNavigate={changeScreen}

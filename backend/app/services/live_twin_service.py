@@ -324,7 +324,7 @@ class LiveTwinService:
             return None
 
         lat, lon = plot.get("latitude"), plot.get("longitude")
-        if not lat or not lon:
+        if lat is None or lon is None:
             log.error("Plot %s has no GPS coordinates", plot_id)
             return None
 
@@ -336,9 +336,14 @@ class LiveTwinService:
         cur = weather["current"]
         daily = weather["daily_7d"]
 
-        temp = cur.get("temperature_c") or 30.0
-        humidity = cur.get("humidity_pct") or 70.0
-        wind = cur.get("wind_kph") or 10.0
+        # Never substitute made-up weather: if the provider omitted a value
+        # the scores cannot be computed honestly, so report "unavailable".
+        temp = cur.get("temperature_c")
+        humidity = cur.get("humidity_pct")
+        wind = cur.get("wind_kph")
+        if temp is None or humidity is None or wind is None:
+            log.error("Open-Meteo returned incomplete current weather for plot %s", plot_id)
+            return None
         rainfall_7d = sum(d["rainfall_mm"] for d in daily if d.get("rainfall_mm"))
 
         # 3. Get last known NDVI
@@ -409,3 +414,10 @@ class LiveTwinService:
 
 def get_live_twin_service(supabase_client) -> LiveTwinService:
     return LiveTwinService(supabase_client)
+
+
+def get_live_twin_service_dependency() -> LiveTwinService:
+    """FastAPI dependency (overridable in tests) that builds the service."""
+    from app.database import get_supabase_client
+
+    return LiveTwinService(get_supabase_client())

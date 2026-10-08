@@ -47,6 +47,66 @@ ALLOWED_CONTENT_TYPES = {
     "image/jpg",
 }
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20 MB
+_READ_CHUNK_BYTES = 1024 * 1024
+
+# Leading bytes each allowed type must actually start with. The client-supplied
+# Content-Type header is untrusted, so the real content is checked as well.
+_MAGIC_BY_CONTENT_TYPE = {
+    "application/pdf": (b"%PDF-",),
+    "image/png": (b"\x89PNG\r\n\x1a\n",),
+    "image/jpeg": (b"\xff\xd8\xff",),
+    "image/jpg": (b"\xff\xd8\xff",),
+}
+
+
+async def _read_limited(file: UploadFile) -> bytes:
+    """Read the upload in chunks, aborting as soon as the size limit is hit."""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(_READ_CHUNK_BYTES)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _micronutrients_for_storage(fields) -> dict | None:
+    """Only micronutrients the report explicitly states are stored."""
+    stored = {
+        f.parameter: {
+            "value": f.value,
+            "unit": f.unit,
+            "validation": f.validation,
+        }
+        for f in fields
+        if f.value is not None
+    }
+    return stored or None
+
+
+def _validation_summary(params) -> dict:
+    return {
+        key: {
+            "validation": getattr(params, key).validation,
+            "confidence": getattr(params, key).confidence,
+            "warnings": getattr(params, key).warnings,
+        }
+        for key in (
+            "nitrogen",
+            "phosphorus",
+            "potassium",
+            "organic_carbon",
+            "ph",
+            "electrical_conductivity",
+        )
+    }
 
 
 @router.post(
@@ -96,7 +156,7 @@ async def upload_soil_report(
             ),
         )
 
-    content = await file.read()
+    content = await _read_limited(file)
 
     if not content:
         raise HTTPException(
@@ -104,10 +164,10 @@ async def upload_soil_report(
             detail="Uploaded file is empty.",
         )
 
-    if len(content) > MAX_UPLOAD_BYTES:
+    if not content.startswith(_MAGIC_BY_CONTENT_TYPE[file.content_type]):
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="File content does not match its declared type.",
         )
 
     # ---------------------------------------------------------
@@ -135,6 +195,7 @@ async def upload_soil_report(
 
     soil_report_id: str | None = None
     persisted = False
+    persist_failed = False
 
     if result.ready_for_persistence:
         params = result.soil_parameters
@@ -148,11 +209,9 @@ async def upload_soil_report(
                 potassium_kg_ha=params.potassium.value,
                 organic_carbon_percent=params.organic_carbon.value,
                 ph=params.ph.value,
-                electrical_conductivity=(
-                    params.electrical_conductivity.value
-                    if params.electrical_conductivity.value is not None
-                    else None
-                ),
+                electrical_conductivity=params.electrical_conductivity.value,
+                micronutrients=_micronutrients_for_storage(params.micronutrients),
+                validation_summary=_validation_summary(params),
             )
             soil_report_id = row.get("id")
             persisted = True
@@ -160,9 +219,10 @@ async def upload_soil_report(
                 "soil_report.created",
                 extra={"owner_id": current_user.user_id, "plot_id": plot_id},
             )
-        except Exception as exc:
-            logger.warning("Failed to persist soil report in DB: %s", exc)
+        except Exception:
+            logger.exception("Failed to persist soil report in DB")
             persisted = False
+            persist_failed = True
 
     return SoilReportUploadResponse(
         success=True,
@@ -178,17 +238,19 @@ async def upload_soil_report(
         organic_carbon=result.soil_parameters.organic_carbon,
         extras=result.soil_parameters.extras,
         micronutrients=result.soil_parameters.micronutrients,
-        warnings=(
-            result.errors
-            if persisted
-            else result.errors
-            + (
-                []
-                if persisted
-                else [
-                    "One or more required fields could not be confidently "
-                    "extracted. Review the values below before saving."
-                ]
-            )
-        ),
+        warnings=list(result.errors) + _persistence_warnings(persisted, persist_failed),
     )
+
+
+def _persistence_warnings(persisted: bool, persist_failed: bool) -> list[str]:
+    if persisted:
+        return []
+    if persist_failed:
+        return [
+            "The values were extracted but could not be saved because of a "
+            "server error. Please try uploading again."
+        ]
+    return [
+        "One or more required fields could not be confidently extracted. "
+        "Review the values below before saving."
+    ]

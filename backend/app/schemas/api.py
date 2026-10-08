@@ -45,7 +45,7 @@ class SoilReportUploadResponse(BaseModel):
     extras: list[ExtractedField] = Field(default_factory=list)
     micronutrients: list[ExtractedField] = Field(
         default_factory=list,
-        description="Zn, Fe, Mn, Cu, B, and S (when explicitly reported). Not yet persisted to soil_reports -- see known limitations.",
+        description="Zn, Fe, Mn, Cu, B, and S (when explicitly reported). Persisted to soil_reports.micronutrients (only the ones actually reported) when the report is saved.",
     )
     warnings: list[str] = Field(default_factory=list)
 
