@@ -13,13 +13,13 @@
 // asserted to degrade gracefully. Device GPS is emulated by the browser's geolocation override.
 
 import { spawn, execSync } from "node:child_process";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startStack } from "../e2e-stack/stack.mjs";
-import { newSession, register, login, waitForConsole, goto, shot, createFarmerUI, surveyAndCreatePlot, KHAMMAM } from "./lib.mjs";
+import { newSession, register, waitForConsole, goto, shot, createFarmerUI, surveyAndCreatePlot, KHAMMAM } from "./lib.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..", "..", "..");
@@ -147,7 +147,6 @@ try {
   const afterReload = await page.locator("body").innerText();
   check("A-reload", "session persisted across a full page reload", /Alice Farmer/.test(afterReload));
   check("A-reload", "same plot is listed after reload", /Plot Alpha/.test(afterReload));
-  const m = afterReload.match(/(\d+\.\d{2}) Acres/g) || [];
   check("A-reload", "area displayed after reload matches the stored area (2 dp)", afterReload.includes(Number(plotA.area).toFixed(2)), Number(plotA.area).toFixed(2));
   await page.screenshot({ path: path.join(shots, "A-03-after-reload.png"), fullPage: true });
   await noFake(page, "A-plot", "farm plots screen");
@@ -168,7 +167,10 @@ try {
   let soilText = await page.locator("main").innerText();
   const partialRows = await dbGet("soil_reports");
   check("A-soil", "incomplete report is NOT persisted", partialRows.length === 0, JSON.stringify(partialRows));
-  check("A-soil", "missing values (K, pH, OC) are shown as missing, not invented", /Not Found|N\/A|missing/i.test(soilText) && !/\b(280|175|6\.5)\b.*kg\/ha/.test(soilText));
+  // Each parameter that is absent from the report must read "Not Found"/"N/A" in its OWN row. (A bare
+  // number search is unreliable: the benchmark card legitimately prints reference targets such as 280 kg/ha.)
+  check("A-soil", "missing K, OC and pH each show as missing in their own row (not invented)", /Potassium \(K\)\s+Not Found/i.test(soilText) && /Organic Carbon \(C\)\s+Not Found/i.test(soilText) && /Acidity pH\s+N\/A/i.test(soilText), soilText.slice(0, 1200));
+  check("A-soil", "the values that ARE on the report (N=245, P=22) are shown", /Nitrogen \(N\)\s+245 kg\/ha/i.test(soilText) && /Phosphorus \(P\)\s+22 kg\/ha/i.test(soilText), soilText.slice(0, 600));
   check("A-soil", "user is told the report was not saved", /not saved|Not Saved|could not be confidently|Low Confidence/i.test(soilText), soilText.slice(0, 200));
   await page.locator("input[type=file]").setInputFiles(path.join(files, "soil_full.pdf")).catch(async () => {
     await page.getByRole("button", { name: /Re-upload|Update Report/ }).first().click();
@@ -184,7 +186,6 @@ try {
   await page.screenshot({ path: path.join(shots, "A-04-soil.png"), fullPage: true });
 
   // ---- recommendations: must come from the backend
-  const reqBefore = events.requests.length;
   await goto(page, "Recommendations");
   await page.waitForTimeout(2000);
   const genBtn = page.getByRole("button", { name: /Generate New Recommendation|Generate/i }).first();
@@ -305,7 +306,6 @@ try {
   const attacks = await pb.evaluate(async ({ api, rest, ids }) => {
     const key = Object.keys(localStorage).find((k) => /sb-.*auth-token/.test(k));
     const tok = JSON.parse(localStorage.getItem(key)).access_token;
-    const anon = new URLSearchParams(location.search); // unused, keeps lint quiet
     const h = { Authorization: `Bearer ${tok}` };
     const jget = async (u, opt = {}) => { const { headers: extra = {}, ...rest } = opt; const r = await fetch(u, { ...rest, headers: { ...h, ...extra } }); let b = null; try { b = await r.json(); } catch {} return { status: r.status, body: b }; };
     const out = {};

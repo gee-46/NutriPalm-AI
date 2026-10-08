@@ -43,7 +43,6 @@ async function asRole(role, uid, fn) {
 }
 const asUser = (uid, fn) => asRole("authenticated", uid, fn);
 const asService = (fn) => asRole("service_role", null, fn);
-const asAnon = (fn) => asRole("anon", null, fn);
 
 async function attempt(role, uid, query, params = []) {
   try {

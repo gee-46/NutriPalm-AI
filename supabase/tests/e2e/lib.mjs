@@ -27,13 +27,6 @@ export async function openAuth(page) {
   await page.waitForSelector("input[type=password]", { timeout: 45000 });
 }
 
-export async function signUp(page, { name, email, password }) {
-  await openAuth(page);
-  await page.getByRole("button", { name: "Sign Up", exact: true }).click();
-  await page.waitForTimeout(600);
-  return page.locator("input").evaluateAll((els) => els.map((e) => `${e.type}|${e.name}|${e.placeholder}`));
-}
-
 export async function register(page, { name, email, password }) {
   await openAuth(page);
   await page.getByRole("button", { name: "Sign Up", exact: true }).click();
@@ -59,7 +52,9 @@ export async function waitForConsole(page) {
 }
 
 export async function goto(page, screen) {
-  await page.locator("aside button", { hasText: new RegExp(`^\s*${screen}\s*$`) }).first().click();
+  // exact (whitespace-tolerant) label match, so "Farm Plots" never matches "Farm"
+  const label = new RegExp("^\\s*" + screen.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$");
+  await page.locator("aside button", { hasText: label }).first().click();
   await page.waitForTimeout(1800);
 }
 export const shot = (page, name) => page.screenshot({ path: `${process.env.TEMP}/shots/${name}.png`, fullPage: true });

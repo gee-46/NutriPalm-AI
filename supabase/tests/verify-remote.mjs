@@ -16,7 +16,7 @@
 // this script's throwaway users (so it cannot be pointed at a project with real data).
 
 import { createClient } from "@supabase/supabase-js";
-import { randomUUID, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 const need = ["SCRATCH_SUPABASE_URL", "SCRATCH_SUPABASE_ANON_KEY", "SCRATCH_SUPABASE_SERVICE_ROLE_KEY"];
 const missing = need.filter((k) => !process.env[k]);
