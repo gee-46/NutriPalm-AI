@@ -4,7 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Layers, MapPin, Sprout, ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
 
 interface AddFarmerScreenProps {
-  onSave: (farmer: any) => void;
+  onSave: (farmer: {
+    name: string;
+    village: string;
+    district: string;
+    contact: string;
+    email: string;
+    crop: string;
+    area: number;
+  }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -12,6 +20,8 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
     const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -46,17 +56,35 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
     if (step > 1) setStep(step - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      name: formData.name || "Unnamed Farmer",
-      village: formData.village || "Unknown Village",
-      contact: formData.contact || "+91 99999 99999",
-      crop: formData.crop,
-      area: parseFloat(formData.area) || 5.0,
-      yield: "Pending Scan"
-    });
-    setIsSaved(true);
+    const area = parseFloat(formData.area);
+    if (!formData.name.trim() || !formData.village.trim() || !formData.contact.trim()) {
+      setSubmitError("Name, village and contact number are required.");
+      return;
+    }
+    if (!Number.isFinite(area) || area <= 0) {
+      setSubmitError("Enter the farm area in acres.");
+      return;
+    }
+    setSubmitError(null);
+    setIsSaving(true);
+    try {
+      await onSave({
+        name: formData.name,
+        village: formData.village,
+        district: formData.district,
+        contact: formData.contact,
+        email: formData.email,
+        crop: formData.crop,
+        area,
+      });
+      setIsSaved(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Could not save the farmer.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const stepsInfo = [
@@ -172,6 +200,11 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
 
       {/* Wizard Content Form Panel */}
       <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-gray-150 shadow-xs overflow-hidden">
+        {submitError && (
+          <div role="alert" className="m-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-800">
+            {submitError}
+          </div>
+        )}
         <div className="p-6 md:p-8 min-h-[280px] relative">
           <AnimatePresence mode="wait" custom={dir}>
             {step === 1 && (
@@ -462,7 +495,8 @@ export const AddFarmerScreen: React.FC<AddFarmerScreenProps> = ({ onSave, onCanc
           ) : (
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-[#235F26] px-6 py-2.5 rounded-lg active:scale-95 shadow-md shadow-primary/10 transition-all cursor-pointer"
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-[#235F26] disabled:opacity-60 px-6 py-2.5 rounded-lg active:scale-95 shadow-md shadow-primary/10 transition-all cursor-pointer"
             >
               <Save className="w-3.5 h-3.5" />  {t('addfarmerscreen.save_farmer_profile')}
                                           </button>

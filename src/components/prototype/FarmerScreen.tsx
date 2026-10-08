@@ -17,12 +17,12 @@ export interface Farmer {
   crop: string;
   area: number; // in acres
   joinDate: string;
-  yield: string;
-  soilHealth: number; // score 0-100
-  lastInspection: string;
+  yield: string | null;
+  soilHealth: number | null; // score 0-100, null when no data
+  lastInspection: string | null;
   status: "Active" | "Monitoring" | "Attention" | "Inactive";
-  digitalTwin: "Online" | "Synced" | "Offline" | "Warning";
-  lastRecommendation: string;
+  digitalTwin: "Online" | "Synced" | "Offline" | "Warning" | null;
+  lastRecommendation: string | null;
 }
 
 // Premium Animated Counter Component
@@ -62,16 +62,29 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: num
   );
 };
 
+export interface NewFarmerPayload {
+  name: string;
+  village: string;
+  district: string;
+  contact: string;
+  email: string;
+  crop: string;
+  area: number;
+}
+
 interface FarmerScreenProps {
   farmers: Farmer[];
-  setFarmers?: React.Dispatch<React.SetStateAction<Farmer[]>>;
+  /** Persists a farmer for the signed-in user. Undefined when not signed in (demo data). */
+  onCreateFarmer?: (input: NewFarmerPayload) => Promise<void>;
+  onDeleteFarmer?: (id: string) => Promise<void>;
   onNavigate?: (screen: string) => void;
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
 }
 
 export const FarmerScreen: React.FC<FarmerScreenProps> = ({
   farmers,
-  setFarmers,
+  onCreateFarmer,
+  onDeleteFarmer,
   onNavigate,
   showToast
 }) => {
@@ -129,47 +142,53 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
   };
 
   // Add Farmer Action
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFarmerData.name || !newFarmerData.phone || !newFarmerData.village) {
+    const area = parseFloat(newFarmerData.farmSize);
+    if (!newFarmerData.name.trim() || !newFarmerData.phone.trim() || !newFarmerData.village.trim()) {
       triggerToast("Validation Failed: Please fill all required fields.", "warning");
       return;
     }
-
-    if (setFarmers) {
-      const added: Farmer = {
-        id: `F-0${farmers.length + 1}`,
+    if (!Number.isFinite(area) || area <= 0) {
+      triggerToast("Validation Failed: Enter the farm size in acres.", "warning");
+      return;
+    }
+    if (!onCreateFarmer) {
+      triggerToast("Sign in to save farmer profiles.", "warning");
+      return;
+    }
+    try {
+      await onCreateFarmer({
         name: newFarmerData.name,
         village: newFarmerData.village,
         district: newFarmerData.district,
         contact: newFarmerData.phone,
-        email: newFarmerData.email || "demo.farmer@samruddhi.org",
+        email: newFarmerData.email,
         crop: newFarmerData.crop,
-        area: parseFloat(newFarmerData.farmSize) || 5.0,
-        joinDate: "July 2026",
-        yield: "Pending Scan",
-        soilHealth: 75,
-        lastInspection: "Just registered",
-        status: "Active",
-        digitalTwin: "Online",
-        lastRecommendation: "Initial scan queued"
-      };
-
-      setFarmers(prev => [added, ...prev]);
+        area,
+      });
       triggerToast(`Farmer "${newFarmerData.name}" registered successfully.`, "success");
       setAddStep(3); // success view
+    } catch (err) {
+      triggerToast(err instanceof Error ? err.message : "Could not save the farmer.", "warning");
     }
   };
 
   // Delete Action
-  const handleDelete = (id: string, name: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (setFarmers) {
-      setFarmers(prev => prev.filter(f => f.id !== id));
-      triggerToast(`Farmer profile "${name}" deleted (Demo Sandbox mode).`, "warning");
+    if (!onDeleteFarmer) {
+      triggerToast("Sign in to manage farmer profiles.", "warning");
+      return;
+    }
+    try {
+      await onDeleteFarmer(id);
+      triggerToast(`Farmer profile "${name}" deleted.`, "success");
       if (selectedFarmer?.id === id) {
         setSelectedFarmer(null);
       }
+    } catch (err) {
+      triggerToast(err instanceof Error ? err.message : "Could not delete the farmer.", "warning");
     }
   };
 
@@ -199,7 +218,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
       } else if (sortBy === "Farm Area") {
         return b.area - a.area;
       } else if (sortBy === "Latest Activity") {
-        return a.lastInspection.localeCompare(b.lastInspection);
+        return (a.lastInspection ?? "").localeCompare(b.lastInspection ?? "");
       }
       // "Recently Added" - default descending ID order
       return b.id.localeCompare(a.id);
@@ -212,7 +231,8 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
   // Derived summaries for cards
   const totalArea = farmers.reduce((sum, f) => sum + f.area, 0);
   const avgArea = farmers.length ? totalArea / farmers.length : 0;
-  const avgSoil = farmers.length ? farmers.reduce((sum, f) => sum + f.soilHealth, 0) / farmers.length : 0;
+  const scored = farmers.filter((f): f is Farmer & { soilHealth: number } => f.soilHealth !== null);
+  const avgSoil = scored.length ? scored.reduce((sum, f) => sum + f.soilHealth, 0) / scored.length : 0;
   const activeCount = farmers.filter(f => f.status === "Active").length;
   const monitoringCount = farmers.filter(f => f.status === "Monitoring").length;
 
@@ -564,21 +584,25 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
 
                           {/* Soil Health Score index */}
                           <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0">
-                                <div 
-                                  className={`h-full ${
-                                    farmer.soilHealth >= 80 ? "bg-primary" : farmer.soilHealth >= 60 ? "bg-amber-500" : "bg-red-500"
-                                  }`}
-                                  style={{ width: `${farmer.soilHealth}%` }}
-                                />
+                            {farmer.soilHealth === null ? (
+                              <span className="text-gray-400 font-semibold">No data</span>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0">
+                                  <div
+                                    className={`h-full ${
+                                      farmer.soilHealth >= 80 ? "bg-primary" : farmer.soilHealth >= 60 ? "bg-amber-500" : "bg-red-500"
+                                    }`}
+                                    style={{ width: `${farmer.soilHealth}%` }}
+                                  />
+                                </div>
+                                <span className="font-black text-gray-850">{farmer.soilHealth}%</span>
                               </div>
-                              <span className="font-black text-gray-850">{farmer.soilHealth}%</span>
-                            </div>
+                            )}
                           </td>
 
                           {/* Last Inspection */}
-                          <td className="p-4 text-gray-500 font-medium">{farmer.lastInspection}</td>
+                          <td className="p-4 text-gray-500 font-medium">{farmer.lastInspection ?? "—"}</td>
 
                           {/* Status */}
                           <td className="p-4">{statusBadge}</td>
@@ -825,19 +849,18 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                   </div>
                   <div className="flex items-center justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-400 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />  {t('farmerscreen.recent_soil_score')}</span>
-                    <span className="text-gray-800 font-bold">{selectedFarmer.soilHealth}%</span>
+                    <span className="text-gray-800 font-bold">{selectedFarmer.soilHealth !== null ? `${selectedFarmer.soilHealth}%` : "No data"}</span>
                   </div>
                   <div className="flex items-center justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-400 flex items-center gap-1.5"><Cpu className="w-3.5 h-3.5" />  {t('farmerscreen.digital_twin_status')}</span>
-                    <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      {selectedFarmer.digitalTwin}
+                    <span className="text-gray-700 font-bold flex items-center gap-1">
+                      {selectedFarmer.digitalTwin ?? "No data"}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1.5 pt-2">
                     <span className="text-gray-400 flex items-center gap-1.5"><FlaskConical className="w-3.5 h-3.5" />  {t('farmerscreen.last_ai_recommendation')}</span>
                     <p className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl text-gray-700 leading-normal font-medium">
-                      {selectedFarmer.lastRecommendation}
+                      {selectedFarmer.lastRecommendation ?? "No recommendation yet"}
                     </p>
                   </div>
                 </div>

@@ -39,6 +39,8 @@ import {
 import { LanguageToggle } from "../translation/LanguageToggle";
 import { useTranslation } from "../translation/useTranslation";
 import { usePlots } from "../data/plots";
+import { fetchFarmers, createFarmer, deleteFarmer } from "../data/farmers";
+import type { NewFarmerInput } from "../data/farmers";
 
 interface PrototypeAppProps {
   onBackToLanding: () => void;
@@ -236,15 +238,21 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     soilHealthScore: 0
   });
 
-  // Sync farmers list between demo data (when logged out) and user data (when logged in)
+  // Signed in: the user's own farmers from the database. Signed out: clearly-labelled sample data.
   useEffect(() => {
+    let cancelled = false;
     if (currentUser) {
-      try {
-        const cached = localStorage.getItem(`nutripalm:farmers:${currentUser.id}`);
-        setFarmers(cached ? JSON.parse(cached) : []);
-      } catch {
-        setFarmers([]);
-      }
+      fetchFarmers(currentUser.id)
+        .then((rows) => {
+          if (!cancelled) setFarmers(rows);
+        })
+        .catch((err) => {
+          console.error("Failed to load farmers:", err);
+          if (!cancelled) {
+            setFarmers([]);
+            showToast("Could not load your farmers. Please retry.", "warning");
+          }
+        });
     } else {
       setFarmers([
         {
@@ -317,6 +325,10 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         }
       ]);
     }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   // Fetch live stats from database tables for the logged-in user
@@ -395,24 +407,17 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     soilHealthScore: 78
   };
 
-  // Add a farmer handler
-  const handleAddFarmer = (newFarmer: Omit<Farmer, "id" | "joinDate">) => {
-    const formatted: Farmer = {
-      ...newFarmer,
-      id: `F-0${farmers.length + 1}`,
-      joinDate: "July 2026",
-      yield: "Pending Scan"
-    };
-    setFarmers((prev) => {
-      const updated = [formatted, ...prev];
-      if (currentUser) {
-        try {
-          localStorage.setItem(`nutripalm:farmers:${currentUser.id}`, JSON.stringify(updated));
-        } catch {}
-      }
-      return updated;
-    });
-    showToast(`Farmer "${formatted.name}" registered successfully.`, "success");
+  // Add a farmer (persisted to Supabase for the signed-in user)
+  const handleAddFarmer = async (input: NewFarmerInput) => {
+    if (!currentUser) throw new Error("Sign in to save farmer profiles.");
+    const created = await createFarmer(currentUser.id, input);
+    setFarmers((prev) => [created, ...prev]);
+    showToast(`Farmer "${created.name}" registered successfully.`, "success");
+  };
+
+  const handleDeleteFarmer = async (id: string) => {
+    await deleteFarmer(id);
+    setFarmers((prev) => prev.filter((f) => f.id !== id));
   };
 
   const handleSoilReportUploaded = useCallback((data: any) => {
@@ -477,7 +482,8 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         return (
           <FarmerScreen
             farmers={farmers}
-            setFarmers={setFarmers}
+            onCreateFarmer={currentUser ? handleAddFarmer : undefined}
+            onDeleteFarmer={currentUser ? handleDeleteFarmer : undefined}
             onNavigate={changeScreen}
             showToast={showToast}
           />
