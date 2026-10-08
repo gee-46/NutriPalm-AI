@@ -7,15 +7,17 @@
 -- 3. soil_reports: persist explicitly-reported micronutrients and a
 --    per-field validation summary. Missing values are stored as absent/null,
 --    never defaulted.
--- 4. RLS hardening:
---    - UPDATE policies on plots/soil_reports/recommendations/profiles had a
---      USING clause but no WITH CHECK, so an owner could reassign a row to
---      another user (owner_id swap). WITH CHECK is added.
---    - INSERT policies on soil_reports/recommendations only checked
+-- 4. RLS hardening (found and verified with supabase/tests/verify.mjs):
+--    - INSERT/UPDATE policies on soil_reports/recommendations only checked
 --      owner_id = auth.uid(); a user could attach a row to ANOTHER user's
---      plot_id. The plot must now belong to the caller.
---    - DELETE policies are added for user-managed tables so the ownership
---      rule is explicit instead of "no policy = silently denied".
+--      plot_id / soil_report_id. The referenced plot and report must now belong
+--      to the caller, and a recommendation's report must be the report of its plot.
+--    - plots.farmer_id may only reference one of the caller's farmers.
+--    - DELETE policies are added for user-managed tables so the ownership rule is
+--      explicit instead of "no policy = silently denied".
+--    (Note: Postgres reuses USING as WITH CHECK when an UPDATE policy has no
+--    WITH CHECK, so a bare owner_id swap was already rejected; explicit WITH CHECK
+--    is added for clarity and because the cross-reference checks need it.)
 --
 -- All statements are idempotent and non-destructive to existing rows.
 
@@ -160,7 +162,10 @@ create policy "Users can delete their own soil reports" on public.soil_reports
   for delete using (auth.uid() = owner_id);
 
 -- ---------------------------------------------------------------------------
--- RLS: recommendations -- plot and soil report must both belong to caller
+-- RLS: recommendations -- plot and soil report must both belong to the caller,
+-- and the soil report must be the report OF that plot. The same rule applies on
+-- INSERT and UPDATE (otherwise an owner could re-point a row at another user's
+-- plot or report).
 -- ---------------------------------------------------------------------------
 drop policy if exists "Users can insert their own recommendations" on public.recommendations;
 create policy "Users can insert their own recommendations" on public.recommendations
@@ -172,13 +177,28 @@ create policy "Users can insert their own recommendations" on public.recommendat
     )
     and exists (
       select 1 from public.soil_reports s
-      where s.id = recommendations.soil_report_id and s.owner_id = auth.uid()
+      where s.id = recommendations.soil_report_id
+        and s.owner_id = auth.uid()
+        and s.plot_id = recommendations.plot_id
     )
   );
 
 drop policy if exists "Users can update their own recommendations" on public.recommendations;
 create policy "Users can update their own recommendations" on public.recommendations
-  for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+  for update using (auth.uid() = owner_id)
+  with check (
+    auth.uid() = owner_id
+    and exists (
+      select 1 from public.plots p
+      where p.id = recommendations.plot_id and p.owner_id = auth.uid()
+    )
+    and exists (
+      select 1 from public.soil_reports s
+      where s.id = recommendations.soil_report_id
+        and s.owner_id = auth.uid()
+        and s.plot_id = recommendations.plot_id
+    )
+  );
 
 drop policy if exists "Users can delete their own recommendations" on public.recommendations;
 create policy "Users can delete their own recommendations" on public.recommendations

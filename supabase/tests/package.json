@@ -1,0 +1,8 @@
+{
+  "name": "nutripalm-db-verification",
+  "private": true,
+  "type": "module",
+  "description": "Repeatable migration + RLS verification on a throwaway Postgres (PGlite). Not part of the app bundle.",
+  "scripts": { "verify": "node verify.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "^0.3.0" }
+}
