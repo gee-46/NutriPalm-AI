@@ -58,6 +58,8 @@ export const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimal
 };
 
 interface FarmPlotScreenProps {
+  /** The signed-in user's farmers, offered when creating a plot. */
+  farmers?: Array<{ id: string; name: string }>;
   onPlotCreated?: () => void;
   onSync?: () => void;
   onNavigate?: (screen: string) => void;
@@ -65,6 +67,7 @@ interface FarmPlotScreenProps {
 }
 
 export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({ 
+  farmers = [],
   onPlotCreated, 
   onSync,
   onNavigate,
@@ -78,17 +81,16 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   
   // Selected plot state
 
-  const [selectedPlotId, setSelectedPlotId] = useState("plot-1");
+  const [selectedPlotId, setSelectedPlotId] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addStep, setAddStep] = useState(1);
 
   // New Plot form data
   const [newPlotData, setNewPlotData] = useState({
     name: "",
-    farmer: "Swaminathan Gowda",
+    farmerId: "",
     area: "",
     crop: "Oil Palm",
-    coordinates: "17.3912 N, 78.4948 E",
     soilType: "Loamy",
     irrigation: "Precision Drip",
     // Phase 5 additions
@@ -118,6 +120,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const [isDirectSurveyOpen, setIsDirectSurveyOpen] = useState(false);
 
   const selectedPlot = plots.find((p) => p.id === selectedPlotId) || plots[0];
+  useEffect(() => {
+    if (plots.length > 0 && !plots.some((p) => p.id === selectedPlotId)) {
+      setSelectedPlotId(plots[0].id);
+    }
+  }, [plots, selectedPlotId]);
   const envData = useEnvironmentalData(selectedPlot);
 
   const handleDirectSurveyConfirm = async (data: BoundaryData) => {
@@ -171,18 +178,17 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const triggerScan = () => {
     setIsScanning(true);
     if (onSync) onSync();
+    envData.refresh();
     setTimeout(() => {
       setIsScanning(false);
-      triggerToast("Satellite diagnostics and vertex nodes verified.", "success");
+      triggerToast("Weather and satellite data requested again for this plot.", "info");
     }, 1500);
   };
 
   const handleRefreshMap = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      triggerToast("GIS satellite imagery layers refreshed.", "success");
-    }, 800);
+    envData.refresh();
+    setTimeout(() => setIsLoading(false), 800);
   };
 
   const handleAddPlotSubmit = async (e: React.FormEvent) => {
@@ -249,7 +255,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       ? (wizardBoundary.geoJSON.coordinates[0] as number[][]).map(
           ([lng, lat]) => `${Math.abs(lat).toFixed(4)} ${lat >= 0 ? "N" : "S"}, ${Math.abs(lng).toFixed(4)} ${lng >= 0 ? "E" : "W"}`
         )
-      : [newPlotData.coordinates];
+      : [];
 
     // Derive plantation_age from plantingDate (Phase 5)
     let plantationAge = 0;
@@ -258,9 +264,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       plantationAge = Math.max(0, Math.round((Date.now() - new Date(newPlotData.plantingDate).getTime()) / msPerYear));
     }
 
+    try {
     await storAddPlot({
       name: newPlotData.name,
-      farmer: newPlotData.farmer,
+      farmerId: newPlotData.farmerId || undefined,
       crop: newPlotData.crop,
       stage: "Seedling",
       age: plantationAge,
@@ -287,6 +294,11 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       boundaryMapped: !!wizardBoundary,
       soilReportAttached: false,
     });
+    } catch (err) {
+      triggerToast(err instanceof Error ? err.message : "The plot could not be saved.", "warning");
+      setAddStep(2);
+      return;
+    }
 
     if (onPlotCreated) onPlotCreated();
   };
@@ -347,10 +359,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               setStep3Data(null);
               setNewPlotData({
                 name: "",
-                farmer: "Swaminathan Gowda",
+                farmerId: "",
                 area: "",
                 crop: "Oil Palm",
-                coordinates: "17.3912° N, 78.4948° E",
                 soilType: "Loamy",
                 irrigation: "Precision Drip",
                 plantingDate: "",
@@ -401,10 +412,6 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           
                             {t('farmplotscreen.total_area')} <strong className="text-primary font-black">{totalArea.toFixed(1)} Acres</strong>
-        </span>
-        <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          
-                            {t('farmplotscreen.gis_sync')} <strong className="text-primary font-black">{t('farmplotscreen.100_online')}</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.healthy_plots')} <strong className="text-primary font-black">{healthyPlotsCount}</strong>
@@ -512,7 +519,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               setWizardBoundary(null);
               setImportedGeoJSON(undefined);
               setStep3Data(null);
-              setNewPlotData({ name: "", farmer: "Swaminathan Gowda", area: "", crop: "Oil Palm", coordinates: "17.3912 N, 78.4948 E", soilType: "Loamy", irrigation: "Precision Drip", plantingDate: "", plantCount: "" });
+              setNewPlotData({ name: "", farmerId: "", area: "", crop: "Oil Palm", soilType: "Loamy", irrigation: "Precision Drip", plantingDate: "", plantCount: "" });
               setIsAddModalOpen(true);
             }}
             className="inline-flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md text-xs border-0 cursor-pointer transition-all"
@@ -1190,21 +1197,16 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
                       <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmplotscreen.farmer_landholder')}</label>
-                        <input
-                          type="text"
-                          required
-                          list="farmer-options"
-                          value={newPlotData.farmer}
-                          onChange={(e) => setNewPlotData(prev => ({ ...prev, farmer: e.target.value }))}
-                          placeholder={t('farmplotscreen.e_g_swaminathan_gowda')}
+                        <select
+                          value={newPlotData.farmerId}
+                          onChange={(e) => setNewPlotData(prev => ({ ...prev, farmerId: e.target.value }))}
                           className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
-                        />
-                        <datalist id="farmer-options">
-                          <option value="Swaminathan Gowda" />
-                          <option value="K. Ramachandra Rao" />
-                          <option value="M. Devamma" />
-                          <option value="Rajesh Kumar" />
-                        </datalist>
+                        >
+                          <option value="">{farmers.length ? "No farmer selected" : "No farmers registered yet"}</option>
+                          {farmers.map((f) => (
+                            <option key={f.id} value={f.id}>{f.name}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">

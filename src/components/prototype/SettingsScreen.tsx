@@ -16,15 +16,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
 
   // Profile data
   const [profile, setProfile] = useState({
-    name: "Dr. L. Ramana",
-    role: "Lead Agronomist",
-    email: "ramana@samruddhi.org",
-    phone: "+91 94401 98765",
+    name: "",
+    role: "Farmer",
+    email: "",
+    phone: "",
     district: "",
     state: "",
     village: "",
     preferred_language: "English",
-    hub: "Chittoor Regional Hub"
+    hub: ""
   });
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -68,7 +68,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
             state: data.state || "",
             village: data.village || "",
             preferred_language: data.preferred_language || "English",
-            hub: data.organization_name || "Chittoor Regional Hub"
+            hub: data.organization_name || ""
           });
         }
       } catch (err) {
@@ -146,16 +146,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
   });
 
   // Selected language
-  const [language, setLanguage] = useState("Telugu");
+  const [language, setLanguage] = useState("English");
 
   // Selected theme
   const [theme, setTheme] = useState("Green Mesh");
 
   // Organization data
   const [org, setOrg] = useState({
-    name: "Samruddhi Organics",
-    dept: "Soil Science & Precision Telemetry",
-    license: "NP-2026-X81-A93"
+    name: "",
+    dept: "",
+    license: ""
   });
 
   const handleSave = (e: React.FormEvent) => {

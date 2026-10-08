@@ -1,14 +1,12 @@
 import { useTranslation } from "../../translation/useTranslation";
 import React, { useState, useEffect } from "react";
+import { DashboardWeatherCard } from "./DashboardWeatherCard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
   Cpu,
   Sparkles,
   Heart,
-  CloudRain,
-  Sun,
-  Cloud,
   ArrowRight,
   Activity,
   Calendar,
@@ -135,115 +133,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const displayRole = userProfile?.user_role || currentUser?.user_metadata?.role || t('dashboardscreen.lead_agronomist', 'Lead Agronomist');
 
-  const seedPlots: Plot[] = [
-    {
-      id: "Plot A",
-      name: "Plot A",
-      farmer: "N. Swamy",
-      crop: "Oil Palm (Hybrid)",
-      stage: "Flowering",
-      age: 6,
-      area: 12.5,
-      coordinates: [],
-      geoJSON: undefined,
-      soil: "Sandy",
-      irrigation: "Drip",
-      status: "Healthy",
-      statusColor: "text-emerald-600",
-      statusDotColor: "bg-emerald-500",
-      svgPath: "M 40 30 L 160 20 L 200 95 L 80 105 Z",
-      fillGradient: "rgba(46, 125, 50, 0.25)",
-      strokeColor: "#2E7D32",
-      glowColor: "rgba(46, 125, 50, 0.25)",
-      boundaryMapped: true,
-      soilReportAttached: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: "Plot B",
-      name: "Plot B",
-      farmer: "S. Gowda",
-      crop: "Oil Palm",
-      stage: "Flowering",
-      age: 4,
-      area: 8.2,
-      coordinates: [],
-      geoJSON: undefined,
-      soil: "Sandy",
-      irrigation: "Drip",
-      status: "Moderate",
-      statusColor: "text-amber-500",
-      statusDotColor: "bg-amber-500",
-      svgPath: "M 175 18 L 300 10 L 320 85 L 210 90 Z",
-      fillGradient: "rgba(245, 158, 11, 0.22)",
-      strokeColor: "#F59E0B",
-      glowColor: "rgba(245, 158, 11, 0.22)",
-      boundaryMapped: true,
-      soilReportAttached: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: "Plot C",
-      name: "Plot C",
-      farmer: "Rajesh Kumar",
-      crop: "Oil Palm (Young)",
-      stage: "Flowering",
-      age: 2,
-      area: 7.8,
-      coordinates: [],
-      geoJSON: undefined,
-      soil: "Sandy",
-      irrigation: "Drip",
-      status: "Needs Attention",
-      statusColor: "text-orange-500",
-      statusDotColor: "bg-orange-500",
-      svgPath: "M 218 97 L 330 90 L 370 160 L 230 155 Z",
-      fillGradient: "rgba(249, 115, 22, 0.22)",
-      strokeColor: "#F97316",
-      glowColor: "rgba(249, 115, 22, 0.22)",
-      boundaryMapped: true,
-      soilReportAttached: true,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: "Plot D",
-      name: "Plot D",
-      farmer: "K. R. Rao",
-      crop: "Oil Palm (Mature)",
-      stage: "Flowering",
-      age: 8,
-      area: 5.0,
-      coordinates: [],
-      geoJSON: undefined,
-      soil: "Sandy",
-      irrigation: "Drip",
-      status: "Critical",
-      statusColor: "text-rose-600",
-      statusDotColor: "bg-rose-500",
-      svgPath: "M 85 110 L 195 103 L 225 170 L 105 175 Z",
-      fillGradient: "rgba(225, 29, 72, 0.22)",
-      strokeColor: "#E11D48",
-      glowColor: "rgba(225, 29, 72, 0.22)",
-      boundaryMapped: true,
-      soilReportAttached: true,
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  const activePlots = currentUser ? plots : seedPlots;
+  const activePlots = plots;
 
   // Recent activities list from database
   const [activities, setActivities] = useState<any[]>([]);
+  // Real findings from the user's most recent saved recommendations
+  const [observations, setObservations] = useState<Array<{ id: string; plotName: string; crop: string; createdAt: string; summary: string; deficient: string[] }>>([]);
 
   useEffect(() => {
     if (!currentUser) {
-      setActivities([
-        { id: 1, time: "09:32", title: "New Farmer Registered", desc: "Rajesh Kumar enrolled with 7.8 acres.", icon: <Users className="w-3.5 h-3.5 text-white" />, color: "bg-emerald-500" },
-        { id: 2, time: "09:18", title: "Soil Report Uploaded", desc: "NPK diagnostic scan completed for Plot 3A.", icon: <FileText className="w-3.5 h-3.5 text-white" />, color: "bg-indigo-500" },
-        { id: 3, time: "08:54", title: "Digital Twin Updated", desc: "Sentinel-2 canopy indices calibrated.", icon: <Layers3 className="w-3.5 h-3.5 text-white" />, color: "bg-emerald-600" },
-        { id: 4, time: "08:40", title: "Recommendation Generated", desc: "Custom NPK slow-release recipe formulated.", icon: <Sparkles className="w-3.5 h-3.5 text-white" />, color: "bg-amber-500" },
-        { id: 5, time: "Yesterday", title: "Weather Synced", desc: "Telangana climate cluster telemetry synchronized.", icon: <Sun className="w-3.5 h-3.5 text-white" />, color: "bg-sky-500" },
-      ]);
+      setActivities([]);
+      setObservations([]);
       return;
     }
 
@@ -266,7 +166,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         // Fetch recent recommendations
         const { data: recommendations } = await supabase
           .from("recommendations")
-          .select("id, created_at, plot_id, crop")
+          .select("id, created_at, plot_id, crop, deficiencies, explanation")
           .in("plot_id", plotIds)
           .order("created_at", { ascending: false })
           .limit(3);
@@ -280,7 +180,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             time: new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             dateObj: new Date(p.createdAt),
             title: "Plot Registered",
-            desc: `GIS boundary mapped for ${p.name} (${p.crop}).`,
+            desc: p.boundaryMapped ? `Boundary mapped for ${p.name} (${p.crop}).` : `${p.name} (${p.crop}) added.`,
             color: "bg-emerald-500",
             icon: <Layers3 className="w-3.5 h-3.5 text-white" />
           });
@@ -318,6 +218,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           });
         }
 
+        setObservations(
+          (recommendations ?? []).map((r: any) => {
+            const findings = Array.isArray(r.deficiencies) ? r.deficiencies : [];
+            const explanation = typeof r.explanation === "object" && r.explanation ? r.explanation : {};
+            return {
+              id: r.id,
+              plotName: plots.find(p => p.id === r.plot_id)?.name || "Plot",
+              crop: r.crop,
+              createdAt: r.created_at,
+              summary: explanation.summary || "",
+              deficient: findings.filter((f: any) => f.status === "deficient").map((f: any) => f.display_name || f.nutrient),
+            };
+          })
+        );
+
         merged.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
         setActivities(merged.slice(0, 5));
       } catch (err) {
@@ -327,14 +242,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     loadActivities();
   }, [plots, currentUser]);
-
-  const weatherForecast = [
-    { day: "Today", temp: "32°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "15%" },
-    { day: "Sat", temp: "30°", icon: <Cloud className="w-4 h-4 text-gray-400 fill-gray-100" />, pop: "20%" },
-    { day: "Sun", temp: "29°", icon: <CloudRain className="w-4 h-4 text-sky-400 animate-pulse" />, pop: "75%" },
-    { day: "Mon", temp: "31°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "10%" },
-    { day: "Tue", temp: "33°", icon: <Sun className="w-4 h-4 text-amber-500 fill-amber-100" />, pop: "5%" }
-  ];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -573,7 +480,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
           <div className="mt-3">
             <p className="text-[10px] font-bold text-gray-450 uppercase tracking-wider">{t('dashboardscreen.avg_soil_index')}</p>
-            <p className="text-sm font-extrabold text-emerald-700 mt-0.5">{t('dashboardscreen.optimal_range')}</p>
+            <p className="text-sm font-extrabold text-gray-600 mt-0.5">{stats.soilHealthScore > 0 ? "From Digital Twin scores" : "No Digital Twin data yet"}</p>
           </div>
         </motion.div>
       </motion.div>
@@ -599,25 +506,25 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.total_mapped_land')}</span>
                     <span className="font-bold text-gray-850">
-                      <AnimatedCounter value={currentUser ? stats.totalAcreage : 33.5} decimals={currentUser ? 2 : 1} suffix=" Acres" />
+                      <AnimatedCounter value={stats.totalAcreage} decimals={2} suffix=" Acres" />
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.crop_variety')}</span>
                     <span className="font-bold text-gray-850">
-                      {currentUser ? (plots.length > 0 ? Array.from(new Set(plots.map(p => p.crop).filter(Boolean))).join(" / ") : t('dashboardscreen.no_plots', 'No Plots Mapped')) : t('dashboardscreen.oil_palm_85_mixed')}
+                      {plots.length > 0 ? Array.from(new Set(plots.map(p => p.crop).filter(Boolean))).join(" / ") : t('dashboardscreen.no_plots', 'No Plots Mapped')}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.iot_telemetry_nodes')}</span>
                     <span className="font-bold text-primary">
-                      {currentUser ? `${activePlots.length * 3} ${t('dashboardscreen.sensors_active', 'Sensors Active')}` : t('dashboardscreen.18_sensors_active')}
+                      None connected
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.irrigation_type')}</span>
                     <span className="font-bold text-gray-850">
-                      {currentUser ? (plots.length > 0 ? Array.from(new Set(plots.map(p => p.irrigation).filter(Boolean))).join(" / ") : t('dashboardscreen.not_configured', 'Not Configured')) : t('dashboardscreen.precision_drip_94')}
+                      {plots.length > 0 ? Array.from(new Set(plots.map(p => p.irrigation).filter(Boolean))).join(" / ") : t('dashboardscreen.not_configured', 'Not Configured')}
                     </span>
                   </div>
                 </div>
@@ -627,9 +534,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-gray-450 font-semibold">{t('dashboardscreen.farm_health_score')}</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-primary font-bold">{currentUser ? stats.soilHealthScore : 84}%</span>
+                      <span className="text-primary font-bold">{stats.soilHealthScore > 0 ? `${stats.soilHealthScore}%` : "N/A"}</span>
                       <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-md uppercase">
-                        {(currentUser ? stats.soilHealthScore : 84) >= 80 ? t('dashboardscreen.healthy') : (currentUser ? stats.soilHealthScore : 84) >= 50 ? t('dashboardscreen.moderate', 'Moderate') : t('dashboardscreen.critical', 'Critical')}
+                        {stats.soilHealthScore <= 0 ? "No data" : stats.soilHealthScore >= 80 ? t('dashboardscreen.healthy') : stats.soilHealthScore >= 50 ? t('dashboardscreen.moderate', 'Moderate') : t('dashboardscreen.critical', 'Critical')}
                       </span>
                     </div>
                   </div>
@@ -637,7 +544,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <motion.div 
                       className="h-full bg-primary" 
                       initial={{ width: 0 }}
-                      animate={{ width: `${currentUser ? stats.soilHealthScore : 84}%` }}
+                      animate={{ width: `${stats.soilHealthScore}%` }}
                       transition={{ duration: 1.2, ease: "easeOut" }}
                     />
                   </div>
@@ -647,13 +554,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <div className="mt-4 space-y-2 text-xs">
                   <span className="text-gray-450 font-semibold block">{t('dashboardscreen.crop_growth_stage')}</span>
                   <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-black">
-                    <div className={`py-1.5 rounded-lg border ${(currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "vegetative" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "seedling" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                    <div className={`py-1.5 rounded-lg border ${(plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "vegetative" || (plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "seedling" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
                       {t('dashboardscreen.vegetative')}
                     </div>
-                    <div className={`py-1.5 rounded-lg border ${(currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "flowering" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "fruit development" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                    <div className={`py-1.5 rounded-lg border ${(plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "flowering" || (plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "fruit development" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
                       {t('dashboardscreen.flowering')}
                     </div>
-                    <div className={`py-1.5 rounded-lg border ${(currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "fruiting" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "mature" || (currentUser && plots.length > 0 ? plots[0].stage?.toLowerCase() : "flowering") === "harvest ready" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
+                    <div className={`py-1.5 rounded-lg border ${(plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "fruiting" || (plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "mature" || (plots.length > 0 ? plots[0].stage?.toLowerCase() : "") === "harvest ready" ? "bg-primary/10 border-primary/20 text-primary" : "bg-gray-50 border-gray-200 text-gray-500"}`}>
                       {t('dashboardscreen.fruiting')}
                     </div>
                   </div>
@@ -669,67 +576,40 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </button>
             </motion.div>
 
-            {/* AI Core Observations Card */}
+            {/* Latest findings from the user's saved recommendations */}
             <motion.div variants={itemVariants} className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left relative overflow-hidden flex flex-col justify-between">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full filter blur-xl pointer-events-none" />
-              
               <div>
                 <span className="text-[9px] font-bold text-indigo-700 uppercase tracking-widest bg-indigo-50 border border-indigo-100/50 px-2.5 py-1 rounded-full flex items-center gap-1 w-max">
                   <Bot className="w-3.5 h-3.5" />
-                  
-                                                    {t('dashboardscreen.samruddhi_ai_core')}
-                                                  </span>
-                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4">{t('dashboardscreen.real_time_observations')}</h3>
-                
-                {/* 4. Grouped Observations by Severity */}
+                  Saved recommendations
+                </span>
+                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4">Latest findings</h3>
+
                 <div className="space-y-3.5 text-xs text-gray-700">
-                  {/* Observation 1: Critical */}
-                  <div className="p-3 bg-red-50/50 border border-red-100 rounded-2xl flex gap-3 items-start hover:shadow-xs transition-shadow">
-                    <div className="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-rose-700 text-[9.5px] uppercase tracking-wider">{t('dashboardscreen.critical')}</span>
-                        <span className="text-[9px] font-mono text-gray-400">{t('dashboardscreen.2_mins_ago')}</span>
+                  {observations.length === 0 ? (
+                    <p className="text-xs text-gray-450 italic font-semibold">
+                      No recommendations yet. Upload a soil report and generate one to see findings here.
+                    </p>
+                  ) : (
+                    observations.map((o) => (
+                      <div
+                        key={o.id}
+                        className={`p-3 border rounded-2xl ${o.deficient.length ? "bg-amber-50/50 border-amber-100" : "bg-emerald-50/50 border-emerald-100"}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-extrabold text-gray-800 text-[11px]">{o.plotName}</span>
+                          <span className="text-[9px] font-mono text-gray-400">{new Date(o.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-gray-700 leading-normal mt-1">
+                          {o.deficient.length ? `Deficient: ${o.deficient.join(", ")}.` : "No nutrient deficiency found."}
+                        </p>
+                        {o.summary && <p className="text-[11px] text-gray-500 mt-1">{o.summary}</p>}
                       </div>
-                      <p className="text-gray-700 leading-normal mt-0.5">
-                        
-                                                                      {t('dashboardscreen.potassium_deficiency_detected_in_plot_2a')}
-                                                                    </p>
-                    </div>
-                  </div>
-
-                  {/* Observation 2: Attention */}
-                  <div className="p-3 bg-amber-50/50 border border-amber-100 rounded-2xl flex gap-3 items-start hover:shadow-xs transition-shadow">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0 animate-pulse" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-amber-700 text-[9.5px] uppercase tracking-wider">{t('dashboardscreen.attention')}</span>
-                        <span className="text-[9px] font-mono text-gray-400">{t('dashboardscreen.10_mins_ago')}</span>
-                      </div>
-                      <p className="text-gray-700 leading-normal mt-0.5">
-                        
-                                                                      {t('dashboardscreen.rainfall_may_reduce_irrigation_demand_to')}
-                                                                    </p>
-                    </div>
-                  </div>
-
-                  {/* Observation 3: Healthy */}
-                  <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl flex gap-3 items-start hover:shadow-xs transition-shadow">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-emerald-700 text-[9.5px] uppercase tracking-wider">{t('dashboardscreen.healthy')}</span>
-                        <span className="text-[9px] font-mono text-gray-400">{t('dashboardscreen.1_hour_ago')}</span>
-                      </div>
-                      <p className="text-gray-700 leading-normal mt-0.5">
-                        
-                                                                      {t('dashboardscreen.ndvi_canopy_index_above_regional_average')}
-                                                                    </p>
-                    </div>
-                  </div>
+                    ))
+                  )}
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => onNavigate("Recommendations")}
                 className="mt-6 w-full flex items-center justify-between text-xs font-bold text-indigo-700 hover:text-indigo-850 p-2 bg-indigo-50/50 rounded-xl hover:bg-indigo-50 transition-all border-0 cursor-pointer"
               >
@@ -768,7 +648,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         fill={plot.fillGradient}
                         stroke={plot.strokeColor}
                         strokeWidth="2"
-                        strokeDasharray={plot.id === "Plot A" || !plot.boundaryMapped ? "4 4" : "0"}
+                        strokeDasharray={!plot.boundaryMapped ? "4 4" : "0"}
                         onClick={() => {
                           setSelectedPlot({
                             id: plot.name,
@@ -786,22 +666,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     ))}
                     
                     {/* Active telemetry pins */}
-                    {!currentUser ? (
-                      <>
-                        <g transform="translate(130, 70)" className="animate-pulse pointer-events-none">
-                          <circle cx="0" cy="0" r="10" fill="rgba(46, 125, 50, 0.4)" />
-                          <circle cx="0" cy="0" r="4" fill="#FFF" />
-                        </g>
-                        <g transform="translate(260, 60)" className="animate-pulse pointer-events-none">
-                          <circle cx="0" cy="0" r="10" fill="rgba(245, 158, 11, 0.4)" />
-                          <circle cx="0" cy="0" r="4" fill="#FFF" />
-                        </g>
-                        <g transform="translate(300, 140)" className="animate-pulse pointer-events-none">
-                          <circle cx="0" cy="0" r="10" fill="rgba(249, 115, 22, 0.4)" />
-                          <circle cx="0" cy="0" r="4" fill="#FFF" />
-                        </g>
-                      </>
-                    ) : (
+                    {(
                       activePlots.map((plot) => {
                         if (!plot.geoJSON?.coordinates?.[0]?.[0]) return null;
                         const coords = plot.geoJSON.coordinates[0];
@@ -878,52 +743,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </button>
             </motion.div>
 
-            {/* 7. AI Insights Card (5/12 width) */}
+            {/* Data coverage: what the account actually has on file */}
             <motion.div variants={itemVariants} className="md:col-span-5 bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left relative overflow-hidden flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-bold text-primary uppercase tracking-widest bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full flex items-center gap-1 w-max">
                   <Cpu className="w-3.5 h-3.5" />
-                  
-                                                    {t('dashboardscreen.ecosystem_analytics')}
-                                                  </span>
-                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">{t('dashboardscreen.ai_insights')}</h3>
-                
-                <div className="space-y-3.5 text-xs text-gray-700">
-                  <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
-                    <span className="text-rose-500 font-bold shrink-0 mt-0.5">⚠️</span>
-                    <div>
-                      <p className="font-bold">{t('dashboardscreen.nitrogen_deficiency_detected')}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_94_2_farms_flagged')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
-                    <span className="text-sky-500 font-bold shrink-0 mt-0.5">🌧️</span>
-                    <div>
-                      <p className="font-bold">{t('dashboardscreen.precipitation_expected_tomorrow')}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_88_telangana_cluster')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
-                    <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
-                    <div>
-                      <p className="font-bold">{t('dashboardscreen.soil_moisture_levels_optimal')}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_96_eastern_clusters')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
-                    <span className="text-emerald-500 font-bold shrink-0 mt-0.5">📈</span>
-                    <div>
-                      <p className="font-bold">{t('dashboardscreen.yield_projection_calibrated_9')}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_91_digital_twin_forecast')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 p-1.5 hover:bg-emerald-50/30 rounded-xl transition-colors">
-                    <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
-                    <div>
-                      <p className="font-bold">{t('dashboardscreen.no_pest_outbreaks_detected')}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">{t('dashboardscreen.confidence_98_satellite_surveillance')}</p>
-                    </div>
-                  </div>
+                  Data coverage
+                </span>
+                <h3 className="text-base font-extrabold text-gray-900 mt-3 mb-4 font-sans">What is on file</h3>
+                <div className="space-y-3 text-xs text-gray-700 font-semibold">
+                  <div className="flex justify-between"><span>Plots</span><span className="font-black">{plots.length}</span></div>
+                  <div className="flex justify-between"><span>With a surveyed boundary</span><span className="font-black">{plots.filter(p => p.boundaryMapped).length}</span></div>
+                  <div className="flex justify-between"><span>With a soil report</span><span className="font-black">{plots.filter(p => p.soilReportAttached).length}</span></div>
+                  <div className="flex justify-between"><span>Digital Twin snapshots stored</span><span className="font-black">{stats.activeTwins}</span></div>
+                  <div className="flex justify-between"><span>Recommendations saved</span><span className="font-black">{stats.recommendations}</span></div>
+                  <div className="flex justify-between"><span>IoT sensors connected</span><span className="font-black text-gray-400">None</span></div>
                 </div>
               </div>
             </motion.div>
@@ -935,75 +769,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         {/* Right Column (1/3 width) */}
         <div className="space-y-6">
           
-          {/* Weather Widget */}
-          <motion.div variants={itemVariants} className="bg-gradient-to-tr from-[#1B4D22] to-[#2E7D32] text-white rounded-3xl p-6 shadow-md relative overflow-hidden text-left">
-            <div className="absolute top-0 right-0 w-36 h-36 bg-white/5 rounded-full filter blur-2xl pointer-events-none" />
-            
-            <div className="relative z-10 space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] font-bold text-emerald-250 uppercase tracking-widest">{t('dashboardscreen.regional_microclimate')}</p>
-                  <h4 className="text-lg font-extrabold mt-1">{t('dashboardscreen.telangana_cluster')}</h4>
-                </div>
-                <Sun className="w-10 h-10 text-amber-300 animate-spin-slow" />
-              </div>
-
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black tracking-tight">32°C</span>
-                <span className="text-xs text-emerald-200">{t('dashboardscreen.light_wind_sunny')}</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 text-center text-xs">
-                <div>
-                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">{t('dashboardscreen.humid')}</p>
-                  <p className="font-extrabold mt-0.5">62%</p>
-                </div>
-                <div>
-                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">{t('dashboardscreen.wind')}</p>
-                  <p className="font-extrabold mt-0.5">11 km/h</p>
-                </div>
-                <div>
-                  <p className="text-[9px] text-emerald-250 uppercase font-bold tracking-wider">{t('dashboardscreen.rain')}</p>
-                  <p className="font-extrabold mt-0.5">15%</p>
-                </div>
-              </div>
-
-              {/* 5. Detailed weather updates grid */}
-              <div className="grid grid-cols-2 gap-x-2 gap-y-2 py-1 text-center text-xs text-emerald-100">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.uv_index')}</span>
-                  <span className="font-extrabold">2.4</span>
-                </div>
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.solar_rad')}</span>
-                  <span className="font-extrabold text-[10px]">{t('dashboardscreen.340_w_m')}</span>
-                </div>
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.evapotrans')}</span>
-                  <span className="font-extrabold text-[10px]">{t('dashboardscreen.4_8_mm_d')}</span>
-                </div>
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.air_press')}</span>
-                  <span className="font-extrabold text-[10px]">1008 hPa</span>
-                </div>
-                <div className="col-span-2 flex justify-between items-center px-1 pt-1.5 border-t border-white/5">
-                  <span className="text-emerald-250 text-[9px] font-bold uppercase tracking-wider">{t('dashboardscreen.cloud_coverage')}</span>
-                  <span className="font-extrabold">22%</span>
-                </div>
-              </div>
-
-              {/* 5-day crop relative forecast */}
-              <div className="space-y-2.5 pt-2 border-t border-white/10">
-                <p className="text-[9px] font-bold text-emerald-250 uppercase tracking-widest mb-2">{t('dashboardscreen.5_day_agricultural_forecast')}</p>
-                {weatherForecast.map((fc, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs">
-                    <span className="w-16 text-emerald-100 font-semibold">{fc.day}</span>
-                    <span className="flex items-center justify-center">{fc.icon}</span>
-                    <span className="w-12 text-right font-extrabold">{fc.temp}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Weather for the user's first mapped plot (Open-Meteo) */}
+          <motion.div variants={itemVariants}>
+            <DashboardWeatherCard plot={plots.find((p) => p.geoJSON)} />
           </motion.div>
 
           {/* 8. Recent Activity Dotted Timeline */}

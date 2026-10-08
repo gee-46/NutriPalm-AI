@@ -211,12 +211,12 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         .substring(0, 2)
         .toUpperCase();
     }
-    const name = currentUser?.user_metadata?.full_name || currentUser?.email || "LR";
+    const name = currentUser?.user_metadata?.full_name || currentUser?.email || "U";
     return name[0].toUpperCase();
   };
 
-  const displayName = userProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || "Dr. L. Ramana";
-  const displayRole = userProfile?.user_role || "Agronomist";
+  const displayName = userProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || "Farmer";
+  const displayRole = userProfile?.user_role || "Farmer";
 
   // Reusable Toast Notification System
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: "success" | "info" | "warning" }>>([]);
@@ -254,76 +254,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           }
         });
     } else {
-      setFarmers([
-        {
-          id: "F-01",
-          name: "Swaminathan Gowda",
-          village: "Rangampeta",
-          district: "Dakshina Kannada",
-          contact: "+91 94401 23456",
-          email: "swamy.g@gmail.com",
-          crop: "Oil Palm",
-          area: 12.5,
-          joinDate: "June 2024",
-          yield: "14.2 tons/ac",
-          soilHealth: 88,
-          lastInspection: "2 hours ago",
-          status: "Active",
-          digitalTwin: "Online",
-          lastRecommendation: "NPK Mix-B"
-        },
-        {
-          id: "F-02",
-          name: "K. Ramachandra Rao",
-          village: "Kothagudem",
-          district: "Bhadradri Kothagudem",
-          contact: "+91 98480 98765",
-          email: "ramachandra.k@gmail.com",
-          crop: "Oil Palm",
-          area: 8.2,
-          joinDate: "Sept 2024",
-          yield: "13.0 tons/ac",
-          soilHealth: 72,
-          lastInspection: "5 hours ago",
-          status: "Monitoring",
-          digitalTwin: "Synced",
-          lastRecommendation: "Potash supplement"
-        },
-        {
-          id: "F-03",
-          name: "M. Devamma",
-          village: "Chittoor",
-          district: "Chittoor",
-          contact: "+91 99123 45678",
-          email: "devamma.m@gmail.com",
-          crop: "Coconut Palm",
-          area: 5.0,
-          joinDate: "Jan 2025",
-          yield: "6.5 tons/ac",
-          soilHealth: 55,
-          lastInspection: "1 day ago",
-          status: "Attention",
-          digitalTwin: "Warning",
-          lastRecommendation: "Slow-Release NPK-A"
-        },
-        {
-          id: "F-04",
-          name: "Rajesh Kumar",
-          village: "Hassan",
-          district: "Hassan",
-          contact: "+91 94900 11223",
-          email: "rajesh.k@gmail.com",
-          crop: "Cocoa",
-          area: 7.8,
-          joinDate: "March 2025",
-          yield: "2.1 tons/ac",
-          soilHealth: 38,
-          lastInspection: "2 days ago",
-          status: "Inactive",
-          digitalTwin: "Offline",
-          lastRecommendation: "Emergency NPK dose"
-        }
-      ]);
+      setFarmers([]);
     }
     return () => {
       cancelled = true;
@@ -338,7 +269,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
     async function fetchStats() {
       try {
-        const plotIds = plots.filter(p => !p.id.startsWith("plot-")).map(p => p.id);
+        const plotIds = plots.map(p => p.id);
         
         let twinsCount = 0;
         let recsCount = 0;
@@ -389,7 +320,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   }, [plots, currentUser]);
 
   // Derive stats dynamically (authenticated vs. unauthenticated)
-  const stats = currentUser ? {
+  const stats = {
     totalFarmers: farmers.length,
     totalFarms: plots.length,
     mappedPlots: plots.filter(p => p.boundaryMapped).length,
@@ -397,14 +328,6 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     activeTwins: dbStats.activeTwins,
     recommendations: dbStats.recommendations,
     soilHealthScore: dbStats.soilHealthScore
-  } : {
-    totalFarmers: farmers.length,
-    totalFarms: 6,
-    mappedPlots: 6,
-    totalAcreage: 33.5,
-    activeTwins: 4,
-    recommendations: 38,
-    soilHealthScore: 78
   };
 
   // Add a farmer (persisted to Supabase for the signed-in user)
@@ -498,8 +421,8 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       case "Farm Plots":
         return (
           <FarmPlotScreen
-            onPlotCreated={() => showToast("New GIS boundary registered for Plot 3B.", "success")}
-            onSync={() => showToast("Satellite GPS coordinates synchronized.", "info")}
+            farmers={farmers.map((f) => ({ id: f.id, name: f.name }))}
+            onPlotCreated={() => showToast("Plot saved to your account.", "success")}
             onNavigate={changeScreen}
             showToast={showToast}
           />
