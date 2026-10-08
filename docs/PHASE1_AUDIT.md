@@ -1,10 +1,17 @@
-# NutriPalm AI -- Phase 1 audit (branch `audit/phase1-hardening`)
+# NutriPalm AI -- Phase 1 audit (final state of branch `audit/phase1-hardening`)
 
-Status terms: **PASS** = verified by a test or by reading the code path end to end;
-**FIXED** = was broken or fabricated, now corrected and covered by a test or build check;
-**IMPLEMENTED** = added in this audit; **BLOCKED** = needs an external service/binary that was
-not available when the audit ran (exact steps below); **NOT VERIFIED** = no browser / live
-Supabase was available, so the behaviour is covered by code reading and unit tests only.
+## Readiness: NOT READY FOR PRODUCTION-LIKE TESTING
+
+Everything that can be verified without external infrastructure has been verified (below). Three things have
+not: **(1)** a real, managed Supabase scratch project, **(2)** real OCR on this machine's CI (verified manually by
+the project owner), **(3)** live Sentinel / Google Maps / Google OAuth. Item (1) is a genuine requirement and
+is the single remaining blocker.
+
+Status terms: **PASS** = executed and observed (test, script or browser run); **BLOCKED** = needs infrastructure or
+credentials that were not available (steps given); **NOT VERIFIED** = not executed in any form; **NOT APPLICABLE**.
+Nothing is called PASS on the strength of code reading alone.
+
+---
 
 ## 1. Git and PR integration
 
@@ -13,96 +20,127 @@ Supabase was available, so the behaviour is covered by code reading and unit tes
 | PRs #1 - #12 | already merged into `main`; nothing to merge | `main` contains all of them |
 | Branches `enhance/analytics-dashboard(-v3)`, `feature/ai-recommendation-backend`, `feature/auth-profile-setup`, `feature/deficiency`, `susheep` | no unmerged commits | fully contained in `main` |
 | `suhan-google-map-fix` `.env.example` changes | **rejected** | commits a real-looking Supabase project URL + publishable key, and a `jsonjson` typo in the JWKS URL |
-| `suhan-google-map-fix` `googleMapsLoader.ts` | **integrated, rewritten** | its real fix: the loader must resolve to the `google` namespace (surveyor calls `google.maps.Map`; `main` resolved to `google.maps`, so the surveyor always fell back to Leaflet). Console logging of key info removed; timeout + retry-safe promise added; covered by tests |
-| `suhan-google-map-fix` `GoogleMapBoundarySurveyor.tsx` | **rejected** | debug `console.log`s and it deletes Places Autocomplete. Its underlying symptom (map resets) is fixed at the root by making `showToast` stable (see below) |
+| `suhan-google-map-fix` `googleMapsLoader.ts` | **integrated, rewritten** | its real fix: the loader must resolve to the `google` namespace (surveyor calls `google.maps.Map`; `main` resolved to `google.maps`, so the surveyor always fell back to Leaflet). Key logging removed; timeout + retry-safe promise added; unit-tested |
+| `suhan-google-map-fix` `GoogleMapBoundarySurveyor.tsx` | **rejected** | debug `console.log`s and it deletes Places Autocomplete. Its symptom (map resets) is fixed at the root by a stable `showToast` |
 | `suhan-google-map-fix` `SoilReportScreen.tsx` | **rejected** | whitespace/indentation only |
-| `suhan-google-map-fix` `schemas/inputs.py` | **rejected** | adds optional EC / micronutrient / crop-profile fields that nothing reads; micronutrients are persisted through `soil_reports.micronutrients` instead |
+| `suhan-google-map-fix` `schemas/inputs.py` | **rejected** | optional fields nothing reads; micronutrients persist via `soil_reports.micronutrients` |
 
-Nothing was pushed. All work is local commits on `audit/phase1-hardening`.
+Nothing was pushed or merged. All work is local commits on `audit/phase1-hardening`.
 
 ## 2. Credentials exposed in public Git history -- rotate / review
 
-* Branch `suhan-google-map-fix`, commit `3abd769`: a Supabase project URL and a *publishable* (anon-class)
-  key in `.env.example`. Publishable keys are meant to be public **only if RLS is correct**; apply migration 011
-  and consider rotating that key and treating the project ref as known.
+* Branch `suhan-google-map-fix`, commit `3abd769`: a Supabase project URL and a *publishable* (anon-class) key in
+  `.env.example`. Publishable keys are meant to be public **only if RLS is correct**; apply migration 011, and
+  consider rotating that key.
 * `docs/GOOGLE_MAPS_SETUP.md` contains only a placeholder (`AIzaSyYourActual...`), not a real key.
-* No service-role key, JWT secret, or Sentinel secret was found in any branch, PR ref or the working tree.
-* Delete or force-clean the `suhan-google-map-fix` branch on GitHub if you want the values out of the branch list
-  (history rewriting was not done by this audit).
+* No service-role key, JWT secret, or Sentinel secret exists in any branch, PR ref or the working tree.
+* Delete the `suhan-google-map-fix` branch on GitHub if you want the values out of the branch list (not done here).
 
-## 3. Requirement matrix
+---
 
-| ID | Requirement | Final | Evidence / location |
-|----|-------------|-------|---------------------|
-| A1 | Supabase email login/signup/logout, session persistence | PASS (code) / NOT VERIFIED live | `PrototypeAuth.tsx`, `App.tsx` session listener |
-| A2 | Frontend and backend agree on user; JWT verified (HS256 + JWKS RS256/ES256), audience checked | PASS | `dependencies.py`; `test_auth_dependency.py`, `test_security_isolation.py` (expired, wrong audience, `alg:none`, tampered, no-secret) |
-| A3 | No hard-coded identity / auth bypass | **FIXED** | mock-login Supabase fallback removed (fails closed); hard-coded demo login (`DemoUser123!`) removed; `src/__tests__/security.test.ts` |
-| A4 | Google OAuth | NOT VERIFIED (needs Supabase Google provider) | `signInWithOAuth` wired in `PrototypeAuth.tsx` |
-| B1 | Dashboard/profile identity from session | **FIXED** | fallback name "Dr. L. Ramana", Settings defaults, dashboard sample personas removed |
-| C1 | Farm(er) management persisted | **IMPLEMENTED** | `farmers` table (migration 011), `src/data/farmers.ts`, RLS; farmers were localStorage-only before |
-| C2 | Plots linked to a farmer | **IMPLEMENTED** | `plots.farmer_id`, farmer select in plot wizard |
-| D1 | Plot create/view/select/edit/reload with ownership | **FIXED** | store starts empty, never falls back to sample plots; failed save raises instead of creating a fake local `plot-N`; hard-coded farmer "Swaminathan Gowda" and default coordinates removed |
-| D2 | Plot location = real centroid | **FIXED** | previously the first polygon vertex was saved as lat/lng; now `polygonCentroid()` (tested) on create and boundary update |
-| E1 | Real GPS, high accuracy, permission/timeout/poor-accuracy handling, watcher cleanup | PASS (code) | `GoogleMapBoundarySurveyor.tsx` `handleUseCurrentLocation`; no synthetic coordinates. NOT VERIFIED on a device |
-| F1 | Boundary survey: find, GPS, draw, edit, undo/clear, area, perimeter, confirm, save, reload | PASS (code) / NOT VERIFIED in browser | surveyor + `geo.ts` (`geoMath.test.ts` for distance/perimeter/acres) |
-| F2 | Surveyor map was reset by parent re-renders | **FIXED** | `showToast` is now stable (`useCallback`) so the lifecycle effect no longer tears the map down |
-| G1 | Satellite map; Google optional; fallback works | **FIXED** | loader returns `google` namespace (previously always dropped to fallback); tests cover missing key, success, retry, no key logging. Live Google imagery BLOCKED (needs key) |
-| H1 | Weather from plot centroid, units, loading/error states | **FIXED** | dashboard weather was hard-coded (32 C, 11 km/h, fake forecast) -> `DashboardWeatherCard` (Open-Meteo at centroid); `useEnvironmentalData` uses the true centroid |
-| H2 | Live twin never substitutes weather | **FIXED** | `or 30.0 / 70.0 / 10.0` defaults removed -> 503 "unavailable"; `test_live_twin.py` |
-| I1 | NDVI: ownership, real geometry, env credentials, graceful unconfigured, validation | **FIXED** (geometry validation added) / live data BLOCKED | `sentinel_service.validate_polygon`, `test_geometry_validation.py`, `test_api_geospatial.py` |
-| J1 | Soil OCR pipeline: upload validation, extraction, validation, persistence | **FIXED** | streamed 20 MB limit, magic-byte check, malformed-UUID -> 404, micronutrient + validation summary persisted; tests in `test_api_soil_reports.py` |
-| J2 | Missing values stay missing | **FIXED** | the soil screen invented N=280 / P=35 / K=175 / pH 6.5 / EC 0.6 and Zn 0.85 / S 14.2 / B 0.75 ... and hard-coded treatment doses; all removed |
-| J3 | Real OCR on scanned/multi-page | BLOCKED | needs Tesseract + Poppler; 6 backend tests fail only for this reason |
-| K1 | Digital Twin bound to the real plot id, no cross-plot leakage | PASS (code) | `digitalTwins.ts` hooks key off plot id; sample ids rejected |
-| K2 | Twin screen fabricated values | **FIXED** | hard-coded soil-chemistry table (pH 6.2, N 72 ppm ...), default foliar health 98, default "Low" risk, 0-valued gauges shown as data -> "N/A"/empty states; soil chemistry now from the plot's latest report |
-| K3 | Prediction excludes synthetic data | **FIXED** | filter was documented but missing; snapshot service also hard-coded `is_synthetic: True` on real snapshots (would have excluded all real data) -> flag now derived from inputs; `test_twin_snapshot_service.py` |
-| L1 | Analytics use real account/plot data | **FIXED** | rewritten; removed mock fallback plots, default 75/18.2/40/NPK values, fixed 12-month "forecast", fake sub-zones, unconditional "Live Active Sync" |
-| M1 | Recommendations generated by the backend engine, persisted, retrievable per user | **FIXED** | the UI never called the backend: it computed invented doses/costs in the browser and saved nothing. Rebuilt on `/api/recommendations` (crop price required, history listed) |
-| M2 | Recommendation cross-account isolation | PASS | `test_security_isolation.py` and `test_api_jwt_ownership.py` (real signed JWTs, `get_current_user` not overridden) |
-| M3 | Application-level ownership with real JWTs | **PASS** | `test_api_jwt_ownership.py` (16 tests): A's token against B's twin live/prediction, NDVI, cadastral, recommendation get/create, soil upload -> 404 identical to a missing id with no data in the body; every one of the 8 `/api` routes returns 401 for missing/empty/garbage/expired/forged/wrong-audience/no-subject/non-bearer tokens; a guard test fails if a new `/api` route is not in that matrix. NOTE: there is no `GET /api/plots/{id}` or `GET /api/soil-reports/{id}` backend route -- plots and reports are read directly from Supabase under RLS |
-| N1 | RLS correct | **PASS on PostgreSQL 17 (PGlite + auth shim)**; NOT VERIFIED on a real Supabase project | `supabase/tests/verify.mjs` 210/210. Migration 011 enforces that referenced plot / soil report / farmer belong to the caller on INSERT and UPDATE, and that a recommendation's report is the report of its plot; explicit DELETE policies |
-| N2 | Migrations 001-011 apply in order on a clean database | **PASS on PostgreSQL 17 (PGlite + shim)**; BLOCKED on real Supabase (no scratch project/credentials) | every file applies; 011 is idempotent (re-run keeps the same policy count); all 9 tables have RLS and policies; no duplicate policy names; every column the app reads/writes exists. Runbook: `docs/SCRATCH_SUPABASE_VERIFICATION.md` |
-| O1 | Config / secrets / CORS | **FIXED** | `.env.example` files rewritten with placeholders; SETUP.md corrected (port, variable names, nonexistent module paths, wrong schema); wildcard CORS rejected outside development; API base URL no longer silently `localhost` in production builds |
-| P1 | Logout clears per-browser caches | **FIXED** | `nutripalm*` localStorage keys removed on logout; soil/recommendation views no longer cache across plots/accounts |
+## 3. Verified (PASS) -- with the evidence
 
-## 4. Bugs by severity
+| Area | Result | Evidence (re-runnable) |
+|------|--------|------------------------|
+| PostgreSQL migrations 001-011, clean database | **PASS** | `cd supabase/tests && npm run verify` -> every file applies in order; 011 idempotent (re-run keeps the policy count) |
+| Schema vs application | **PASS** | same script: every column the app reads/writes exists; all 9 public tables have RLS and at least one policy; no duplicate policy names; all UPDATE policies carry `WITH CHECK` |
+| Two-user RLS / ownership attack matrix | **PASS 210/210** | same script, as `authenticated` role with PostgREST-style JWT GUCs (never a superuser): A<->B read/update/delete, inserts claiming the other's `owner_id`/plot/farmer/report, re-pointing own rows at the other's plot/report/farmer, owner reassignment, backend-only tables, anon access |
+| Recommendation cross-references | **PASS** | A cannot create a recommendation on B's plot or with B's soil report, cannot re-point an existing one, and a recommendation's report must belong to its plot (found and fixed in this audit) |
+| Security tests are meaningful | **PASS** | `WEAKEN=1 npm run verify` re-creates the pre-011 policies -> 17 expected failures (cross-reference holes) |
+| FastAPI auth with real signed JWTs | **PASS** | `backend/tests/test_api_jwt_ownership.py` (16): all 8 `/api` routes return 401 for missing/empty/garbage/expired/forged/wrong-audience/no-subject/non-bearer; A's token against B's resources -> 404 identical to "not found"; client `owner_id` ignored; a guard test fails if an `/api` route is added without being covered |
+| Backend suite | **PASS 173 / 179** | the 6 failures are the real-OCR tests that need Tesseract/Poppler binaries, absent on this machine (OCR itself: see below) |
+| Frontend build, lint, unit tests | **PASS** | `npm run build` (type-check + bundle), `npm run lint` (0 errors), `npm test` -> 30 tests incl. crop-table parity with the backend |
+| Emulator fidelity | **PASS 14/14** | `npm run e2e:stack-selftest` runs the real `supabase-js` client against the emulated stack |
+| Browser end-to-end, two users | **PASS 87/87** (Edge via Playwright, emulated Supabase stack — not managed Supabase) | `npm run e2e` (details in section 4) |
+| OCR (Tesseract) | **PASS -- manual** | verified by the project owner on their machine; not re-run here. Frontend integration (upload -> API -> structured result -> persisted -> shown, missing values stay missing) **is** covered by the browser E2E using the text-layer PDF path |
 
-* **Critical**: mock-login fallback in `supabaseClient.ts` (anyone "signs in" when env is missing); hard-coded demo credentials in the bundle; recommendations computed and shown without the backend (invented doses/costs/yields); soil screen inventing lab values; dashboard / twin / analytics presenting hard-coded telemetry as live.
-* **High**: plot lat/lng stored as first vertex, not centroid; Maps loader contract mismatch (surveyor always on fallback); soil-report / recommendation INSERT and UPDATE not checking that the referenced plot, report or farmer belongs to the caller (rows could be attached to another user's plot; found by the new attack matrix, including a gap in my own first draft of 011 where recommendations UPDATE only checked owner_id); farmers stored only in localStorage; synthetic flag hard-coded on real twin snapshots; live twin default weather; sample plots shown to signed-in users on load/error; failed plot save created fake local plot.
-* **Medium**: unvalidated polygon sent to Sentinel Hub; unbounded upload read + trust of client content type; wildcard CORS allowed in production; unknown crops judged against oil-palm ranges (and "Cocoa" matched coconut, "Coconut Palm" matched oil palm); inverted water-stress interpretation and `[0]`-of-unordered-rows "latest" in analytics.
-* **Low**: stale SETUP/README claims; static "GIS sync 100% online" chip; fake refresh toasts.
+Verified against PostgreSQL 17/PGlite with Supabase-auth-compatible test roles. Managed Supabase verification remains blocked.
 
-## 5. Known limitations / not claimed
+**Test scope that must not be overstated:** the database checks ran on PostgreSQL 17 (PGlite, real Postgres compiled
+to WASM) with a Supabase-auth-compatible shim (`supabase/tests/supabase_shim.sql`); the browser E2E ran against an
+**emulated** Supabase (GoTrue/PostgREST-compatible HTTP layer over that Postgres) with the real FastAPI backend and
+the real Vite app. This is **not** equivalent to a managed Supabase project.
 
-* The yield estimate in `/twin/live` uses an oil-palm baseline (20 t/ha) for every crop, and `crop_rules.py` / `cropBaselines.ts` are separate V1 reference tables with different numbers. Treat both as defaults, not agronomy-validated.
-* Sentinel NDVI is an aggregate over the last 30 days (the `acquisition_date` is the end of that window, not a single satellite pass).
-* `Bhu-Naksha` cadastral lookup is intentionally unavailable.
-* Crops not in the backend catalog (e.g. "Cocoa", "Coconut Palm" as written) get a 422 "unsupported crop" from the recommendation API instead of advice.
-* The i18n dictionaries still contain strings for removed mock content; they are unused.
-* A guided-demo overlay (tour text only) remains; it contains no fabricated account data.
-* Not verified: browser behaviour, Google OAuth, live Supabase RLS, live Sentinel, live Google Maps, real OCR.
+## 4. Browser E2E (emulated Supabase + real backend + real app, Microsoft Edge via Playwright)
 
-## 6. How to finish the BLOCKED verifications
+Run: `cd supabase/tests && npm install && E2E_PYTHON=<python with backend deps> npm run e2e`.
 
-1. **Database**: create a scratch Supabase project, run `001`...`011`, then sign up two users and confirm with the anon key
-   that user B cannot select/update/insert rows referencing user A's `plots`, `soil_reports`, `recommendations`, `farmers`.
-2. **OCR**: install Tesseract and Poppler (see `SETUP.md`), run `cd backend && python -m pytest -q` -- expect 0 failures.
-3. **Sentinel**: set `SENTINEL_HUB_CLIENT_ID/SECRET`, call `GET /api/geospatial/ndvi/{plot_id}` with a token for a mapped plot.
-4. **Google Maps**: set `VITE_GOOGLE_MAPS_API_KEY`, open the surveyor, confirm Google satellite loads; unset it and confirm the Esri/Leaflet fallback.
-5. **End to end**: two accounts, create farmer -> plot (draw boundary) -> upload report -> generate recommendation -> check Digital Twin and Analytics; then as user B request A's ids against the API (expect 404).
+| Step | Result |
+|------|--------|
+| Sign up (email), session persists across reload, sign out clears token + `nutripalm*` caches, no restore after logout | PASS |
+| Dashboard: real profile name/role, honest empty state, no fabricated persona/telemetry, header API status from `/health` | PASS |
+| Create farmer (persisted for the right owner) | PASS |
+| Create plot: wizard -> location search (live geocoding) -> current location (browser geolocation, emulated device at +/-12 m) -> satellite map -> draw 4 vertices -> undo -> edit (drag a vertex, area/perimeter update) -> confirm -> save | PASS |
+| Saved boundary: closed WGS84 GeoJSON, stored location = polygon **centroid** (not first vertex), real reverse-geocode + elevation, status "Not Assessed" | PASS |
+| Reload: same plot and area; weather requested for the plot's own centroid; NDVI shows "Config required" (no fabricated NDVI); backend NDVI call is authenticated and carries the plot id | PASS |
+| Soil report: incomplete report not saved and missing values shown as missing; complete report persisted with the exact extracted N/P/K/pH/EC/OC, micronutrients stay empty ("Not reported") | PASS |
+| Recommendations: refuses to run without a crop price; browser calls `POST /api/recommendations` with plot id, report id and price only (no owner/user id, bearer token); persisted for the right user/plot/report; shown again after reload; nothing computed or cached in the browser | PASS |
+| Second plot; Digital Twin follows the selected plot (live + prediction requests use that plot's UUID); persisted non-synthetic snapshot shown, synthetic one never shown; no leakage between plots | PASS |
+| Analytics: KPIs equal the account's data; no invented forecast/telemetry | PASS |
+| Profile / Settings: real identity, no hard-coded organisation/licence | PASS |
+| User B: sees none of A's data on any screen; direct calls with B's token against A's ids (twin live/prediction, NDVI, cadastral, recommendation get/create, soil upload) -> 404; REST read/update/delete/insert against A's rows denied; A's data unchanged; forged token -> 401 | PASS |
+| Console/network audit: no page errors, no unexpected console errors or HTTP errors, no request storm, no backend traceback | PASS (known accepted noise below) |
 
-## 7. Verification log (migration / RLS phase)
+Accepted console noise (framework-level, not application logic): framer-motion logs
+`<path> attribute d: Expected moveto path command` for the boot-splash SVG animation; the missing Google key logs a
+warning because the keyless engine is intentional.
 
-* **Correction to the first audit report:** it said an UPDATE policy without `WITH CHECK` allowed `owner_id`
-  reassignment. That is wrong: PostgreSQL reuses `USING` as `WITH CHECK` when none is given, and the mutation test
-  (`WEAKEN=1`) confirms a bare owner swap was already rejected. The real pre-011 weaknesses were the *cross-reference*
-  checks (attaching rows to another user's plot / report / farmer), which the mutation test shows as 17 failures.
-* Bug found by the attack matrix in the first draft of 011 and fixed: `recommendations` UPDATE could re-point a row
-  at another user's `plot_id` / `soil_report_id`, and a recommendation could pair a plot with a report of a different plot.
-* Environment: no Docker, Postgres, Supabase CLI or scratch-project credentials existed on the audit machine. The
-  database checks therefore ran on PGlite (real PostgreSQL 17 compiled to WASM) with `supabase_shim.sql` standing in
-  for Supabase's `auth` schema and roles. That validates SQL, RLS, triggers and cascades; it does **not** validate a
-  managed Supabase project.
-* Server-side trust review: no route accepts `user_id` / `owner_id` / `farm_id` from the client; stored `owner_id` is
-  always compared with the verified token subject, and written owner ids come from the token (or from a plot already
-  proven to belong to it). Extra body fields such as `owner_id` are ignored (tested).
+## 5. BLOCKED / NOT VERIFIED
+
+| Item | Status | Why / how to finish |
+|------|--------|---------------------|
+| Managed Supabase scratch project: migrations + two-user RLS | **BLOCKED -- no scratch Supabase project/credentials** | follow `docs/SCRATCH_SUPABASE_VERIFICATION.md`; `npm run verify:remote` (written, syntax-checked, guarded, **never run**) |
+| Supabase email confirmation, password reset, GoTrue behaviours | **BLOCKED** (same) | emulator auto-confirms and does not implement recovery |
+| Google OAuth sign-in | **BLOCKED** | needs the Google provider configured in a real Supabase project |
+| Google Maps imagery / Places search | **BLOCKED -- no API key** | keyless fallback is PASS (above); set `VITE_GOOGLE_MAPS_API_KEY` to test the Google engine |
+| Sentinel-2 NDVI with real data | **BLOCKED -- no credentials** | unconfigured state, authentication, ownership and geometry validation are PASS |
+| Real GPS hardware | **NOT VERIFIED** | browser geolocation was emulated (permission + coordinates + accuracy); permission-denied / timeout paths are code-only |
+| Scanned/multi-page OCR in CI | **NOT VERIFIED here** (PASS manually by owner) | install Tesseract + Poppler and run `pytest` |
+| Mobile viewport / accessibility | **NOT VERIFIED** | desktop viewport only |
+| `GET /api/plots/{id}` and `/api/soil-reports/{id}` | **NOT APPLICABLE** | these backend routes do not exist; plots and reports are read directly from Supabase under RLS (covered by the DB matrix and browser attacks) |
+
+## 6. Bugs found and fixed (cumulative)
+
+**Critical**: mock-login Supabase fallback; hard-coded demo credentials; recommendations computed in the browser
+(invented doses/costs/yields); soil screen inventing lab values; dashboard / twin / analytics / farmer / plot screens showing hard-coded
+telemetry as live (fake sensors, "99.8%", "+12% MoM", fake activity logs, fake AI observations, fake plot health).
+
+**High**: confirm-boundary dialog rendered *behind* the Leaflet map (users could not save a boundary with the keyless engine);
+plot location stored as first vertex not centroid; Maps loader contract mismatch; surveyor reset by parent re-renders;
+cross-reference RLS holes (found by the attack matrix, including one in this audit's own first draft of migration 011);
+farmers only in localStorage; snapshot service marking real data synthetic; live-twin default weather; sample plots shown to signed-in
+users; failed save creating a fake local plot; Soil/Analytics benchmark ranges contradicting the recommendation engine
+(frontend table now mirrors `crop_rules.py`, guarded by a parity test).
+
+**Medium**: unvalidated polygons sent to Sentinel; unbounded uploads / trusted content type; wildcard CORS allowed in
+production; unknown crops judged against oil palm and loose crop-name matching ("Cocoa" matched coconut); oil-palm
+yield shown for every crop (now only for oil palm, others get an explicit note); analytics inverted water-stress logic;
+Esri imagery blank at zoom 19 (now upscales from native zoom 18); farmer wizard fake coordinates/district defaults; dead
+duplicate `AddFarmerScreen`; soil reference ranges hard-coded to oil palm.
+
+**Low**: stale SETUP/README; static status chips; fake refresh toasts; duplicate success toast; "Soil Reports Scanned"
+counting farmers; unformatted acreage (1.4675289...).
+
+## 7. Known limitations (not claimed as solved)
+
+* Crop reference values and the live-twin disease/water models are **V1 defaults, not agronomist-validated**. The yield
+  model is oil-palm only. Unsupported crops (e.g. Cocoa, Coconut *Palm* as free text) are recorded but get no recommendation
+  (the UI says which crops are supported).
+* Sentinel NDVI is an aggregate over the last 30 days, not a single satellite pass.
+* Cadastral (Bhu-Naksha) lookup intentionally reports unavailable.
+* A boot-splash animation shows a fixed-duration progress bar; it carries no data.
+* The plot wizard's irrigation / soil-type selects still default to "Precision Drip" / "Loamy" and are saved as chosen.
+* Imagery providers may lack tiles for some locations (grey placeholders); that is provider coverage, not an app fault.
+
+## 8. Reproduce everything
+
+```bash
+npm install && npm run build && npm run lint && npm test            # frontend
+cd backend && pip install -r requirements.txt && python -m pytest -q  # backend (6 OCR tests need Tesseract/Poppler)
+cd supabase/tests && npm install
+npm run verify                  # migrations + 210-attack RLS matrix on PostgreSQL 17 (PGlite)
+WEAKEN=1 npm run verify         # mutation check: expected failures
+npm run e2e:stack-selftest      # emulator vs the real supabase-js client
+E2E_PYTHON=/path/to/python npm run e2e   # browser E2E (needs internet for tiles/geocoding/weather, and Edge or Chrome)
+npm run verify:remote           # BLOCKED: real scratch Supabase project, see docs/SCRATCH_SUPABASE_VERIFICATION.md
+```
