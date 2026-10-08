@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { usePlots, type Plot, getStatusColor, getStatusDotColor } from "../../data/plots";
 import LeafletMapPicker, { type BoundaryData } from "./LeafletMapPicker";
+import { SUPPORTED_CROP_NAMES } from "../../constants/cropBaselines";
 import GoogleMapBoundarySurveyor from "./GoogleMapBoundarySurveyor";
 import { FarmPlotOverviewMap, type BasemapMode, type DataOverlayLayer } from "./FarmPlotOverviewMap";
 import { reverseGeocode, getElevation, parseGeoJSONFile, type GeoJSONPolygon } from "../../lib/geo";
@@ -1158,10 +1159,13 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                             className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
                           />
                           <datalist id="crop-options">
-                            <option value="Oil Palm" />
-                            <option value="Coconut Palm" />
-                            <option value="Cocoa" />
+                            {SUPPORTED_CROP_NAMES.map((c) => (
+                              <option key={c} value={c} />
+                            ))}
                           </datalist>
+                          <p className="text-[9px] text-gray-400 font-medium leading-snug">
+                            Fertilizer recommendations are available for: {SUPPORTED_CROP_NAMES.join(", ")}. Other crops can be recorded but get no recommendation.
+                          </p>
                         </div>
                       </div>
 

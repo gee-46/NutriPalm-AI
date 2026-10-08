@@ -211,7 +211,7 @@ export interface LiveScores {
   disease_risk: number;
   crop_health: number;
   soil_score: number;
-  yield_estimate_t_ha: number;
+  yield_estimate_t_ha: number | null;
 }
 
 export interface LiveWeather {
@@ -238,6 +238,7 @@ export interface LiveTwinData {
   disease_name: string;
   disease_explanation: string;
   yield_risk: string;
+  model_note?: string | null;
   risk_level: "Low" | "Moderate" | "High";
   ndvi_last_known: number | null;
   daily_7d: Array<{

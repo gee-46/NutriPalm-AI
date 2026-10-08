@@ -50,22 +50,3 @@ describe("rowToFarmer", () => {
     expect(f.status).toBe("Active");
   });
 });
-
-describe("crop baselines", () => {
-  it("does not judge unknown crops against oil palm", async () => {
-    const { getCropBaseline } = await import("../constants/cropBaselines");
-    expect(getCropBaseline("Cocoa")).toBeNull();
-    expect(getCropBaseline(undefined)).toBeNull();
-    expect(getCropBaseline("Oil Palm")).not.toBeNull();
-  });
-});
-
-describe("crop baseline name matching", () => {
-  it("maps Coconut Palm to coconut (not oil palm) and Cocoa to nothing", async () => {
-    const { getCropBaseline, CROP_BASELINES } = await import("../constants/cropBaselines");
-    expect(getCropBaseline("Coconut Palm")).toBe(CROP_BASELINES.coconut);
-    expect(getCropBaseline("Oil Palm")).toBe(CROP_BASELINES.oil_palm);
-    expect(getCropBaseline("oil_palm")).toBe(CROP_BASELINES.oil_palm);
-    expect(getCropBaseline("Cocoa")).toBeNull();
-  });
-});

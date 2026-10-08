@@ -68,7 +68,7 @@ class LiveScores(BaseModel):
     disease_risk: float = 0.0
     crop_health: float = 0.0
     soil_score: float = 0.0
-    yield_estimate_t_ha: float = 0.0
+    yield_estimate_t_ha: Optional[float] = None
 
 
 class LiveTwinResponse(BaseModel):
@@ -85,6 +85,7 @@ class LiveTwinResponse(BaseModel):
     disease_name: str = "No Significant Risk"
     disease_explanation: str = ""
     yield_risk: str = "Unknown"
+    model_note: Optional[str] = None
     risk_level: str = "Low"
 
     ndvi_last_known: Optional[float] = None

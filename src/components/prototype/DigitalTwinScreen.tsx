@@ -314,7 +314,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       soilNutrients.push({
         label,
         val: `${value}${unit}`,
-        pct: ref ? Math.min(100, Math.max(3, Math.round((value / (ref.max * 1.2)) * 100))) : 0,
+        pct: ref ? Math.min(100, Math.max(3, Math.round((value / (ref.target * 1.3)) * 100))) : 0,
         color: within ? "bg-emerald-500" : "bg-amber-500",
         text: ref ? rangeNote(value, ref.min, ref.max) : "No reference range",
       });
@@ -665,7 +665,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   <span className="absolute text-base">{score.icon}</span>
                 </div>
                 <span className={`text-sm font-black ${liveAvailable ? score.color : "text-gray-400"}`}>
-                  {isLiveLoading ? "—" : !liveAvailable && score.label !== "Crop Health" ? "N/A" : score.label === "Crop Health" && !hasTwinHealth ? "N/A" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
+                  {isLiveLoading ? "—" : (!liveAvailable && score.label !== "Crop Health") || (score.label === "Yield Est." && liveYieldEst === null) ? "N/A" : score.label === "Crop Health" && !hasTwinHealth ? "N/A" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
                 </span>
                 {score.sublabel && (
                   <span className="text-[9px] font-bold text-gray-400">{score.sublabel}</span>
@@ -675,6 +675,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             );
           })}
         </div>
+
+        {liveData?.model_note && (
+          <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">{liveData.model_note}</p>
+        )}
 
         {/* Live weather quick-read strip */}
         {liveData && (

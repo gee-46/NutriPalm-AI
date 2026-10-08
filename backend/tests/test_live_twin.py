@@ -220,3 +220,24 @@ def test_prediction_query_excludes_synthetic_rows():
 def test_other_user_constant_is_distinct():
     # Guard against a fixture edit silently weakening the IDOR tests above.
     assert OTHER_USER_ID != TEST_USER_ID
+
+
+def test_yield_is_only_estimated_for_oil_palm(monkeypatch):
+    monkeypatch.setattr(live_twin_service, "fetch_live_weather", lambda lat, lon: _weather())
+
+    palm = _service(PLOT_ROW).compute_live_state(str(TEST_PLOT_ID))
+    assert palm["scores"]["yield_estimate_t_ha"] is not None
+    assert palm["model_note"] is None
+
+    rice = _service({**PLOT_ROW, "crop": "Rice"}).compute_live_state(str(TEST_PLOT_ID))
+    assert rice["scores"]["yield_estimate_t_ha"] is None  # no oil-palm yield invented for rice
+    assert rice["yield_risk"] == "Not estimated for this crop"
+    assert "oil palm" in rice["model_note"].lower()
+
+
+def test_live_response_schema_accepts_missing_yield(client, monkeypatch):
+    monkeypatch.setattr(live_twin_service, "fetch_live_weather", lambda lat, lon: _weather())
+    _use_service(_service({**PLOT_ROW, "crop": "Coconut"}))
+    response = client.get(f"/api/plots/{TEST_PLOT_ID}/twin/live")
+    assert response.status_code == 200
+    assert response.json()["scores"]["yield_estimate_t_ha"] is None

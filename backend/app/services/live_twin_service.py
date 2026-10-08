@@ -356,9 +356,18 @@ class LiveTwinService:
         )
         crop_health = compute_crop_health(ndvi, water_stress, disease_risk)
         soil_state, soil_score, soil_interpretation = compute_soil_state(rainfall_7d, humidity)
-        yield_est, yield_risk = compute_yield_forecast(
-            crop_health, water_stress, plot.get("stage", "Fruit Dev")
-        )
+        # The yield model is an oil-palm FFB model (20 t/ha base). Applying it to another crop
+        # would present a made-up yield, so it is only computed for oil palm.
+        is_oil_palm = (plot.get("crop") or "").strip().lower().replace(" ", "_") == "oil_palm"
+        if is_oil_palm:
+            yield_est, yield_risk = compute_yield_forecast(crop_health, water_stress, plot.get("stage"))
+            model_note = None
+        else:
+            yield_est, yield_risk = None, "Not estimated for this crop"
+            model_note = (
+                "Disease-risk and yield models are V1 defaults calibrated for oil palm. "
+                "Yield is not estimated for other crops and the disease score is indicative only."
+            )
 
         # 5. Determine overall risk level
         if disease_risk > 65 or water_stress > 70:
@@ -406,6 +415,7 @@ class LiveTwinService:
             "disease_name": disease_name,
             "disease_explanation": disease_explanation,
             "yield_risk": yield_risk,
+            "model_note": model_note,
             "risk_level": risk_level,
             "ndvi_last_known": ndvi,
             "ndvi_data_age_days": None,  # Could compute from analysis_date
