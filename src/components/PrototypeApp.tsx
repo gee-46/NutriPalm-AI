@@ -21,7 +21,6 @@ import {
 import { DashboardScreen } from "./prototype/DashboardScreen";
 import { FarmerScreen } from "./prototype/FarmerScreen";
 import type { Farmer } from "./prototype/FarmerScreen";
-import { AddFarmerScreen } from "./prototype/AddFarmerScreen";
 import { FarmPlotScreen } from "./prototype/FarmPlotScreen";
 import { DigitalTwinScreen } from "./prototype/DigitalTwinScreen";
 import { SoilReportScreen } from "./prototype/SoilReportScreen";
@@ -39,6 +38,7 @@ import {
 import { LanguageToggle } from "../translation/LanguageToggle";
 import { useTranslation } from "../translation/useTranslation";
 import { usePlots } from "../data/plots";
+import { useApiHealth } from "../lib/useApiHealth";
 import { fetchFarmers, createFarmer, deleteFarmer } from "../data/farmers";
 import type { NewFarmerInput } from "../data/farmers";
 
@@ -94,6 +94,7 @@ const demoSteps = [
 export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) => {
   const { t } = useTranslation();
   const { plots } = usePlots();
+  const apiHealth = useApiHealth();
   const [currentScreen, setCurrentScreen] = useState("Dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isScreenLoading, setIsScreenLoading] = useState(false);
@@ -387,7 +388,6 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       case "Dashboard":
         return <DashboardSkeleton />;
       case "Farmers":
-      case "Add Farmer":
         return <FarmerTableSkeleton />;
       case "Soil Reports":
         return <SoilReportSkeleton />;
@@ -419,13 +419,6 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             onDeleteFarmer={currentUser ? handleDeleteFarmer : undefined}
             onNavigate={changeScreen}
             showToast={showToast}
-          />
-        );
-      case "Add Farmer":
-        return (
-          <AddFarmerScreen
-            onSave={handleAddFarmer}
-            onCancel={() => changeScreen("Farmers")}
           />
         );
       case "Farm Plots":
@@ -593,9 +586,18 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           <div className="flex items-center gap-4">
             <LanguageToggle />
             {/* System Status Online */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-100 bg-emerald-50 text-[10px] font-bold text-primary">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              SYSTEM ONLINE
+            <div
+              role="status"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold ${
+                apiHealth === "online"
+                  ? "border-emerald-100 bg-emerald-50 text-primary"
+                  : apiHealth === "offline"
+                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                    : "border-gray-200 bg-gray-50 text-gray-500"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${apiHealth === "online" ? "bg-primary" : apiHealth === "offline" ? "bg-rose-500" : "bg-gray-400"}`} />
+              {apiHealth === "online" ? "API ONLINE" : apiHealth === "offline" ? "API OFFLINE" : "CHECKING API"}
             </div>
 
             {/* Notification Bell */}

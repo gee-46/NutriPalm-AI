@@ -55,7 +55,7 @@ export interface Plot {
   ndvi?: number;
   moisture?: number;
   lastInspection?: string;
-  status: "Healthy" | "Moderate" | "Needs Attention" | "Critical";
+  status: "Healthy" | "Moderate" | "Needs Attention" | "Critical" | "Not Assessed";
   /** Tailwind classes for FarmPlotScreen badge */
   statusColor: string;
   /** Tailwind bg-* class for DigitalTwin status dot */
@@ -117,7 +117,8 @@ export function polygonCentroid(geo: GeoJSONPolygon | undefined | null): { lat: 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function dbRowToPlot(row: Record<string, any>): Plot {
-  const status = (row.status as Plot["status"]) || "Healthy";
+  // No health assessment exists until a Digital Twin / report produces one.
+  const status = (row.status as Plot["status"]) || "Not Assessed";
 
   // Real geometry from Supabase 'boundary' JSON column (captured via GPS drawing or imported GeoJSON)
   const isGeoJSONValid =
@@ -173,14 +174,14 @@ function dbRowToPlot(row: Record<string, any>): Plot {
 
   const fillMap: Record<Plot["status"], string> = {
     "Healthy": "url(#healthyGrad)", "Moderate": "url(#stableGrad)",
-    "Critical": "url(#criticalGrad)", "Needs Attention": "url(#deficientGrad)",
+    "Critical": "url(#criticalGrad)", "Needs Attention": "url(#deficientGrad)", "Not Assessed": "rgba(148, 163, 184, 0.25)",
   };
   const strokeMap: Record<Plot["status"], string> = {
-    "Healthy": "#10b981", "Moderate": "#84cc16", "Critical": "#e11d48", "Needs Attention": "#f59e0b",
+    "Healthy": "#10b981", "Moderate": "#84cc16", "Critical": "#e11d48", "Needs Attention": "#f59e0b", "Not Assessed": "#94a3b8",
   };
   const glowMap: Record<Plot["status"], string> = {
     "Healthy": "rgba(16, 185, 129, 0.4)", "Moderate": "rgba(132, 204, 22, 0.3)",
-    "Critical": "rgba(225, 29, 72, 0.4)", "Needs Attention": "rgba(245, 158, 11, 0.3)",
+    "Critical": "rgba(225, 29, 72, 0.4)", "Needs Attention": "rgba(245, 158, 11, 0.3)", "Not Assessed": "rgba(148, 163, 184, 0.3)",
   };
 
   return {
@@ -459,6 +460,8 @@ export function getStatusColor(status: Plot["status"]): string {
       return "text-orange-600 bg-orange-50 border border-orange-100";
     case "Critical":
       return "text-rose-650 bg-rose-50 border border-rose-100";
+    case "Not Assessed":
+      return "text-slate-600 bg-slate-50 border border-slate-200";
   }
 }
 
@@ -473,5 +476,7 @@ export function getStatusDotColor(status: Plot["status"]): string {
       return "bg-orange-500";
     case "Critical":
       return "bg-rose-500";
+    case "Not Assessed":
+      return "bg-slate-400";
   }
 }

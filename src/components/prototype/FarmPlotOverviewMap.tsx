@@ -29,7 +29,7 @@ import { computeCentroid } from "../../lib/geo";
 
 const MAPTILER_KEY = (import.meta as any).env?.VITE_MAPTILER_API_KEY as string | undefined;
 
-function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number } {
+function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number; maxNativeZoom?: number } {
   if (MAPTILER_KEY) {
     return {
       url: `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
@@ -41,7 +41,9 @@ function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: 
   return {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "© Esri, Maxar, Earthstar Geographics",
-    maxZoom: 19,
+    // Esri has no imagery at zoom 19+ in many regions: stop at native zoom 18 and upscale.
+    maxZoom: 21,
+    maxNativeZoom: 18,
   };
 }
 
@@ -117,6 +119,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
     });
     const satelliteLayer = L.tileLayer(satConfig.url, {
       maxZoom: satConfig.maxZoom,
+      maxNativeZoom: satConfig.maxNativeZoom,
       attribution: satConfig.attribution,
     });
 
@@ -281,7 +284,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
         `
         <div style="font-family: system-ui, -apple-system, sans-serif; font-size: 11px; line-height: 1.4; min-width: 130px;">
           <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">${plot.name}</div>
-          <div style="color: #64748b; font-size: 10px;">${plot.crop} • ${plot.area} Acres</div>
+          <div style="color: #64748b; font-size: 10px;">${plot.crop} • ${Number(plot.area).toFixed(2)} Acres</div>
           <div style="margin-top: 4px; border-top: 1px solid #e2e8f0; padding-top: 4px; display: flex; justify-content: space-between;">
             <span style="color: #64748b;">Status:</span>
             <strong style="color: ${fillColor};">${plot.status}</strong>
@@ -342,7 +345,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
         ">
           <span style="width: 6px; height: 6px; border-radius: 50%; background: ${statusDot}; flex-shrink: 0;"></span>
           <span>${plot.name.length > 18 ? plot.name.slice(0, 16) + "…" : plot.name}</span>
-          <span style="color: #94a3b8; font-size: 9px;">(${plot.area} ac)</span>
+          <span style="color: #94a3b8; font-size: 9px;">(${Number(plot.area).toFixed(2)} ac)</span>
         </div>
       `;
 

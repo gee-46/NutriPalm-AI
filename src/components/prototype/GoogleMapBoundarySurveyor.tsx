@@ -351,12 +351,15 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
         zoom,
         zoomControl: false,
         attributionControl: false,
+        maxZoom: 21,
       });
 
-      // High-resolution satellite tiles
+      // High-resolution satellite tiles. Esri imagery is not available at zoom 19+
+      // everywhere (blank tiles), so tiles stop at their native zoom 18 and Leaflet
+      // scales them up for deep zoom instead of showing nothing.
       const satLayer = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { maxZoom: 19 }
+        { maxZoom: 21, maxNativeZoom: 18 }
       );
       satLayer.addTo(map);
 
@@ -1430,7 +1433,9 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
 
       {/* ================= 2. Map Canvas (Full Viewport Hero) ================= */}
       <main
-        className={`relative flex-1 w-full h-full bg-slate-950 overflow-hidden ${
+        // `isolate` makes the map its own stacking context: Leaflet's internal panes use
+        // z-index 400-700 and would otherwise paint above the confirm/clear dialogs.
+        className={`relative isolate z-0 flex-1 w-full h-full bg-slate-950 overflow-hidden ${
           isDrawingActive ? "cursor-crosshair" : "cursor-grab"
         }`}
         onClick={() => setShowSuggestionsDropdown(false)}

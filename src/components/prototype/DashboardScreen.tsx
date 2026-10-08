@@ -9,7 +9,6 @@ import {
   Heart,
   ArrowRight,
   Activity,
-  Calendar,
   Layers3,
   Compass,
   ArrowUpRight,
@@ -97,7 +96,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     soilHealth: string;
     recommendation: string;
     lastInspection: string;
-    status: "Healthy" | "Moderate" | "Needs Attention" | "Critical";
+    status: "Healthy" | "Moderate" | "Needs Attention" | "Critical" | "Not Assessed";
     statusColor: string;
   } | null>(null);
 
@@ -289,10 +288,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                                         {t('dashboardscreen.start_guided_demo')}
                                       </button>
           )}
-          <div className="flex items-center gap-2 text-xs font-bold bg-white border border-gray-250 px-4 py-2.5 rounded-xl shadow-xs text-gray-650">
-            <Calendar className="w-4 h-4 text-primary" />
-            <span>{t('dashboardscreen.telemetry_online_synced')}</span>
-          </div>
         </div>
       </div>
 
@@ -309,19 +304,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-500">
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            {currentUser ? `${activePlots.length} ${activePlots.length === 1 ? t('dashboardscreen.farm_monitored', 'farm monitored') : t('dashboardscreen.farms_monitored', 'farms monitored')}` : t('dashboardscreen.4_farms_monitored_today')}
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            {`${activePlots.length} ${activePlots.length === 1 ? "plot" : "plots"} on file`}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            {currentUser ? `${activePlots.length * 3} ${t('dashboardscreen.sensors_online', 'sensors online')}` : t('dashboardscreen.18_sensors_online')}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            {t('dashboardscreen.ai_engine_active')}
-          </span>
-          <span className="flex items-center gap-1.5 text-gray-450 font-mono text-[11px]">
-            {currentUser ? t('dashboardscreen.live_sync', 'Live Telemetry Synced') : t('dashboardscreen.last_sync_2_mins_ago')}
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+            No IoT sensors connected
           </span>
         </div>
       </motion.div>
@@ -339,7 +327,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="p-3 bg-primary/10 text-primary rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Users className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{t('dashboardscreen.12_mom')}</span>
             </div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.registered_farmers')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
@@ -368,7 +355,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="p-3 bg-emerald-50 text-[#2E7D32] rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Layers3 className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{t('dashboardscreen.gis_active')}</span>
             </div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.mapped_plots')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
@@ -397,7 +383,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="p-3 bg-secondary/10 text-primary rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Cpu className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-bold text-[#2E7D32] bg-[#A5D6A7]/25 px-2.5 py-0.5 rounded-full border border-emerald-100/50">99.8%</span>
             </div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.digital_twins')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
@@ -426,7 +411,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl group-hover:scale-110 transition-transform duration-300">
                 <Sparkles className="w-5 h-5 fill-indigo-50" />
               </div>
-              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full">{t('dashboardscreen.ai_advisories')}</span>
             </div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('dashboardscreen.advisories_built')}</p>
             <p className="text-3xl font-black text-gray-900 mt-1.5 tracking-tight">

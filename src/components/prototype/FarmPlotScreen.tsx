@@ -156,6 +156,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     ? Math.round(validSoilHealths.reduce((a, b) => a + b, 0) / validSoilHealths.length)
     : null;
 
+  const cropAcres = new Map<string, number>();
+  plots.forEach((p) => cropAcres.set(p.crop || "Not set", (cropAcres.get(p.crop || "Not set") ?? 0) + (p.area || 0)));
+  const cropShare = [...cropAcres.entries()].map(([name, acres]) => ({ name, pct: totalArea > 0 ? Math.round((acres / totalArea) * 100) : 0 }));
+  const recentPlots = [...plots].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 5);
   const uniqueCrops = new Set(plots.map(p => p.crop).filter(Boolean));
   const activeCropTypes = uniqueCrops.size;
 
@@ -250,7 +254,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
     setIsGeocodingStep3(false);
 
     // Persist to shared store
-    const status: Plot["status"] = "Healthy";
+    const status: Plot["status"] = "Not Assessed"; // nothing has assessed this plot yet
     const coordStrings = wizardBoundary
       ? (wizardBoundary.geoJSON.coordinates[0] as number[][]).map(
           ([lng, lat]) => `${Math.abs(lat).toFixed(4)} ${lat >= 0 ? "N" : "S"}, ${Math.abs(lng).toFixed(4)} ${lng >= 0 ? "E" : "W"}`
@@ -273,7 +277,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       age: plantationAge,
       plantingDate: newPlotData.plantingDate || undefined,
       plantCount: newPlotData.plantCount ? parseInt(newPlotData.plantCount, 10) : undefined,
-      area: areaAcres,
+      area: Number(areaAcres.toFixed(4)),
       elevation: elevation || undefined,
       village: village || undefined,
       taluk: taluk || undefined,
@@ -288,9 +292,9 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       statusColor: getStatusColor(status),
       statusDotColor: getStatusDotColor(status),
       svgPath: wizardBoundary?.geoJSON ? boundaryToSvgPath(wizardBoundary.geoJSON) : generatePlaceholderSvgPath(areaAcres),
-      fillGradient: "url(#healthyGrad)",
-      strokeColor: "#10b981",
-      glowColor: "rgba(16, 185, 129, 0.4)",
+      fillGradient: "rgba(148, 163, 184, 0.25)",
+      strokeColor: "#94a3b8",
+      glowColor: "rgba(148, 163, 184, 0.3)",
       boundaryMapped: !!wizardBoundary,
       soilReportAttached: false,
     });
@@ -584,14 +588,6 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   <span className="text-gray-500 font-medium">{t('farmplotscreen.manual_drip')}</span>
                 </div>
               </div>
-
-              <div className="space-y-1.5">
-                <p className="font-extrabold text-[9px] text-gray-400 uppercase">{t('farmplotscreen.telemetry_nodes')}</p>
-                <div className="flex flex-col gap-1">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.iot_sensors')}</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-white border border-primary" />  {t('farmplotscreen.selected_plot')}</span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -604,123 +600,75 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                                       </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-gray-700">
-              {/* Crop Distribution */}
+              {/* Crop Distribution (from this account's plots) */}
               <div className="space-y-2">
                 <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.crop_distribution')}</p>
                 <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>{t('farmplotscreen.oil_palm_1')}</span>
-                      <span>85%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: "85%" }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>{t('farmplotscreen.coconut_palm_1')}</span>
-                      <span>10%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: "10%" }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between font-bold mb-1">
-                      <span>{t('farmplotscreen.cocoa_1')}</span>
-                      <span>5%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: "5%" }} />
-                    </div>
-                  </div>
+                  {cropShare.length === 0 ? (
+                    <p className="text-gray-500 font-semibold">No plots yet.</p>
+                  ) : (
+                    cropShare.map((c) => (
+                      <div key={c.name}>
+                        <div className="flex justify-between font-bold mb-1">
+                          <span>{c.name}</span>
+                          <span>{c.pct}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary" style={{ width: `${c.pct}%` }} />
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
-              {/* Healthy vs Attention Plots */}
+              {/* Plot health: only plots that have actually been assessed */}
               <div className="space-y-2">
                 <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.plot_health_ratios')}</p>
-                <div className="flex items-center gap-4 py-2">
-                  <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="32" cy="32" r="26" stroke="#F1F5F0" strokeWidth="6" fill="transparent" />
-                      <circle cx="32" cy="32" r="26" stroke="#2E7D32" strokeWidth="6" fill="transparent" strokeDasharray={2*Math.PI*26} strokeDashoffset={2*Math.PI*26*(1-0.60)} strokeLinecap="round" />
-                    </svg>
-                    <span className="absolute text-[10px] font-black text-gray-800">60%</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    <p className="font-bold text-gray-800">{t('farmplotscreen.60_optimal')}</p>
-                    <p className="text-gray-400 leading-normal text-[10px]">
-                      
-                                                                {t('farmplotscreen.3_healthy_1_attention_1_critical_plot_ca')}
-                                                              </p>
-                  </div>
+                <div className="space-y-1.5 pt-1 font-semibold">
+                  <div className="flex justify-between"><span>Assessed plots</span><span>{plots.filter((p) => p.status !== "Not Assessed").length} / {plots.length}</span></div>
+                  <div className="flex justify-between"><span>Healthy</span><span>{plots.filter((p) => p.status === "Healthy").length}</span></div>
+                  <div className="flex justify-between"><span>Needs attention / critical</span><span>{plots.filter((p) => p.status === "Needs Attention" || p.status === "Critical").length}</span></div>
+                  <p className="text-gray-400 text-[10px] font-medium leading-normal">Health is only reported once a Digital Twin or report has assessed a plot.</p>
                 </div>
               </div>
 
-              {/* Water Usage / Irrigation */}
+              {/* Data on file (replaces invented irrigation/water metrics) */}
               <div className="space-y-2">
-                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.water_irrigation')}</p>
+                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">Data on file</p>
                 <div className="space-y-2 pt-1 font-semibold">
-                  <div className="flex justify-between">
-                    <span>{t('farmplotscreen.irrigation_coverage')}</span>
-                    <span className="text-primary">94%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>{t('farmplotscreen.moisture_efficiency')}</span>
-                    <span className="text-primary">{t('farmplotscreen.optimal')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>{t('farmplotscreen.weekly_water_saved')}</span>
-                    <span className="text-primary font-bold">+18.5%</span>
-                  </div>
+                  <div className="flex justify-between"><span>Surveyed boundaries</span><span className="text-primary">{plots.filter((p) => p.boundaryMapped).length} / {plots.length}</span></div>
+                  <div className="flex justify-between"><span>Soil reports attached</span><span className="text-primary">{plots.filter((p) => p.soilReportAttached).length} / {plots.length}</span></div>
+                  <div className="flex justify-between"><span>IoT soil-moisture sensors</span><span className="text-gray-400">None connected</span></div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ================= 10. Plot Timeline ================= */}
+
+          {/* ================= 10. Plot Timeline (real plot records) ================= */}
           <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs">
             <h3 className="font-extrabold text-gray-900 text-sm mb-6 flex items-center gap-1.5">
               <Activity className="w-4.5 h-4.5 text-primary" />
-              
-                                        {t('farmplotscreen.recent_plot_spatial_logs')}
-                                      </h3>
-            
+              {t('farmplotscreen.recent_plot_spatial_logs')}
+            </h3>
             <div className="relative pl-6 border-l border-gray-100 space-y-6 text-xs text-gray-700">
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-primary shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold">{t('farmplotscreen.boundary_updated')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmplotscreen.10_45_am')}</span>
+              {recentPlots.length === 0 ? (
+                <p className="text-gray-500 font-semibold">No plot activity yet.</p>
+              ) : (
+                recentPlots.map((p) => (
+                  <div key={p.id} className="relative">
+                    <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-primary shadow-xs" />
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold">{p.boundaryMapped ? "Plot registered with surveyed boundary" : "Plot registered (no boundary yet)"}</span>
+                        <span className="text-[8px] font-mono text-gray-400">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}</span>
+                      </div>
+                      <p className="text-gray-500">{p.name} ({p.crop || "crop not set"}, {Number(p.area).toFixed(2)} acres)</p>
+                    </div>
                   </div>
-                  <p className="text-gray-500">{t('farmplotscreen.plot_e_boundary_adjusted_after_land_surv')}</p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-indigo-500 shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold">{t('farmplotscreen.drone_canopy_survey_completed')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmplotscreen.09_12_am')}</span>
-                  </div>
-                  <p className="text-gray-500">{t('farmplotscreen.ndvi_indices_synced_for_swamy_north_plot')}</p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold">{t('farmplotscreen.digital_twin_synced')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmplotscreen.08_00_am')}</span>
-                  </div>
-                  <p className="text-gray-500">{t('farmplotscreen.canopy_biophysical_metrics_synced_with_t')}</p>
-                </div>
-              </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -787,7 +735,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.acreage')}</span>
-                <span className="font-bold text-primary">{selectedPlot.area}  {t('farmplotscreen.acres')}</span>
+                <span className="font-bold text-primary">{Number(selectedPlot.area).toFixed(2)}  {t('farmplotscreen.acres')}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.crop_variety')}</span>
@@ -946,44 +894,22 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               )}
             </div>
 
-            {/* ================= 7. AI Plot Insights ================= */}
+            {/* ================= 7. Data status (no invented AI findings) ================= */}
             <div className="space-y-2.5">
-              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.ai_boundary_observations')}</h4>
+              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">Data status</h4>
               <div className="space-y-2 text-xs text-gray-700">
-                {/* soilHealth is optional for DB-sourced plots (AI telemetry not yet populated) */}
-                {typeof selectedPlot.soilHealth?.Current === 'number' && selectedPlot.soilHealth.Current < 60 && (
-                  <div className="p-2.5 bg-red-50/50 border border-red-100 rounded-xl flex gap-2 items-start">
-                    <span className="text-red-500 mt-0.5">⚠️</span>
-                    <div className="space-y-0.5">
-                      <p className="font-extrabold">{t('farmplotscreen.nitrogen_deficiency_detected')}</p>
-                      <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_94_updated_2_mins_ago')}</p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedPlot.moisture !== undefined && selectedPlot.moisture < 35 ? (
-                  <div className="p-2.5 bg-amber-50/50 border border-amber-100 rounded-xl flex gap-2 items-start">
-                    <span className="text-amber-500 mt-0.5">⚠️</span>
-                    <div className="space-y-0.5">
-                      <p className="font-extrabold">{t('farmplotscreen.soil_moisture_below_optimal_vwc')}</p>
-                      <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_89_updated_1_hour_ago')}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-2.5 bg-emerald-50/40 border border-emerald-100/50 rounded-xl flex gap-2 items-start">
-                    <span className="text-emerald-500 mt-0.5">✓</span>
-                    <div className="space-y-0.5">
-                      <p className="font-extrabold">{t('farmplotscreen.soil_moisture_level_optimal')}</p>
-                      <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_96_updated_2_hours_ago')}</p>
-                    </div>
-                  </div>
-                )}
-                <div className="p-2.5 bg-emerald-50/40 border border-emerald-100/50 rounded-xl flex gap-2 items-start">
-                  <span className="text-emerald-500 mt-0.5">✓</span>
-                  <div className="space-y-0.5">
-                    <p className="font-extrabold">{t('farmplotscreen.healthy_vegetation_indices_scanned')}</p>
-                    <p className="text-[9px] text-gray-450 font-medium">{t('farmplotscreen.confidence_91_sentinel_2_calibrated')}</p>
-                  </div>
+                <div className="p-2.5 bg-gray-50 border border-gray-100 rounded-xl">
+                  <p className="font-extrabold">{selectedPlot.boundaryMapped ? "Boundary surveyed" : "No boundary surveyed yet"}</p>
+                </div>
+                <div className="p-2.5 bg-gray-50 border border-gray-100 rounded-xl">
+                  <p className="font-extrabold">{selectedPlot.soilReportAttached ? "Soil report on file" : "No soil report uploaded"}</p>
+                </div>
+                <div className="p-2.5 bg-gray-50 border border-gray-100 rounded-xl">
+                  <p className="font-extrabold">
+                    {typeof selectedPlot.soilHealth?.Current === "number"
+                      ? `Digital Twin crop-health score: ${selectedPlot.soilHealth.Current}%`
+                      : "No Digital Twin snapshot stored"}
+                  </p>
                 </div>
               </div>
             </div>

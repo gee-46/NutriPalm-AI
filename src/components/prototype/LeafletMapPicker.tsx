@@ -64,7 +64,7 @@ type BasemapId = "standard" | "satellite";
 
 const MAPTILER_KEY = (import.meta as any).env?.VITE_MAPTILER_API_KEY as string | undefined;
 
-function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number } {
+function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number; maxNativeZoom?: number } {
   if (MAPTILER_KEY) {
     return {
       url: `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
@@ -75,7 +75,9 @@ function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: 
   return {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "© Esri, Maxar, Earthstar Geographics",
-    maxZoom: 19,
+    // Esri has no imagery at zoom 19+ in many regions: stop at native zoom 18 and upscale.
+    maxZoom: 21,
+    maxNativeZoom: 18,
   };
 }
 
@@ -215,6 +217,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
     });
     const satelliteLayer = L.tileLayer(satConfig.url, {
       maxZoom: satConfig.maxZoom,
+      maxNativeZoom: satConfig.maxNativeZoom,
       attribution: satConfig.attribution,
     });
 
