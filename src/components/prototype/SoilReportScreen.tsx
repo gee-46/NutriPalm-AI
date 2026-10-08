@@ -678,7 +678,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </h3>
                       <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 text-amber-800">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        Plot: <strong className="text-amber-950">{plot?.name || selectedPlotId}</strong> ({plot?.crop || "Oil Palm"}) • 
+                        Plot: <strong className="text-amber-950">{plot?.name || selectedPlotId}</strong> ({plot?.crop || "crop not set"}) • 
                         Status: <span className="font-bold text-amber-700">Unsaved (Low OCR confidence)</span>
                       </p>
                     </div>
@@ -709,7 +709,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </h3>
                       <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 text-gray-650">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                        Plot: <strong className="text-slate-900">{plot?.name || selectedPlotId}</strong> ({plot?.crop || "Oil Palm"}) • 
+                        Plot: <strong className="text-slate-900">{plot?.name || selectedPlotId}</strong> ({plot?.crop || "crop not set"}) • 
                         Saved: {activeDisplayReport.created_at ? new Date(activeDisplayReport.created_at).toLocaleDateString() : "Active"}
                       </p>
                     </div>
@@ -783,7 +783,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 text-[10px] text-gray-450 uppercase font-black">
-                        <div>Crop Context: <span className="text-gray-700 font-bold capitalize">{plot?.crop || "Oil Palm"}</span></div>
+                        <div>Crop Context: <span className="text-gray-700 font-bold capitalize">{plot?.crop || "—"}</span></div>
                         <div className="text-right">Database: <span className="text-gray-700 font-bold">{savedReport ? "Saved" : "Not saved"}</span></div>
                       </div>
                     </div>
@@ -998,7 +998,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
                 <SoilNutrientAnalyticsCard
                   report={activeDisplayReport}
-                  cropType={plot?.crop || "Oil Palm"}
+                  cropType={plot?.crop}
                   title="Nutrient Deficiency Breakdown & Polar Radar Footprint"
                   showMiniRadar={true}
                 />

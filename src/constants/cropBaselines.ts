@@ -53,10 +53,11 @@ export const CROP_BASELINES: Record<string, CropBenchmark> = {
 
 /**
  * Normalizes crop names and retrieves corresponding agronomic benchmarks.
- * Falls back safely to oil_palm if the crop is unrecognized or undefined.
+ * Returns null when the crop has no reference ranges -- it never substitutes
+ * another crop's ranges, which would misreport deficiencies.
  */
-export function getCropBaseline(cropType?: string): CropBenchmark {
-  if (!cropType) return CROP_BASELINES.oil_palm;
+export function getCropBaseline(cropType?: string): CropBenchmark | null {
+  if (!cropType) return null;
   const normalized = cropType.toLowerCase().trim().replace(/[\s-]+/g, '_');
   
   if (CROP_BASELINES[normalized]) {
@@ -70,5 +71,5 @@ export function getCropBaseline(cropType?: string): CropBenchmark {
   if (normalized.includes('paddy') || normalized.includes('rice')) return CROP_BASELINES.rice;
   if (normalized.includes('sugar') || normalized.includes('cane')) return CROP_BASELINES.sugarcane;
   
-  return CROP_BASELINES.oil_palm;
+  return null;
 }

@@ -301,11 +301,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const soilNutrients: Array<{ label: string; val: string; pct: number; color: string; text: string }> = [];
   if (soilRow) {
     const rows: Array<[string, number | null, string, { target: number; min: number; max: number } | null]> = [
-      [t('digitaltwinscreen.ph_score'), soilRow.ph, "", baseline.ph],
-      [t('digitaltwinscreen.nitrogen_n'), soilRow.nitrogen_kg_ha, " kg/ha", baseline.nitrogen],
-      [t('digitaltwinscreen.phosphorus_p'), soilRow.phosphorus_kg_ha, " kg/ha", baseline.phosphorus],
-      [t('digitaltwinscreen.potassium_k'), soilRow.potassium_kg_ha, " kg/ha", baseline.potassium],
-      [t('digitaltwinscreen.organic_carbon'), soilRow.organic_carbon_percent, " %", baseline.organic_carbon],
+      [t('digitaltwinscreen.ph_score'), soilRow.ph, "", baseline?.ph ?? null],
+      [t('digitaltwinscreen.nitrogen_n'), soilRow.nitrogen_kg_ha, " kg/ha", baseline?.nitrogen ?? null],
+      [t('digitaltwinscreen.phosphorus_p'), soilRow.phosphorus_kg_ha, " kg/ha", baseline?.phosphorus ?? null],
+      [t('digitaltwinscreen.potassium_k'), soilRow.potassium_kg_ha, " kg/ha", baseline?.potassium ?? null],
+      [t('digitaltwinscreen.organic_carbon'), soilRow.organic_carbon_percent, " %", baseline?.organic_carbon ?? null],
       [t('digitaltwinscreen.ec_electrical_conductivity'), soilRow.electrical_conductivity, " dS/m", null],
     ];
     for (const [label, value, unit, ref] of rows) {

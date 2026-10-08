@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { polygonCentroid } from "../data/plots";
 import type { Plot } from "../data/plots";
 import { fetchWeather, type WeatherResult } from "../lib/weather";
 import { getPlotNdvi, type NdviResponsePayload } from "../lib/apiClient";
@@ -35,22 +36,8 @@ export interface EnvironmentalDataState {
 }
 
 function plotCentroid(plot: Plot | undefined): { lat: number; lng: number } | null {
-  if (!plot?.geoJSON?.coordinates?.[0]?.length) return null;
-  const ring = plot.geoJSON.coordinates[0];
-  // Centroid (average of ring vertices) -- good enough for weather;
-  // the backend uses the full polygon for NDVI.
-  let sumLat = 0;
-  let sumLng = 0;
-  let n = 0;
-  for (const [lng, lat] of ring) {
-    if (typeof lat === "number" && typeof lng === "number") {
-      sumLat += lat;
-      sumLng += lng;
-      n++;
-    }
-  }
-  if (n === 0) return null;
-  return { lat: sumLat / n, lng: sumLng / n };
+  // True polygon centroid of the surveyed boundary (WGS84).
+  return polygonCentroid(plot?.geoJSON);
 }
 
 export function useEnvironmentalData(plot: Plot | undefined): EnvironmentalDataState {
