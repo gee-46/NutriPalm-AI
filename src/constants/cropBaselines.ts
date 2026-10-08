@@ -65,9 +65,11 @@ export function getCropBaseline(cropType?: string): CropBenchmark | null {
   }
   
   // Fuzzy match common synonyms
-  if (normalized.includes('palm')) return CROP_BASELINES.oil_palm;
+  // Order matters: "coconut palm" must not be mistaken for oil palm, and
+  // "cocoa" (a different crop) must not be mistaken for coconut.
+  if (normalized.includes('coconut')) return CROP_BASELINES.coconut;
+  if (normalized.includes('oil') && normalized.includes('palm')) return CROP_BASELINES.oil_palm;
   if (normalized.includes('areca') || normalized.includes('betel')) return CROP_BASELINES.arecanut;
-  if (normalized.includes('coco')) return CROP_BASELINES.coconut;
   if (normalized.includes('paddy') || normalized.includes('rice')) return CROP_BASELINES.rice;
   if (normalized.includes('sugar') || normalized.includes('cane')) return CROP_BASELINES.sugarcane;
   

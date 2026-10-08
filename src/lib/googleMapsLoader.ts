@@ -26,7 +26,7 @@ const LOAD_TIMEOUT_MS = 15000;
 let loadPromise: Promise<any> | null = null;
 
 export function getGoogleMapsApiKey(): string {
-  const envKey = (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY;
+  const envKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
   if (typeof envKey === "string" && envKey.trim().length > 0) {
     return envKey.trim();
   }
