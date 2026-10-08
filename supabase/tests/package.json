@@ -5,7 +5,9 @@
   "description": "Repeatable migration + RLS verification on a throwaway Postgres (PGlite). Not part of the app bundle.",
   "scripts": {
     "verify": "node verify.mjs",
-    "verify:remote": "node verify-remote.mjs"
+    "verify:remote": "node verify-remote.mjs",
+    "e2e": "node e2e/run.mjs",
+    "e2e:stack-selftest": "node e2e-stack/selftest.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.0",

@@ -10,6 +10,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { uploadSoilReport } from "../../lib/apiClient";
 import type { SoilReportUploadResponsePayload } from "../../lib/apiClient";
 import { SoilNutrientAnalyticsCard } from "../analytics/SoilNutrientAnalyticsCard";
+import { getCropBaseline } from "../../constants/cropBaselines";
 
 interface SoilReportScreenProps {
   onRecommendationClick?: (plotId?: string, reportData?: any) => void;
@@ -48,6 +49,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const plot = plots.find(p => p.id === selectedPlotId);
+  const cropBaseline = getCropBaseline(plot?.crop);
+  const phRangeLabel = cropBaseline ? `range: ${cropBaseline.ph.min} - ${cropBaseline.ph.max}` : "no reference range";
 
   // Parse Soil Health Index from raw text dynamically
   const sqiMatch = ocrResult?.raw_text?.match(/SQI\s*\)?\s*:\s*([0-9.]+)\s*\(([^)]+)\)/i);
@@ -871,7 +874,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-650 bg-emerald-50 border border-emerald-100">
                           {(ocrResult?.ph.validation ?? "saved").toUpperCase()}
                         </span>
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">range: 5.5 - 6.5</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">{phRangeLabel}</span>
                       </div>
                       <div className="mt-4">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.acidity_ph')}</span>
@@ -887,7 +890,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-650 bg-emerald-50 border border-emerald-100">
                           {(ocrResult?.electrical_conductivity.validation ?? "saved").toUpperCase()}
                         </span>
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">range: 0.50 - 0.75</span>
                       </div>
                       <div className="mt-4">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.electrical_conductivity')}</span>
@@ -903,7 +905,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-650 bg-emerald-50 border border-emerald-100">
                           {microBadge(zn)}
                         </span>
-                        <span className="text-[9px] font-bold text-gray-400 uppercase">range: &gt; 0.6</span>
                       </div>
                       <div className="mt-4">
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{t('soilreportscreen.zinc_zn')}</span>

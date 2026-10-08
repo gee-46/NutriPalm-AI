@@ -92,9 +92,13 @@ function buildSelect(table, selectParam, alias) {
 }
 
 const RESERVED = new Set(["select", "order", "limit", "offset", "on_conflict", "columns"]);
-function buildWhere(query, params) {
+function buildWhere(query, params, table, colTypes) {
   const clauses = [];
-  const add = (v) => { params.push(v); return `$${params.length}`; };
+  const add = (v, col) => {
+    params.push(v);
+    const typ = colTypes?.get(`${table}.${col}`);
+    return typ ? `$${params.length}::text::${typ}` : `$${params.length}`;
+  };
   const cond = (col, expr, alias = "t") => {
     const neg = expr.startsWith("not.");
     const e = neg ? expr.slice(4) : expr;
@@ -103,12 +107,12 @@ function buildWhere(query, params) {
     let sql;
     const c = `${alias}.${ident(col)}`;
     switch (op) {
-      case "eq": sql = `${c} = ${add(val)}`; break;
-      case "neq": sql = `${c} <> ${add(val)}`; break;
-      case "gt": sql = `${c} > ${add(val)}`; break;
-      case "gte": sql = `${c} >= ${add(val)}`; break;
-      case "lt": sql = `${c} < ${add(val)}`; break;
-      case "lte": sql = `${c} <= ${add(val)}`; break;
+      case "eq": sql = `${c} = ${add(val, col)}`; break;
+      case "neq": sql = `${c} <> ${add(val, col)}`; break;
+      case "gt": sql = `${c} > ${add(val, col)}`; break;
+      case "gte": sql = `${c} >= ${add(val, col)}`; break;
+      case "lt": sql = `${c} < ${add(val, col)}`; break;
+      case "lte": sql = `${c} <= ${add(val, col)}`; break;
       case "in": {
         const items = splitTop(val.replace(/^\(|\)$/g, "")).map((x) => x.replace(/^"|"$/g, ""));
         sql = `${c}::text = any(${add(items)}::text[])`;
@@ -157,6 +161,12 @@ export async function startStack({ port = 54321, jwtSecret, quiet = false } = {}
   for (const f of readdirSync(migrationsDir).filter((x) => x.endsWith(".sql")).sort()) {
     await db.exec(readFileSync(path.join(migrationsDir, f), "utf8"));
   }
+
+  // column -> Postgres type, so filter values can be cast like PostgREST does
+  const colTypes = new Map();
+  for (const r of (await db.query(`select c.relname t, a.attname col, format_type(a.atttypid, a.atttypmod) typ
+      from pg_attribute a join pg_class c on c.oid=a.attrelid join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='public' and c.relkind='r' and a.attnum>0 and not a.attisdropped`)).rows) colTypes.set(`${r.t}.${r.col}`, r.typ);
 
   const credentials = new Map(); // email -> { id, password }
   const refreshTokens = new Map(); // token -> user id
@@ -219,7 +229,7 @@ export async function startStack({ port = 54321, jwtSecret, quiet = false } = {}
 
     const selectRows = async (ids) => {
       const params = [];
-      let where = buildWhere(ids ? { id: `in.(${ids.join(",")})` } : query, params);
+      let where = buildWhere(ids ? { id: `in.(${ids.join(",")})` } : query, params, table, colTypes);
       const sql = `select ${buildSelect(table, query.select, "t")} from public.${table} t${where}${buildOrder(query.order)}${query.limit ? ` limit ${parseInt(query.limit, 10)}` : ""}${query.offset ? ` offset ${parseInt(query.offset, 10)}` : ""}`;
       return (await db.query(sql, params)).rows;
     };
@@ -250,13 +260,13 @@ export async function startStack({ port = 54321, jwtSecret, quiet = false } = {}
         const keys = Object.keys(body);
         const params = keys.map((k) => (body[k] !== null && typeof body[k] === "object" ? JSON.stringify(body[k]) : body[k]));
         const sets = keys.map((k, i) => `${ident(k)} = $${i + 1}`).join(", ");
-        const where = buildWhere(query, params);
+        const where = buildWhere(query, params, table, colTypes);
         const upd = (await db.query(`update public.${table} t set ${sets}${where} returning t.id`, params)).rows.map((r) => r.id);
         return { status: returnRep ? 200 : 204, rows: returnRep ? await selectRows(upd) : [] };
       }
       if (req.method === "DELETE") {
         const params = [];
-        const where = buildWhere(query, params);
+        const where = buildWhere(query, params, table, colTypes);
         const del = (await db.query(`delete from public.${table} t${where} returning id`, params)).rows.map((r) => r.id);
         return { status: returnRep ? 200 : 204, rows: returnRep ? del.map((id) => ({ id })) : [] };
       }
@@ -344,6 +354,10 @@ export async function startStack({ port = 54321, jwtSecret, quiet = false } = {}
       if (!res.headersSent) { res.writeHead(status, { "content-type": "application/json" }); res.end(JSON.stringify(pgrst)); }
     }
   });
+  // Real PostgREST/GoTrue sit behind proxies that keep idle connections for >= 60s. Node's 5s default
+  // makes pooled clients (httpx in the backend) hit half-closed sockets, which real Supabase does not.
+  server.keepAliveTimeout = 75_000;
+  server.headersTimeout = 80_000;
   await new Promise((r) => server.listen(port, "127.0.0.1", r));
   log(`listening on http://127.0.0.1:${port}`);
 

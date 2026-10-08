@@ -9,7 +9,7 @@ export async function newSession(opts = {}) {
   const page = await ctx.newPage();
   const events = { console: [], pageErrors: [], failed: [], http: [], requests: [] };
   page.on("console", (m) => {
-    if (m.type() === "error" || m.type() === "warning") events.console.push(`${m.type()}: ${m.text()}`);
+    if (m.type() === "error" || m.type() === "warning") events.console.push(`${m.type()}: ${m.text()}${m.location()?.url ? " @ " + m.location().url : ""}`);
   });
   page.on("pageerror", (e) => events.pageErrors.push(e.message));
   page.on("requestfailed", (r) => events.failed.push(`${r.method()} ${r.url()} ${r.failure()?.errorText}`));
