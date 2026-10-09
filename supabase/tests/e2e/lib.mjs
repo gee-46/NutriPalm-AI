@@ -7,6 +7,7 @@ export async function newSession(opts = {}) {
   const browser = await chromium.launch({ executablePath: EDGE, headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 }, ...opts });
   const page = await ctx.newPage();
+  (globalThis.__e2ePages ??= []).push(page); // lets the runner screenshot the live page if a step throws
   const events = { console: [], pageErrors: [], failed: [], http: [], requests: [] };
   page.on("console", (m) => {
     if (m.type() === "error" || m.type() === "warning") events.console.push(`${m.type()}: ${m.text()}${m.location()?.url ? " @ " + m.location().url : ""}`);
@@ -51,7 +52,20 @@ export async function waitForConsole(page) {
   await page.waitForTimeout(2500);
 }
 
-export async function goto(page, screen) {
+// internal screen ids -> the English sidebar label the farmer sees
+const NAV_LABEL = {
+  "Soil Reports": "Soil",
+  "Recommendations": "Nutrient & Fertilizer",
+  "Digital Twin": "Satellite & Digital Twin",
+  "Settings": "Settings & Language",
+  "Profile": "My Profile",
+  "Disease Intelligence": "Disease Intelligence",
+  "Crop Suitability": "What Should I Grow?",
+  "Weather": "Weather Advisory",
+  "History": "Previous Reports & Advice",
+};
+export async function goto(page, screenId) {
+  const screen = NAV_LABEL[screenId] ?? screenId;
   // exact (whitespace-tolerant) label match, so "Farm Plots" never matches "Farm"
   const label = new RegExp("^\\s*" + screen.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$");
   await page.locator("aside button", { hasText: label }).first().click();

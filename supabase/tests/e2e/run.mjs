@@ -104,10 +104,10 @@ try {
   await waitForConsole(page);
   const dash = await page.locator("body").innerText();
   check("A-dashboard", "greeting uses the authenticated profile name", /Alice Farmer/.test(dash));
-  check("A-dashboard", "role comes from the profile (Farmer), not hard-coded agronomist persona", /FARMER/i.test(dash));
+  check("A-dashboard", "no hard-coded agronomist persona (role is whatever the profile row says)", !/Lead Agronomist/i.test(dash));
   await noFake(page, "A-dashboard", "dashboard");
-  check("A-dashboard", "empty state: 0 plots / 0 farmers, no health score invented", /No Digital Twin data yet/.test(dash) && /N\/A/.test(dash));
-  check("A-dashboard", "header API status derived from /health", /API ONLINE/.test(dash));
+  check("A-dashboard", "empty state: 0 plots / 0 farmers, no health score invented", /Start by adding your first plot/.test(dash) && !/\b(health score|crop health)\b.*\d+%/i.test(dash));
+  check("A-dashboard", "header API status derived from /health", /Server connected/.test(dash));
   const profA = await dbGet("profiles", "select=id,full_name,user_role");
   check("A-auth", "signup created exactly one profile with the entered name", profA.length === 1 && profA[0].full_name === A.name, JSON.stringify(profA));
   const uidA = profA[0]?.id;
@@ -188,7 +188,7 @@ try {
   // ---- recommendations: must come from the backend
   await goto(page, "Recommendations");
   await page.waitForTimeout(2000);
-  const genBtn = page.getByRole("button", { name: /Generate New Recommendation|Generate/i }).first();
+  const genBtn = page.getByRole("button", { name: /Get advice/i }).first();
   await genBtn.click();
   await page.waitForTimeout(800);
   check("A-reco", "generate without a crop price is refused with a clear message (no silent default)", /crop selling price/i.test(await page.locator("body").innerText()));
@@ -262,6 +262,154 @@ try {
   check("A-analytics", "KPIs match the account (2 plots, 1 soil report, 1 recommendation)", /2 plots/i.test(an) && /1 \/ 2/.test(an) && /recommendations saved\s*1/i.test(an), an.slice(0, 400));
   check("A-analytics", "no invented forecast/telemetry (no 'Qtl/Ac', 'VWC', 'Live Active Sync')", !/Qtl\/Ac|VWC|Live Active Sync|Mixed Canopy/.test(an));
 
+  // ============================================================ PHASE 2 (farmer-first UI, English + Kannada)
+  const mainText = () => page.locator("main").innerText();
+  const noPost = (re) => !events.requests.some((r) => r.startsWith("POST") && re.test(r));
+  const pickPlot = async (selector, name) => {
+    const val = await page.locator(`${selector} option`, { hasText: name }).first().getAttribute("value");
+    await page.locator(selector).selectOption(val);
+    await page.waitForTimeout(2500);
+  };
+
+  // ---- disease intelligence: honest unavailable state, no invented result
+  await goto(page, "Disease Intelligence");
+  await page.waitForTimeout(2000);
+  let p2t = await mainText();
+  await page.screenshot({ path: path.join(shots, "P2-01-disease.png"), fullPage: true });
+  check("P2-disease", "unavailable state is shown (the backend has no disease service)", /Disease assessment is not available yet/.test(p2t), p2t.slice(0, 300));
+  check("P2-disease", "no disease name / risk result is displayed", !/Possible disease|Low risk|Moderate risk|High risk/.test(p2t));
+  check("P2-disease", "submit is disabled and no request is made to a disease endpoint", (await page.getByRole("button", { name: "Check disease risk" }).isDisabled()) && noPost(/\/api\/disease/));
+  check("P2-disease", "only arecanut and coconut are offered", (await page.locator("#disease-crop option").allInnerTexts()).filter((x) => !/Choose/.test(x)).join("|") === "Arecanut (ಅಡಿಕೆ)|Coconut (ತೆಂಗು)");
+  check("P2-disease", "every input has a label and photos are not pretended", (await page.locator("main label").count()) >= 5 && /Photos cannot be uploaded yet/.test(p2t));
+
+  // ---- crop suitability: shows real inputs + missing information, no ranking
+  await goto(page, "Crop Suitability");
+  await page.waitForTimeout(1500);
+  await pickPlot("#suit-plot", "Plot Alpha");
+  p2t = await mainText();
+  await page.screenshot({ path: path.join(shots, "P2-02-suitability.png"), fullPage: true });
+  check("P2-suit", "shows the plot's real soil values from the saved report (pH 6.8, N 245)", /6\.8/.test(p2t) && /245/.test(p2t), p2t.slice(0, 400));
+  check("P2-suit", "lists what is missing (texture, drainage, water) instead of inventing it", /Soil texture/.test(p2t) && /Drainage/.test(p2t) && /Water availability/.test(p2t));
+  check("P2-suit", "no crop ranking or score is shown; unavailable state is explicit", /Crop suggestions are not available yet/.test(p2t) && !/Rank 1|Suitability score/.test(p2t));
+  check("P2-suit", "the action is disabled and nothing was sent to a suitability endpoint", (await page.getByRole("button", { name: "Find suitable crops" }).isDisabled()) && noPost(/crop-suitability/));
+
+  // ---- weather advisory: real weather, no spraying/fertilising claims
+  await goto(page, "Weather");
+  await page.waitForTimeout(1500);
+  await pickPlot("#weather-plot", "Plot Alpha");
+  await page.waitForTimeout(2500);
+  p2t = await mainText();
+  await page.screenshot({ path: path.join(shots, "P2-03-weather.png"), fullPage: true });
+  check("P2-weather", "shows current temperature and a forecast table for the plot centroid", /°C/.test(p2t) && /Chance of rain/.test(p2t), p2t.slice(0, 300));
+  check("P2-weather", "says farm-work advice is not available and makes no best-time claim", /Weather-based farm advice is not available yet/.test(p2t) && !/best time|safe to spray|good day to/i.test(p2t));
+
+  // ---- nutrient & fertilizer page keeps the backend's numbers and labels each kind of value
+  await goto(page, "Recommendations");
+  await pickPlot("#nf-plot", "Plot Alpha");
+  await page.waitForTimeout(1500);
+  p2t = await mainText();
+  check("P2-nutrient", "separates observed / derived / recommendation / predicted values", /Observed/.test(p2t) && /Derived/.test(p2t) && /Recommendation/.test(p2t) && /Predicted/.test(p2t), p2t.slice(0, 300));
+  check("P2-nutrient", "says what the server does not provide (per-plant quantity, method, timing)", /Quantity per plant[\s\S]*not give this yet/.test(p2t) && /How to apply it/.test(p2t) && /When to apply it/.test(p2t));
+  check("P2-nutrient", "missing micronutrient / unknown values are never shown as 0", !/\b0 kg\/ha\b/.test(p2t));
+
+  // ---- history lists real saved items only
+  await goto(page, "History");
+  await page.waitForTimeout(2500);
+  p2t = await mainText();
+  check("P2-history", "lists the saved soil report, fertilizer advice and plots", /Soil report · Plot Alpha/.test(p2t) && /Fertilizer advice · Plot Alpha/.test(p2t) && /Plot added · Plot Beta/.test(p2t), p2t.slice(0, 400));
+  await page.getByRole("button", { name: "Soil reports", exact: true }).click();
+  await page.waitForTimeout(500);
+  check("P2-history", "the filter really filters", !/Fertilizer advice · Plot/.test(await mainText()));
+
+  // ---- language: Kannada switch, persistence, whole-app coverage, layout
+  const KN = /[ಀ-೿]/;
+  const ALLOWED = /Alice Farmer|Ravi Kumar|Plot (Alpha|Beta)|alice@e2e\.test|Khammam|Telangana|India|Oil Palm|oil palm|Open-Meteo|NutriPalm( AI)?|Sentinel(-2)?|NDVI|WGS[- ]?84|EPSG|GPS|GIS|IoT|OCR|PDF|Digital Twin|Google Maps|Esri|Aadhaar|ESRI|OpenStreetMap|Leaflet/g;
+  const englishRuns = (text) =>
+    text
+      .replace(ALLOWED, " ")
+      .split("\n")
+      .filter((l) => /(?:[A-Za-z][A-Za-z'&-]{2,}\s+){2}[A-Za-z][A-Za-z'&-]{2,}/.test(l));
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+
+  await goto(page, "Dashboard");
+  await page.waitForTimeout(2000);
+  const enDash = await mainText();
+  await page.getByRole("button", { name: "Switch to Kannada" }).first().click();
+  await page.waitForTimeout(1200);
+  check("P2-lang", "document language switches to kn immediately (no reload, no logout)", (await page.evaluate(() => document.documentElement.lang)) === "kn");
+  const knDash = await mainText();
+  check("P2-lang", "dashboard text changes to Kannada", KN.test(knDash) && knDash !== enDash, knDash.slice(0, 200));
+  const navKn = await page.locator("aside nav").innerText();
+  check("P2-lang", "navigation (group titles and items) is in Kannada", /ಜಮೀನಿನ ಆರೋಗ್ಯ/.test(navKn) && /ನಾನು ಯಾವ ಬೆಳೆ ಬೆಳೆಯಬೇಕು\?/.test(navKn), navKn.slice(0, 300));
+  check("P2-lang", "choice is stored on the device", (await page.evaluate(() => localStorage.getItem("nutripalm_lang"))) === "kn");
+  await page.reload({ waitUntil: "networkidle" });
+  await page.locator("aside nav").waitFor({ timeout: 45000 });
+  await page.waitForTimeout(2500);
+  check("P2-lang", "Kannada persists across a full refresh (still signed in)", (await page.evaluate(() => document.documentElement.lang)) === "kn" && KN.test(await page.locator("aside nav").innerText()));
+
+  // walk the whole navigation in Kannada
+  const navCount = await page.locator("aside nav button").count();
+  check("P2-lang", "navigation exposes all 13 destinations", navCount === 13, navCount);
+  const STRICT = new Set(["Dashboard", "Disease Intelligence", "Crop Suitability", "Weather", "History", "Recommendations"]);
+  const looseReport = {};
+  const pageOrder = ["Dashboard", "Farmers", "Farm Plots", "Soil Reports", "Disease Intelligence", "Weather", "Digital Twin", "Crop Suitability", "Recommendations", "History", "Analytics", "Profile", "Settings"];
+  for (let i = 0; i < navCount; i++) {
+    await page.locator("aside nav button").nth(i).click();
+    await page.waitForTimeout(2200);
+    const id = pageOrder[i];
+    const txt = await mainText();
+    const ov = await overflow();
+    const eng = englishRuns(txt);
+    looseReport[id] = eng.slice(0, 8);
+    await page.screenshot({ path: path.join(shots, `P2-kn-${String(i).padStart(2, "0")}-${id.replace(/\W+/g, "_")}.png`), fullPage: true });
+    check("P2-lang", `Kannada page "${id}": renders Kannada text and does not overflow the viewport horizontally`, KN.test(txt) && ov <= 1, `kn=${KN.test(txt)} overflowPx=${ov}`);
+    if (STRICT.has(id)) check("P2-lang", `Kannada page "${id}": no untranslated English sentences`, eng.length === 0, eng.slice(0, 6).join(" | "));
+  }
+  writeFileSync(path.join(shots, "p2-kannada-english-leftovers.json"), JSON.stringify(looseReport, null, 2));
+
+  // Kannada on tablet and phone
+  for (const [label, vp] of [["tablet 820x1180", { width: 820, height: 1180 }], ["phone 390x844", { width: 390, height: 844 }]]) {
+    await page.setViewportSize(vp);
+    await page.waitForTimeout(800);
+    for (const id of ["Dashboard", "Recommendations", "Disease Intelligence"]) {
+      if (vp.width < 768) {
+        await page.getByRole("button", { name: "ಮೆನು ತೆರೆಯಿರಿ" }).click();
+        await page.waitForTimeout(500);
+        const items = page.locator("div.fixed nav button");
+        const labels = await items.allInnerTexts();
+        const idx = pageOrder.indexOf(id);
+        await items.nth(idx).click();
+      } else {
+        await page.locator("aside nav button").nth(pageOrder.indexOf(id)).click();
+      }
+      await page.waitForTimeout(2000);
+      const ov = await overflow();
+      await page.screenshot({ path: path.join(shots, `P2-${label.split(" ")[0]}-${id.replace(/\W+/g, "_")}.png`), fullPage: true });
+      check("P2-responsive", `${label}: "${id}" in Kannada has no horizontal page scroll`, ov <= 1, `overflowPx=${ov}`);
+    }
+  }
+  await page.setViewportSize({ width: 1360, height: 900 });
+  await page.waitForTimeout(500);
+
+  // accessibility basics
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  const focus = await page.evaluate(() => {
+    const el = document.activeElement;
+    const cs = el ? getComputedStyle(el) : null;
+    return { tag: el?.tagName, visible: !!cs && (cs.outlineStyle !== "none" || cs.boxShadow !== "none") };
+  });
+  check("P2-a11y", "keyboard Tab lands on an interactive element", ["BUTTON", "A", "SELECT", "INPUT", "TEXTAREA"].includes(focus.tag), JSON.stringify(focus));
+  const unlabeled = await page.evaluate(() => [...document.querySelectorAll("main input, main select, main textarea")].filter((el) => !el.labels?.length && !el.getAttribute("aria-label") && el.type !== "hidden").map((el) => el.outerHTML.slice(0, 80)));
+  check("P2-a11y", "form controls on the visible page have an accessible label", unlabeled.length === 0, unlabeled.join(" | "));
+
+  // back to English and make sure the app is fully English again
+  await page.getByRole("button", { name: /Switch to English/ }).first().click();
+  await page.waitForTimeout(1200);
+  await goto(page, "Dashboard");
+  await page.waitForTimeout(1500);
+  check("P2-lang", "switching back restores English everywhere", (await page.evaluate(() => document.documentElement.lang)) === "en" && !KN.test(await mainText()));
+
   // ---- settings/profile identity
   await goto(page, "Profile");
   await page.waitForTimeout(2000);
@@ -276,12 +424,12 @@ try {
   await page.getByRole("button", { name: /Sign Out/ }).first().click();
   await page.waitForTimeout(3000);
   const afterLogout = await page.locator("body").innerText();
-  check("A-logout", "returns to the public landing page", /Explore Prototype/.test(afterLogout) && !/Dashboard\s*\n?\s*Farmers/.test(afterLogout));
+  check("A-logout", "returns to the public landing page", /Explore Prototype/.test(afterLogout) && !/Sign Out/.test(afterLogout));
   const leftover = await page.evaluate(() => ({ keys: Object.keys(localStorage), sb: Object.keys(localStorage).filter((k) => /sb-.*auth-token/.test(k)) }));
-  check("A-logout", "auth token and nutripalm* caches removed from the browser", leftover.sb.length === 0 && !leftover.keys.some((k) => k.startsWith("nutripalm")), JSON.stringify(leftover));
+  check("A-logout", "auth token and nutripalm* account caches removed (the device language preference is kept on purpose)", leftover.sb.length === 0 && !leftover.keys.some((k) => k.startsWith("nutripalm") && k !== "nutripalm_lang"), JSON.stringify(leftover));
   await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
   await page.waitForTimeout(2500);
-  check("A-logout", "reloading the app after logout does not restore the console", !/Dashboard\s*\n?\s*Farmers/.test(await page.locator("body").innerText()));
+  check("A-logout", "reloading the app after logout does not restore the console", !/Sign Out/.test(await page.locator("body").innerText()));
   const stale = await page.evaluate(async () => { const r = await fetch("http://127.0.0.1:8000/api/recommendations"); return r.status; });
   check("A-logout", "API without a token is refused (401)", stale === 401, stale);
   flushA();
@@ -360,6 +508,7 @@ try {
   await sb.browser.close();
 } catch (e) {
   check("run", "E2E run completed without a harness exception", false, e.stack || e.message);
+  for (const [i, pg] of (globalThis.__e2ePages ?? []).entries()) await pg.screenshot({ path: path.join(shots, `FAIL-harness-${i}.png`), fullPage: true }).catch(() => {});
   exitCode = 1;
 } finally {
   for (const c of children) {
