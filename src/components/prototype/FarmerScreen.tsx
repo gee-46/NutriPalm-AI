@@ -17,12 +17,12 @@ export interface Farmer {
   crop: string;
   area: number; // in acres
   joinDate: string;
-  yield: string;
-  soilHealth: number; // score 0-100
-  lastInspection: string;
+  yield: string | null;
+  soilHealth: number | null; // score 0-100, null when no data
+  lastInspection: string | null;
   status: "Active" | "Monitoring" | "Attention" | "Inactive";
-  digitalTwin: "Online" | "Synced" | "Offline" | "Warning";
-  lastRecommendation: string;
+  digitalTwin: "Online" | "Synced" | "Offline" | "Warning" | null;
+  lastRecommendation: string | null;
 }
 
 // Premium Animated Counter Component
@@ -62,16 +62,29 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; decimals?: num
   );
 };
 
+export interface NewFarmerPayload {
+  name: string;
+  village: string;
+  district: string;
+  contact: string;
+  email: string;
+  crop: string;
+  area: number;
+}
+
 interface FarmerScreenProps {
   farmers: Farmer[];
-  setFarmers?: React.Dispatch<React.SetStateAction<Farmer[]>>;
+  /** Persists a farmer for the signed-in user. Undefined when not signed in (demo data). */
+  onCreateFarmer?: (input: NewFarmerPayload) => Promise<void>;
+  onDeleteFarmer?: (id: string) => Promise<void>;
   onNavigate?: (screen: string) => void;
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
 }
 
 export const FarmerScreen: React.FC<FarmerScreenProps> = ({
   farmers,
-  setFarmers,
+  onCreateFarmer,
+  onDeleteFarmer,
   onNavigate,
   showToast
 }) => {
@@ -103,11 +116,9 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
     phone: "",
     email: "",
     village: "",
-    district: "Dakshina Kannada",
+    district: "",
     crop: "Oil Palm",
     farmSize: "",
-    coordinates: "12.9141, 75.2612",
-    soilType: "Loamy"
   });
 
   const handleRefresh = () => {
@@ -129,47 +140,52 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
   };
 
   // Add Farmer Action
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFarmerData.name || !newFarmerData.phone || !newFarmerData.village) {
+    const area = parseFloat(newFarmerData.farmSize);
+    if (!newFarmerData.name.trim() || !newFarmerData.phone.trim() || !newFarmerData.village.trim()) {
       triggerToast("Validation Failed: Please fill all required fields.", "warning");
       return;
     }
-
-    if (setFarmers) {
-      const added: Farmer = {
-        id: `F-0${farmers.length + 1}`,
+    if (!Number.isFinite(area) || area <= 0) {
+      triggerToast("Validation Failed: Enter the farm size in acres.", "warning");
+      return;
+    }
+    if (!onCreateFarmer) {
+      triggerToast("Sign in to save farmer profiles.", "warning");
+      return;
+    }
+    try {
+      await onCreateFarmer({
         name: newFarmerData.name,
         village: newFarmerData.village,
         district: newFarmerData.district,
         contact: newFarmerData.phone,
-        email: newFarmerData.email || "demo.farmer@samruddhi.org",
+        email: newFarmerData.email,
         crop: newFarmerData.crop,
-        area: parseFloat(newFarmerData.farmSize) || 5.0,
-        joinDate: "July 2026",
-        yield: "Pending Scan",
-        soilHealth: 75,
-        lastInspection: "Just registered",
-        status: "Active",
-        digitalTwin: "Online",
-        lastRecommendation: "Initial scan queued"
-      };
-
-      setFarmers(prev => [added, ...prev]);
-      triggerToast(`Farmer "${newFarmerData.name}" registered successfully.`, "success");
+        area,
+      });
       setAddStep(3); // success view
+    } catch (err) {
+      triggerToast(err instanceof Error ? err.message : "Could not save the farmer.", "warning");
     }
   };
 
   // Delete Action
-  const handleDelete = (id: string, name: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (setFarmers) {
-      setFarmers(prev => prev.filter(f => f.id !== id));
-      triggerToast(`Farmer profile "${name}" deleted (Demo Sandbox mode).`, "warning");
+    if (!onDeleteFarmer) {
+      triggerToast("Sign in to manage farmer profiles.", "warning");
+      return;
+    }
+    try {
+      await onDeleteFarmer(id);
+      triggerToast(`Farmer profile "${name}" deleted.`, "success");
       if (selectedFarmer?.id === id) {
         setSelectedFarmer(null);
       }
+    } catch (err) {
+      triggerToast(err instanceof Error ? err.message : "Could not delete the farmer.", "warning");
     }
   };
 
@@ -199,7 +215,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
       } else if (sortBy === "Farm Area") {
         return b.area - a.area;
       } else if (sortBy === "Latest Activity") {
-        return a.lastInspection.localeCompare(b.lastInspection);
+        return (a.lastInspection ?? "").localeCompare(b.lastInspection ?? "");
       }
       // "Recently Added" - default descending ID order
       return b.id.localeCompare(a.id);
@@ -212,7 +228,8 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
   // Derived summaries for cards
   const totalArea = farmers.reduce((sum, f) => sum + f.area, 0);
   const avgArea = farmers.length ? totalArea / farmers.length : 0;
-  const avgSoil = farmers.length ? farmers.reduce((sum, f) => sum + f.soilHealth, 0) / farmers.length : 0;
+  const scored = farmers.filter((f): f is Farmer & { soilHealth: number } => f.soilHealth !== null);
+  const avgSoil = scored.length ? scored.reduce((sum, f) => sum + f.soilHealth, 0) / scored.length : 0;
   const activeCount = farmers.filter(f => f.status === "Active").length;
   const monitoringCount = farmers.filter(f => f.status === "Monitoring").length;
 
@@ -247,11 +264,9 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                 phone: "",
                 email: "",
                 village: "",
-                district: "Dakshina Kannada",
+                district: "",
                 crop: "Oil Palm",
                 farmSize: "",
-                coordinates: "12.9141, 75.2612",
-                soilType: "Loamy"
               });
               setIsAddModalOpen(true);
             }}
@@ -292,9 +307,6 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmerscreen.active_farmers')} <strong className="text-primary font-black">{activeCount}</strong>
         </span>
-        <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
-          <span>📄</span>  {t('farmerscreen.soil_reports_scanned')} <strong className="text-primary font-black">{farmers.length}</strong>
-        </span>
       </div>
 
       {/* ================= 7. Farmer Summary Cards ================= */}
@@ -307,7 +319,6 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
             <h3 className="text-3xl font-black text-gray-900 tracking-tight">
               <AnimatedCounter value={farmers.length} />
             </h3>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/50">{t('farmerscreen.12_mom')}</span>
           </div>
         </div>
 
@@ -318,7 +329,6 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
             <h3 className="text-3xl font-black text-gray-900 tracking-tight">
               <AnimatedCounter value={activeCount + monitoringCount} />
             </h3>
-            <span className="text-[10px] font-bold text-emerald-650 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100/50">{t('farmerscreen.100_calibrated')}</span>
           </div>
         </div>
 
@@ -338,9 +348,8 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('farmerscreen.average_soil_health')}</p>
           <div className="flex items-baseline justify-between mt-2">
             <h3 className="text-3xl font-black text-gray-900 tracking-tight">
-              <AnimatedCounter value={avgSoil} suffix="%" />
+              {scored.length ? <AnimatedCounter value={avgSoil} suffix="%" /> : <span className="text-gray-400">{t("p2.ui.no_data_1e4ltia")}</span>}
             </h3>
-            <span className="text-[10px] font-bold text-indigo-650 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-150">{t('farmerscreen.optimal_range')}</span>
           </div>
         </div>
 
@@ -564,21 +573,25 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
 
                           {/* Soil Health Score index */}
                           <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0">
-                                <div 
-                                  className={`h-full ${
-                                    farmer.soilHealth >= 80 ? "bg-primary" : farmer.soilHealth >= 60 ? "bg-amber-500" : "bg-red-500"
-                                  }`}
-                                  style={{ width: `${farmer.soilHealth}%` }}
-                                />
+                            {farmer.soilHealth === null ? (
+                              <span className="text-gray-400 font-semibold">{t("p2.ui.no_data_1e4ltia")}</span>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0">
+                                  <div
+                                    className={`h-full ${
+                                      farmer.soilHealth >= 80 ? "bg-primary" : farmer.soilHealth >= 60 ? "bg-amber-500" : "bg-red-500"
+                                    }`}
+                                    style={{ width: `${farmer.soilHealth}%` }}
+                                  />
+                                </div>
+                                <span className="font-black text-gray-850">{farmer.soilHealth}%</span>
                               </div>
-                              <span className="font-black text-gray-850">{farmer.soilHealth}%</span>
-                            </div>
+                            )}
                           </td>
 
                           {/* Last Inspection */}
-                          <td className="p-4 text-gray-500 font-medium">{farmer.lastInspection}</td>
+                          <td className="p-4 text-gray-500 font-medium">{farmer.lastInspection ?? "—"}</td>
 
                           {/* Status */}
                           <td className="p-4">{statusBadge}</td>
@@ -679,60 +692,22 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                                       </h3>
             
             <div className="relative pl-6 border-l border-gray-100 space-y-6 text-xs">
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">{t('farmerscreen.new_farmer_registered')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmerscreen.09_32_am')}</span>
+              {farmers.length === 0 ? (
+                <p className="text-gray-500 font-semibold">{t("p2.ui.no_farmer_activity_yet_yi4436")}</p>
+              ) : (
+                farmers.slice(0, 5).map((f) => (
+                  <div key={f.id} className="relative">
+                    <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-gray-800">{t("p2.ui.farmer_registered_1jzj0uw")}</span>
+                        <span className="text-[8px] font-mono text-gray-400">{f.joinDate}</span>
+                      </div>
+                      <p className="text-gray-500">{f.name}{f.village ? `, ${f.village}` : ""}</p>
+                    </div>
                   </div>
-                  <p className="text-gray-500">{t('farmerscreen.rajesh_kumar_added_to_hassan_village')}</p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-indigo-500 shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">{t('farmerscreen.farm_plot_added')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmerscreen.09_18_am')}</span>
-                  </div>
-                  <p className="text-gray-500">{t('farmerscreen.swaminathan_gowda_mapped_plot_3b')}</p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-600 shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">{t('farmerscreen.soil_report_uploaded')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmerscreen.08_54_am')}</span>
-                  </div>
-                  <p className="text-gray-500">{t('farmerscreen.npk_diagnostic_pdf_scanned_for_f_02')}</p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-amber-500 shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">{t('farmerscreen.digital_twin_updated')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmerscreen.08_40_am')}</span>
-                  </div>
-                  <p className="text-gray-500">{t('farmerscreen.canopy_indexes_updated_for_plot_2a')}</p>
-                </div>
-              </div>
-
-              <div className="relative">
-                <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-[#43A047] shadow-xs" />
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-gray-800">{t('farmerscreen.recommendation_generated')}</span>
-                    <span className="text-[8px] font-mono text-gray-400">{t('farmerscreen.yesterday')}</span>
-                  </div>
-                  <p className="text-gray-500">{t('farmerscreen.slow_release_npk_a_generated_for_f_03')}</p>
-                </div>
-              </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -825,19 +800,18 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                   </div>
                   <div className="flex items-center justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-400 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />  {t('farmerscreen.recent_soil_score')}</span>
-                    <span className="text-gray-800 font-bold">{selectedFarmer.soilHealth}%</span>
+                    <span className="text-gray-800 font-bold">{selectedFarmer.soilHealth !== null ? `${selectedFarmer.soilHealth}%` : t("p2.ui.no_data_1e4ltia")}</span>
                   </div>
                   <div className="flex items-center justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-400 flex items-center gap-1.5"><Cpu className="w-3.5 h-3.5" />  {t('farmerscreen.digital_twin_status')}</span>
-                    <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      {selectedFarmer.digitalTwin}
+                    <span className="text-gray-700 font-bold flex items-center gap-1">
+                      {selectedFarmer.digitalTwin ?? t("p2.ui.no_data_1e4ltia")}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1.5 pt-2">
                     <span className="text-gray-400 flex items-center gap-1.5"><FlaskConical className="w-3.5 h-3.5" />  {t('farmerscreen.last_ai_recommendation')}</span>
                     <p className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl text-gray-700 leading-normal font-medium">
-                      {selectedFarmer.lastRecommendation}
+                      {selectedFarmer.lastRecommendation ?? t("p2.ui.no_recommendation_yet_5y9989")}
                     </p>
                   </div>
                 </div>
@@ -935,7 +909,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                                                     {t('farmerscreen.wizard_step')} {addStep}  {t('farmerscreen.of_3')}
                                                   </span>
                 <span className="text-xs font-bold text-gray-400">
-                  {addStep === 1 ? "Basic Details" : addStep === 2 ? "Farm Specs" : "Success"}
+                  {addStep === 1 ? t("p2.ui.basic_details_1gct5yh") : addStep === 2 ? t("p2.ui.farm_specs_4fa5th") : t("p2.ui.success_1kckkqk")}
                 </span>
               </div>
 
@@ -1021,16 +995,13 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmerscreen.district_1')}</label>
-                          <select
+                          <input
+                            type="text"
                             value={newFarmerData.district}
                             onChange={(e) => setNewFarmerData(prev => ({ ...prev, district: e.target.value }))}
+                            placeholder={t("p2.ui.e_g_dakshina_kannada_umd2zu")}
                             className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
-                          >
-                            <option>{t('farmerscreen.dakshina_kannada')}</option>
-                            <option>{t('farmerscreen.hassan')}</option>
-                            <option>{t('farmerscreen.bhadradri_kothagudem')}</option>
-                            <option>{t('farmerscreen.chittoor')}</option>
-                          </select>
+                          />
                         </div>
                       </div>
                     </div>
@@ -1071,30 +1042,6 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmerscreen.gnss_coordinates')}</label>
-                          <input
-                            type="text"
-                            value={newFarmerData.coordinates}
-                            onChange={(e) => setNewFarmerData(prev => ({ ...prev, coordinates: e.target.value }))}
-                            placeholder="12.9141, 75.2612"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 text-xs focus:ring-2 focus:ring-primary/10 focus:border-primary font-semibold"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t('farmerscreen.soil_type')}</label>
-                          <select
-                            value={newFarmerData.soilType}
-                            onChange={(e) => setNewFarmerData(prev => ({ ...prev, soilType: e.target.value }))}
-                            className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
-                          >
-                            <option>{t('farmerscreen.loamy')}</option>
-                            <option>{t('farmerscreen.clay')}</option>
-                            <option>{t('farmerscreen.sandy')}</option>
-                          </select>
-                        </div>
-                      </div>
                     </div>
                   )}
 

@@ -14,8 +14,10 @@ from app.services.twin_prediction_service import (
     TwinPredictionService,
     get_twin_prediction_service,
 )
-from app.services.live_twin_service import LiveTwinService
-from app.database import get_supabase_client
+from app.services.live_twin_service import (
+    LiveTwinService,
+    get_live_twin_service_dependency,
+)
 
 router = APIRouter(prefix="/api/plots", tags=["Digital Twins"])
 
@@ -57,46 +59,44 @@ def get_prediction(
 def get_live_twin(
     plot_id: UUID,
     current_user: AuthenticatedUser = Depends(get_current_user),
+    geometry_repo: PlotGeometryRepository = Depends(get_plot_geometry_repository),
+    service: LiveTwinService = Depends(get_live_twin_service_dependency),
 ) -> LiveTwinResponse:
     """
     Returns near real-time Digital Twin state for the caller's plot.
 
-    Fetches live weather from Open-Meteo (updated every 15 min) and
-    computes 5 AI scores on demand:
-      - water_stress (Penman-Monteith ET model)
-      - disease_risk (palm fungal epidemiology model)
-      - crop_health  (NDVI + stress fusion)
-      - soil_score   (7-day rainfall integration)
-      - yield_estimate_t_ha (FFB yield forecast)
-
-    No caching — every call returns freshly computed values.
+    Fetches live weather from Open-Meteo (updated every 15 min) for the plot's
+    own stored coordinates and computes the scores on demand. If weather or
+    coordinates are unavailable the endpoint answers 503 instead of
+    substituting made-up values.
     """
-    client = get_supabase_client()
+    try:
+        geometry = geometry_repo.get_geometry(str(plot_id))
+    except PlotNotFound as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Plot not found."
+        ) from exc
+    except RepositoryNotConfigured as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Plot data source is not yet configured.",
+        ) from exc
 
-    # Verify the plot belongs to this user
-    plot_check = (
-        client.table("plots")
-        .select("owner_id")
-        .eq("id", str(plot_id))
-        .maybe_single()
-        .execute()
-    )
-    plot_data = getattr(plot_check, "data", None)
-    if not plot_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plot not found.")
-
-    if plot_data.get("owner_id") != current_user.user_id:
+    if geometry.owner_id != current_user.user_id:
+        # Never reveal existence of another user's plot.
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Plot not found."
         )
 
-    service = LiveTwinService(client)
     result = service.compute_live_state(str(plot_id))
 
     if not result:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Unable to fetch live data. Check plot GPS coordinates.",
+            detail=(
+                "Live data is unavailable: the plot has no saved coordinates "
+                "or the weather provider did not return complete data."
+            ),
         )
 
     return LiveTwinResponse(**result)

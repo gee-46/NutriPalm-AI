@@ -15,13 +15,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
-  ArrowLeft
+  ArrowLeft,
+  Bug,
+  Sprout,
+  CloudSun,
+  History as HistoryIcon
 } from "lucide-react";
 
 import { DashboardScreen } from "./prototype/DashboardScreen";
 import { FarmerScreen } from "./prototype/FarmerScreen";
 import type { Farmer } from "./prototype/FarmerScreen";
-import { AddFarmerScreen } from "./prototype/AddFarmerScreen";
 import { FarmPlotScreen } from "./prototype/FarmPlotScreen";
 import { DigitalTwinScreen } from "./prototype/DigitalTwinScreen";
 import { SoilReportScreen } from "./prototype/SoilReportScreen";
@@ -29,6 +32,10 @@ import { RecommendationScreen } from "./prototype/RecommendationScreen";
 import { AnalyticsScreen } from "./prototype/AnalyticsScreen";
 import { SettingsScreen } from "./prototype/SettingsScreen";
 import { NotFoundScreen } from "./prototype/NotFoundScreen";
+import { DiseaseScreen } from "./prototype/DiseaseScreen";
+import { CropSuitabilityScreen } from "./prototype/CropSuitabilityScreen";
+import { WeatherAdvisoryScreen } from "./prototype/WeatherAdvisoryScreen";
+import { HistoryScreen } from "./prototype/HistoryScreen";
 import {
   DashboardSkeleton,
   FarmerTableSkeleton,
@@ -38,66 +45,34 @@ import {
 } from "./prototype/LoadingSkeletons";
 import { LanguageToggle } from "../translation/LanguageToggle";
 import { useTranslation } from "../translation/useTranslation";
+import { LANGUAGE_STORAGE_KEY } from "../translation/LanguageContext";
 import { usePlots } from "../data/plots";
+import { useApiHealth } from "../lib/useApiHealth";
+import { fetchFarmers, createFarmer, deleteFarmer } from "../data/farmers";
+import type { NewFarmerInput } from "../data/farmers";
 
 interface PrototypeAppProps {
   onBackToLanding: () => void;
 }
 
-const demoSteps = [
-  {
-    screen: "Dashboard",
-    title: "Dashboard Control Panel",
-    desc: "NutriPalm AI aggregates real-time agricultural vital stats, local weather forecasts, active operation logs, and AI observation metrics in a centralized SaaS dashboard.",
-    highlightStyle: "top-[23%] right-[8%] sm:right-[15%] md:right-[20%]"
-  },
-  {
-    screen: "Farmers",
-    title: "Farmer Registry Database",
-    desc: "Enables lead agronomists to list, search, village filter, and register new landholder profiles to coordinate custom agricultural advisory deployments.",
-    highlightStyle: "top-[18%] right-[8%] sm:right-[15%] md:right-[20%]"
-  },
-  {
-    screen: "Farm Plots",
-    title: "GIS Plot Boundary Mapping",
-    desc: "Leverages Sentinel-2 satellite coordinate mapping. Clicking on any custom plot instantly measures acreage, leaf NDVI health, and GNSS vertex node coordinates.",
-    highlightStyle: "top-[32%] right-[8%] sm:right-[15%] md:right-[20%]"
-  },
-  {
-    screen: "Digital Twin",
-    title: "Biophysical Digital Twin Simulator",
-    desc: "An isometric canopy twin model tracking chlorophyll reflectance and root moisture. Toggling drought sandboxes automatically recalibrates vital indices in real-time.",
-    highlightStyle: "top-[28%] right-[8%] sm:right-[15%] md:right-[20%]"
-  },
-  {
-    screen: "Soil Reports",
-    title: "AI OCR Document Scanning",
-    desc: "Agronomists upload diagnostic lab reports to trigger an OCR processing pipeline. Text extraction logs map Nitrogen, Phosphorus, Potassium, Carbon and pH levels.",
-    highlightStyle: "top-[22%] right-[8%] sm:right-[15%] md:right-[20%]"
-  },
-  {
-    screen: "Recommendations",
-    title: "AI Slow-Release Formulations",
-    desc: "Generates bespoke slow-release recipes (12-6-22 NPK). Calibrates seasonal timeline schedules, expected bunch weight gains (+18.2%), and environmental leaching risks.",
-    highlightStyle: "top-[26%] right-[8%] sm:right-[15%] md:right-[20%]"
-  },
-  {
-    screen: "Analytics",
-    title: "Agronomic Analytical Trends",
-    desc: "Aggregates historical soil recovery graphs, active fertilizer volumes applied, and doughnut charts tracking regional crop type distribution metrics.",
-    highlightStyle: "top-[23%] right-[8%] sm:right-[15%] md:right-[20%]"
-  }
-];
-
 export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) => {
   const { t } = useTranslation();
   const { plots } = usePlots();
+  const apiHealth = useApiHealth();
   const [currentScreen, setCurrentScreen] = useState("Dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isScreenLoading, setIsScreenLoading] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Drop any per-browser cached data so the next account on this device starts clean.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("nutripalm") && k !== LANGUAGE_STORAGE_KEY) // the language is a device preference, not account data
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // storage unavailable; nothing to clear
+    }
     onBackToLanding();
   };
 
@@ -109,47 +84,13 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     }, 600);
   };
 
-  // Guided Walkthrough State
-  const [demoState, setDemoState] = useState({ isActive: false, stepIndex: 0 });
-
-  const startDemo = () => {
-    setDemoState({ isActive: true, stepIndex: 0 });
-    changeScreen("Dashboard");
-  };
-
-  const nextDemoStep = () => {
-    if (demoState.stepIndex < demoSteps.length - 1) {
-      const nextIdx = demoState.stepIndex + 1;
-      setDemoState(prev => ({ ...prev, stepIndex: nextIdx }));
-      changeScreen(demoSteps[nextIdx].screen);
-    } else {
-      exitDemo();
-    }
-  };
-
-  const prevDemoStep = () => {
-    if (demoState.stepIndex > 0) {
-      const prevIdx = demoState.stepIndex - 1;
-      setDemoState(prev => ({ ...prev, stepIndex: prevIdx }));
-      changeScreen(demoSteps[prevIdx].screen);
-    }
-  };
-
-  const exitDemo = () => {
-    setDemoState({ isActive: false, stepIndex: 0 });
-    changeScreen("Dashboard");
-  };
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "Sentinel-2 satellite coordinates updated for Plot 2A.", read: false },
-    { id: 2, text: "AI advisor completed Mix-B analysis.", read: false }
-  ]);
+  // Only real events are added here (no seeded sample notifications). `key` is a translation key.
+  const [notifications, setNotifications] = useState<Array<{ id: number; key: string; read: boolean }>>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [lastUploadedReport, setLastUploadedReport] = useState<any>(null);
   const [recommendationPlotId, setRecommendationPlotId] = useState<string>("");
 
   useEffect(() => {
@@ -210,22 +151,24 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         .substring(0, 2)
         .toUpperCase();
     }
-    const name = currentUser?.user_metadata?.full_name || currentUser?.email || "LR";
+    const name = currentUser?.user_metadata?.full_name || currentUser?.email || "U";
     return name[0].toUpperCase();
   };
 
-  const displayName = userProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || "Dr. L. Ramana";
-  const displayRole = userProfile?.user_role || "Agronomist";
+  const displayName = userProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || "Farmer";
+  const displayRole = userProfile?.user_role || "Farmer";
 
   // Reusable Toast Notification System
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: "success" | "info" | "warning" }>>([]);
-  const showToast = (message: string, type: "success" | "info" | "warning" = "success") => {
+  // Stable identity: children (e.g. the boundary surveyor) list this in effect
+  // dependencies, and a new function every render would tear their state down.
+  const showToast = useCallback((message: string, type: "success" | "info" | "warning" = "success") => {
     const id = Date.now().toString() + Math.random().toString();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
-  };
+  }, []);
 
   // Shared state: list of farmers
   const [farmers, setFarmers] = useState<Farmer[]>([]);
@@ -237,87 +180,28 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     soilHealthScore: 0
   });
 
-  // Sync farmers list between demo data (when logged out) and user data (when logged in)
+  // Signed in: the user's own farmers from the database. Signed out: clearly-labelled sample data.
   useEffect(() => {
+    let cancelled = false;
     if (currentUser) {
-      try {
-        const cached = localStorage.getItem(`nutripalm:farmers:${currentUser.id}`);
-        setFarmers(cached ? JSON.parse(cached) : []);
-      } catch {
-        setFarmers([]);
-      }
+      fetchFarmers(currentUser.id)
+        .then((rows) => {
+          if (!cancelled) setFarmers(rows);
+        })
+        .catch((err) => {
+          console.error("Failed to load farmers:", err);
+          if (!cancelled) {
+            setFarmers([]);
+            showToast(t("p2.app.farmers_load_error"), "warning");
+          }
+        });
     } else {
-      setFarmers([
-        {
-          id: "F-01",
-          name: "Swaminathan Gowda",
-          village: "Rangampeta",
-          district: "Dakshina Kannada",
-          contact: "+91 94401 23456",
-          email: "swamy.g@gmail.com",
-          crop: "Oil Palm",
-          area: 12.5,
-          joinDate: "June 2024",
-          yield: "14.2 tons/ac",
-          soilHealth: 88,
-          lastInspection: "2 hours ago",
-          status: "Active",
-          digitalTwin: "Online",
-          lastRecommendation: "NPK Mix-B"
-        },
-        {
-          id: "F-02",
-          name: "K. Ramachandra Rao",
-          village: "Kothagudem",
-          district: "Bhadradri Kothagudem",
-          contact: "+91 98480 98765",
-          email: "ramachandra.k@gmail.com",
-          crop: "Oil Palm",
-          area: 8.2,
-          joinDate: "Sept 2024",
-          yield: "13.0 tons/ac",
-          soilHealth: 72,
-          lastInspection: "5 hours ago",
-          status: "Monitoring",
-          digitalTwin: "Synced",
-          lastRecommendation: "Potash supplement"
-        },
-        {
-          id: "F-03",
-          name: "M. Devamma",
-          village: "Chittoor",
-          district: "Chittoor",
-          contact: "+91 99123 45678",
-          email: "devamma.m@gmail.com",
-          crop: "Coconut Palm",
-          area: 5.0,
-          joinDate: "Jan 2025",
-          yield: "6.5 tons/ac",
-          soilHealth: 55,
-          lastInspection: "1 day ago",
-          status: "Attention",
-          digitalTwin: "Warning",
-          lastRecommendation: "Slow-Release NPK-A"
-        },
-        {
-          id: "F-04",
-          name: "Rajesh Kumar",
-          village: "Hassan",
-          district: "Hassan",
-          contact: "+91 94900 11223",
-          email: "rajesh.k@gmail.com",
-          crop: "Cocoa",
-          area: 7.8,
-          joinDate: "March 2025",
-          yield: "2.1 tons/ac",
-          soilHealth: 38,
-          lastInspection: "2 days ago",
-          status: "Inactive",
-          digitalTwin: "Offline",
-          lastRecommendation: "Emergency NPK dose"
-        }
-      ]);
+      setFarmers([]);
     }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   // Fetch live stats from database tables for the logged-in user
@@ -327,7 +211,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
     async function fetchStats() {
       try {
-        const plotIds = plots.filter(p => !p.id.startsWith("plot-")).map(p => p.id);
+        const plotIds = plots.map(p => p.id);
         
         let twinsCount = 0;
         let recsCount = 0;
@@ -378,7 +262,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   }, [plots, currentUser]);
 
   // Derive stats dynamically (authenticated vs. unauthenticated)
-  const stats = currentUser ? {
+  const stats = {
     totalFarmers: farmers.length,
     totalFarms: plots.length,
     mappedPlots: plots.filter(p => p.boundaryMapped).length,
@@ -386,80 +270,120 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
     activeTwins: dbStats.activeTwins,
     recommendations: dbStats.recommendations,
     soilHealthScore: dbStats.soilHealthScore
-  } : {
-    totalFarmers: farmers.length,
-    totalFarms: 6,
-    mappedPlots: 6,
-    totalAcreage: 33.5,
-    activeTwins: 4,
-    recommendations: 38,
-    soilHealthScore: 78
   };
 
-  // Add a farmer handler
-  const handleAddFarmer = (newFarmer: Omit<Farmer, "id" | "joinDate">) => {
-    const formatted: Farmer = {
-      ...newFarmer,
-      id: `F-0${farmers.length + 1}`,
-      joinDate: "July 2026",
-      yield: "Pending Scan"
-    };
-    setFarmers((prev) => {
-      const updated = [formatted, ...prev];
-      if (currentUser) {
-        try {
-          localStorage.setItem(`nutripalm:farmers:${currentUser.id}`, JSON.stringify(updated));
-        } catch {}
-      }
-      return updated;
-    });
-    showToast(`Farmer "${formatted.name}" registered successfully.`, "success");
+  // Add a farmer (persisted to Supabase for the signed-in user)
+  const handleAddFarmer = async (input: NewFarmerInput) => {
+    if (!currentUser) throw new Error("Sign in to save farmer profiles.");
+    const created = await createFarmer(currentUser.id, input);
+    setFarmers((prev) => [created, ...prev]);
+    showToast(t("p2.app.farmer_added", { name: created.name }), "success");
+  };
+
+  const handleDeleteFarmer = async (id: string) => {
+    await deleteFarmer(id);
+    setFarmers((prev) => prev.filter((f) => f.id !== id));
   };
 
   const handleSoilReportUploaded = useCallback((data: any) => {
-    if (data) {
-      setLastUploadedReport(data);
-    }
-    // Add a notification
+    // Only announce a saved report; unsaved/low-confidence results are shown on the Soil Reports screen.
+    if (!data?.persisted) return;
     setNotifications((prev) => [
-      { id: Date.now(), text: "New laboratory soil report successfully scanned.", read: false },
+      { id: Date.now(), key: "p2.app.soil_saved", read: false },
       ...prev
     ]);
-    showToast("Soil report PDF uploaded & chemical levels extracted.", "success");
-  }, [showToast]);
+  }, []);
 
-  const handleRecommendationNavigate = useCallback((plotId?: string, reportData?: any) => {
+  const handleRecommendationNavigate = useCallback((plotId?: string) => {
     if (plotId) {
       setRecommendationPlotId(plotId);
-    }
-    if (reportData) {
-      setLastUploadedReport(reportData);
-      try {
-        localStorage.setItem("nutripalm:lastUploadedReport", JSON.stringify(reportData));
-      } catch {}
     }
     changeScreen("Recommendations");
   }, [changeScreen]);
 
   // Navigations mapping
-  const sidebarItems = [
-    { name: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: "Farmers", icon: <Users className="w-5 h-5" /> },
-    { name: "Farm Plots", icon: <Map className="w-5 h-5" /> },
-    { name: "Digital Twin", icon: <Cpu className="w-5 h-5" /> },
-    { name: "Soil Reports", icon: <FileText className="w-5 h-5" /> },
-    { name: "Recommendations", icon: <FlaskConical className="w-5 h-5" /> },
-    { name: "Analytics", icon: <BarChart3 className="w-5 h-5" /> },
-    { name: "Settings", icon: <Settings className="w-5 h-5" /> },
-    { name: "Profile", icon: <User className="w-5 h-5" /> }
+  const iconCls = "w-5 h-5";
+  const navGroups: Array<{ key: string; items: Array<{ name: string; icon: React.ReactNode }> }> = [
+    { key: "p2.nav.group.home", items: [{ name: "Dashboard", icon: <LayoutDashboard className={iconCls} /> }] },
+    {
+      key: "p2.nav.group.farms",
+      items: [
+        { name: "Farmers", icon: <Users className={iconCls} /> },
+        { name: "Farm Plots", icon: <Map className={iconCls} /> }
+      ]
+    },
+    {
+      key: "p2.nav.group.health",
+      items: [
+        { name: "Soil Reports", icon: <FileText className={iconCls} /> },
+        { name: "Disease Intelligence", icon: <Bug className={iconCls} /> },
+        { name: "Weather", icon: <CloudSun className={iconCls} /> },
+        { name: "Digital Twin", icon: <Cpu className={iconCls} /> }
+      ]
+    },
+    { key: "p2.nav.group.suitability", items: [{ name: "Crop Suitability", icon: <Sprout className={iconCls} /> }] },
+    { key: "p2.nav.group.recommendations", items: [{ name: "Recommendations", icon: <FlaskConical className={iconCls} /> }] },
+    {
+      key: "p2.nav.group.history",
+      items: [
+        { name: "History", icon: <HistoryIcon className={iconCls} /> },
+        { name: "Analytics", icon: <BarChart3 className={iconCls} /> }
+      ]
+    },
+    {
+      key: "p2.nav.group.profile",
+      items: [
+        { name: "Profile", icon: <User className={iconCls} /> },
+        { name: "Settings", icon: <Settings className={iconCls} /> }
+      ]
+    }
   ];
+
+  const renderNav = (collapsed: boolean, onPick?: () => void) => (
+    <nav aria-label={t("p2.nav.main")} className="px-3 text-left">
+      {navGroups.map((group) => (
+        <div key={group.key} className="mb-3">
+          {collapsed ? (
+            <hr className="my-2 border-gray-150" />
+          ) : (
+            <p className="px-3 pb-1 pt-2 text-xs font-extrabold uppercase tracking-wide text-gray-500">{t(group.key)}</p>
+          )}
+          <ul className="space-y-1">
+            {group.items.map((item) => {
+              const isSelected = currentScreen === item.name;
+              return (
+                <li key={item.name}>
+                  <button
+                    onClick={() => {
+                      changeScreen(item.name);
+                      onPick?.();
+                    }}
+                    aria-current={isSelected ? "page" : undefined}
+                    aria-label={t(`sidebar.${item.name}`)}
+                    title={t(`sidebar.${item.name}`)}
+                    className={`w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-left transition-all border-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${isSelected
+                      ? "bg-primary text-white shadow-md shadow-primary/10"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      }`}
+                  >
+                    <span className="shrink-0" aria-hidden="true">{item.icon}</span>
+                    {!collapsed && <span className="leading-snug">{t(`sidebar.${item.name}`)}</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+
 
   const renderLoadingSkeleton = () => {
     switch (currentScreen) {
       case "Dashboard":
         return <DashboardSkeleton />;
       case "Farmers":
-      case "Add Farmer":
         return <FarmerTableSkeleton />;
       case "Soil Reports":
         return <SoilReportSkeleton />;
@@ -480,30 +404,24 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             currentUser={currentUser}
             userProfile={userProfile}
             onNavigate={changeScreen}
-            onStartDemo={startDemo}
+            onOpenRecommendation={handleRecommendationNavigate}
           />
         );
       case "Farmers":
         return (
           <FarmerScreen
             farmers={farmers}
-            setFarmers={setFarmers}
+            onCreateFarmer={currentUser ? handleAddFarmer : undefined}
+            onDeleteFarmer={currentUser ? handleDeleteFarmer : undefined}
             onNavigate={changeScreen}
             showToast={showToast}
-          />
-        );
-      case "Add Farmer":
-        return (
-          <AddFarmerScreen
-            onSave={handleAddFarmer}
-            onCancel={() => changeScreen("Farmers")}
           />
         );
       case "Farm Plots":
         return (
           <FarmPlotScreen
-            onPlotCreated={() => showToast("New GIS boundary registered for Plot 3B.", "success")}
-            onSync={() => showToast("Satellite GPS coordinates synchronized.", "info")}
+            farmers={farmers.map((f) => ({ id: f.id, name: f.name }))}
+            onPlotCreated={() => showToast(t("p2.app.plot_saved"), "success")}
             onNavigate={changeScreen}
             showToast={showToast}
           />
@@ -528,31 +446,33 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           <RecommendationScreen
             selectedPlotId={recommendationPlotId}
             onPlotChange={(plotId) => setRecommendationPlotId(plotId)}
-            lastUploadedReport={lastUploadedReport}
-            onClearReport={() => {
-              setLastUploadedReport(null);
-              localStorage.removeItem("nutripalm:lastUploadedReport");
-              localStorage.removeItem("nutripalm:lastRecommendation");
-            }}
             showToast={showToast}
             farmerName={displayName}
             onNavigate={changeScreen}
           />
         );
+      case "Disease Intelligence":
+        return <DiseaseScreen onNavigate={changeScreen} />;
+      case "Crop Suitability":
+        return <CropSuitabilityScreen onNavigate={changeScreen} />;
+      case "Weather":
+        return <WeatherAdvisoryScreen onNavigate={changeScreen} />;
+      case "History":
+        return <HistoryScreen onNavigate={changeScreen} onOpenRecommendation={handleRecommendationNavigate} />;
       case "Analytics":
         return <AnalyticsScreen onNavigate={changeScreen} />;
       case "Settings":
         return (
           <SettingsScreen
             activeSection="Theme"
-            onSaveSuccess={() => showToast("System configuration profiles saved successfully.", "success")}
+            onSaveSuccess={() => showToast(t("p2.app.settings_saved"), "success")}
           />
         );
       case "Profile":
         return (
           <SettingsScreen
             activeSection="Profile"
-            onSaveSuccess={() => showToast("Lead agronomist profile settings saved successfully.", "success")}
+            onSaveSuccess={() => showToast(t("p2.app.profile_saved"), "success")}
           />
         );
       default:
@@ -581,7 +501,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-250 shadow-xs bg-white shrink-0">
               <img
                 src="/samruddhi-logo.jpeg"
-                alt="Samruddhi Organics Logo"
+                alt={t("p2.ui.samruddhi_organics_logo_ytkuov")}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -595,33 +515,14 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                   NutriPalm <span className="text-primary font-bold">AI</span>
                 </span>
                 <span className="text-[8px] font-semibold text-gray-400 leading-none mt-1 tracking-wider">
-                  by Samruddhi Organics
+                  {t("p2.ui.by_samruddhi_organics_1y0cqdj")}
                 </span>
               </motion.div>
             )}
           </div>
 
           {/* Sidebar Nav Items */}
-          <nav className="px-3 space-y-1 text-left">
-            {sidebarItems.map((item) => {
-              const isSelected = currentScreen === item.name ||
-                (item.name === "Settings" && currentScreen === "Settings") ||
-                (item.name === "Profile" && currentScreen === "Profile");
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => changeScreen(item.name)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${isSelected
-                    ? "bg-primary text-white shadow-md shadow-primary/10"
-                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                    }`}
-                >
-                  {item.icon}
-                  {!isSidebarCollapsed && <span>{t(`sidebar.${item.name}`)}</span>}
-                </button>
-              );
-            })}
-          </nav>
+          {renderNav(isSidebarCollapsed)}
         </div>
 
         {/* Sidebar Footer (Collapse Toggle + Back to Landing) */}
@@ -655,6 +556,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={t("p2.nav.open_menu")}
               className="md:hidden p-2 hover:bg-gray-100 rounded-xl text-gray-700 active:scale-95 transition-all border-0 cursor-pointer"
             >
               <Menu className="w-5 h-5" />
@@ -670,9 +572,18 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           <div className="flex items-center gap-4">
             <LanguageToggle />
             {/* System Status Online */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-100 bg-emerald-50 text-[10px] font-bold text-primary">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              SYSTEM ONLINE
+            <div
+              role="status"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-bold ${
+                apiHealth === "online"
+                  ? "border-emerald-100 bg-emerald-50 text-primary"
+                  : apiHealth === "offline"
+                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                    : "border-gray-200 bg-gray-50 text-gray-500"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${apiHealth === "online" ? "bg-primary" : apiHealth === "offline" ? "bg-rose-500" : "bg-gray-400"}`} />
+              {apiHealth === "online" ? t("p2.app.api_online") : apiHealth === "offline" ? t("p2.app.api_offline") : t("p2.app.api_checking")}
             </div>
 
             {/* Notification Bell */}
@@ -682,7 +593,8 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                   setShowNotifications(!showNotifications);
                   if (!showNotifications) markNotificationsRead();
                 }}
-                className="p-2.5 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-xl transition-all relative border border-gray-200 cursor-pointer bg-white"
+                aria-label={t("p2.app.bell")}
+                className="min-h-11 min-w-11 p-2.5 hover:bg-gray-100 text-gray-500 hover:text-gray-900 rounded-xl transition-all relative border border-gray-200 cursor-pointer bg-white"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
@@ -700,16 +612,18 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                     className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-gray-150 shadow-lg p-4 text-left space-y-3 z-30"
                   >
                     <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Notifications</span>
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t("p2.app.notifications")}</span>
                       {unreadCount > 0 && (
-                        <span className="text-[8px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-full">New alerts</span>
+                        <span className="text-xs font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-full">{t("p2.app.new_alerts")}</span>
                       )}
                     </div>
                     <div className="space-y-3 max-h-48 overflow-y-auto">
+                      {notifications.length === 0 && (
+                        <p className="text-sm font-medium text-gray-600">{t("p2.app.no_notifications")}</p>
+                      )}
                       {notifications.map((n) => (
-                        <div key={n.id} className="text-xs border-b border-gray-50 pb-2">
-                          <p className="text-gray-700 leading-tight">{n.text}</p>
-                          <span className="block text-[8px] text-gray-400 mt-1 font-mono">Telemetry sync alert</span>
+                        <div key={n.id} className="text-sm border-b border-gray-50 pb-2">
+                          <p className="text-gray-700 leading-snug">{t(n.key)}</p>
                         </div>
                       ))}
                     </div>
@@ -769,7 +683,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                       <div className="w-7 h-7 rounded-lg overflow-hidden border border-gray-200 shadow-xs bg-white shrink-0">
                         <img
                           src="/samruddhi-logo.jpeg"
-                          alt="Samruddhi Organics Logo"
+                          alt={t("p2.ui.samruddhi_organics_logo_ytkuov")}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -778,13 +692,14 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                           NutriPalm <span className="text-primary font-bold">AI</span>
                         </span>
                         <span className="text-[7px] font-semibold text-gray-400 leading-none mt-0.5 tracking-wider">
-                          by Samruddhi Organics
+                          {t("p2.ui.by_samruddhi_organics_1y0cqdj")}
                         </span>
                       </div>
                     </div>
                     <button
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="p-1 text-gray-500 hover:text-gray-900 border-0 bg-transparent cursor-pointer"
+                      aria-label={t("p2.nav.close_menu")}
+                      className="min-h-11 min-w-11 p-1 text-gray-500 hover:text-gray-900 border-0 bg-transparent cursor-pointer"
                     >
                       ✕
                     </button>
@@ -792,24 +707,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
                   <div className="mb-6 flex justify-center">
                     <LanguageToggle />
                   </div>
-                  <nav className="space-y-1 text-left">
-                    {sidebarItems.map((item) => (
-                      <button
-                        key={item.name}
-                        onClick={() => {
-                          changeScreen(item.name);
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border-0 cursor-pointer ${currentScreen === item.name
-                          ? "bg-primary text-white"
-                          : "text-gray-500 hover:bg-gray-100"
-                          }`}
-                      >
-                        {item.icon}
-                        <span>{t(`sidebar.${item.name}`)}</span>
-                      </button>
-                    ))}
-                  </nav>
+                  {renderNav(false, () => setIsMobileMenuOpen(false))}
                 </div>
                 <button
                   onClick={() => {
@@ -864,12 +762,13 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
               <div className="flex-grow pl-2 text-left text-xs">
                 <div className="flex justify-between items-start">
                   <span className="font-extrabold text-gray-900 leading-tight">
-                    {toast.type === "success" ? "Success Notification" :
-                      toast.type === "info" ? "Telemetry Sync" : "System Alert"}
+                    {toast.type === "success" ? t("p2.app.toast_success") :
+                      toast.type === "info" ? t("p2.app.toast_info") : t("p2.app.toast_warning")}
                   </span>
                   <button
-                    onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-                    className="text-gray-400 hover:text-gray-650 cursor-pointer border-0 bg-transparent text-[10px] p-0 leading-none"
+                    onClick={() => setToasts(prev => prev.filter(x => x.id !== toast.id))}
+                    aria-label={t("p2.app.close")}
+                    className="text-gray-500 hover:text-gray-900 cursor-pointer border-0 bg-transparent text-sm p-1 leading-none"
                   >
                     ✕
                   </button>
@@ -881,75 +780,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         </AnimatePresence>
       </div>
 
-      {/* Guided Walkthrough Tooltip Overlay */}
-      <AnimatePresence>
-        {demoState.isActive && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className={`fixed z-40 w-72 bg-slate-950/95 backdrop-blur-md border border-indigo-500/30 p-5 rounded-2xl shadow-2xl text-white pointer-events-auto ${demoSteps[demoState.stepIndex].highlightStyle}`}
-          >
-            {/* Pulsing focal glow ring */}
-            <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-indigo-500 rounded-full animate-ping" />
-            <div className="absolute -top-1 -left-1 w-2 h-2 bg-indigo-400 rounded-full" />
 
-            <div className="space-y-2.5">
-              <div className="flex justify-between items-center text-[8.5px] font-bold text-indigo-400 uppercase tracking-widest">
-                <span>GUIDED DEMO • STEP {demoState.stepIndex + 1} OF {demoSteps.length}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              </div>
-              <h4 className="font-extrabold text-sm text-white leading-tight">
-                {demoSteps[demoState.stepIndex].title}
-              </h4>
-              <p className="text-[10.5px] text-slate-300 leading-relaxed font-medium">
-                {demoSteps[demoState.stepIndex].desc}
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Guided Walkthrough Bottom Console Controls */}
-      <AnimatePresence>
-        {demoState.isActive && (
-          <motion.div
-            initial={{ opacity: 0, y: 55 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 55 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-6 pointer-events-none"
-          >
-            <div className="pointer-events-auto bg-slate-950/95 backdrop-blur-md border border-slate-800 shadow-2xl rounded-2xl p-4.5 flex flex-col sm:flex-row justify-between items-center gap-4 text-white">
-              <div className="text-left">
-                <span className="text-[8.5px] font-mono text-indigo-400 uppercase tracking-widest block font-bold">NutriPalm AI Investor Guided Tour</span>
-                <span className="text-xs font-extrabold block mt-1">Active Screen: {demoSteps[demoState.stepIndex].screen}</span>
-              </div>
-
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button
-                  onClick={prevDemoStep}
-                  disabled={demoState.stepIndex === 0}
-                  className="flex-1 sm:flex-initial bg-slate-850 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-[10px] px-4.5 py-2.5 rounded-xl transition-all cursor-pointer border-0"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={nextDemoStep}
-                  className="flex-1 sm:flex-initial bg-primary hover:bg-[#235F26] text-white font-bold text-[10px] px-5 py-2.5 rounded-xl transition-all cursor-pointer border-0 shadow-md shadow-primary/10"
-                >
-                  {demoState.stepIndex === demoSteps.length - 1 ? "Finish Tour" : "Next"}
-                </button>
-                <button
-                  onClick={exitDemo}
-                  className="flex-1 sm:flex-initial bg-rose-650 hover:bg-rose-700 text-white font-bold text-[10px] px-4.5 py-2.5 rounded-xl transition-all cursor-pointer border-0"
-                >
-                  Exit Demo
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
     </div>
   );

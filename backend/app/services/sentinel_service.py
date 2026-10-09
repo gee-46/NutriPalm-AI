@@ -20,6 +20,7 @@ Configuration (see backend/.env.example):
 from __future__ import annotations
 
 import logging
+import math
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -110,6 +111,52 @@ def _get_access_token(settings: Settings) -> str:
         return access_token
 
 
+# A single plot larger than this (in degrees of lon/lat extent) is certainly a
+# data error and would be an expensive request to the external provider.
+_MAX_EXTENT_DEGREES = 0.5
+
+
+def validate_polygon(geojson_polygon: Any) -> None:
+    """
+    Reject geometry that is not a sane WGS84 GeoJSON Polygon before it is sent
+    to an external service. Raises GeospatialServiceUnavailable with a reason
+    the UI can show.
+    """
+    bad = GeospatialServiceUnavailable(
+        "The plot boundary is not a valid closed WGS84 polygon. Re-survey the boundary."
+    )
+    if not isinstance(geojson_polygon, dict) or geojson_polygon.get("type") != "Polygon":
+        raise bad
+    rings = geojson_polygon.get("coordinates")
+    if not isinstance(rings, list) or not rings or not isinstance(rings[0], list):
+        raise bad
+    ring = rings[0]
+    if len(ring) < 4:
+        raise bad
+    lngs: list[float] = []
+    lats: list[float] = []
+    for pt in ring:
+        if not isinstance(pt, (list, tuple)) or len(pt) < 2:
+            raise bad
+        lng, lat = pt[0], pt[1]
+        if isinstance(lng, bool) or isinstance(lat, bool) or not isinstance(lng, (int, float)) or not isinstance(lat, (int, float)):
+            raise bad
+        if not (math.isfinite(lng) and math.isfinite(lat)) or not (-180 <= lng <= 180) or not (-90 <= lat <= 90):
+            raise bad
+        lngs.append(float(lng))
+        lats.append(float(lat))
+    if ring[0][0] != ring[-1][0] or ring[0][1] != ring[-1][1]:
+        raise bad
+    if (max(lngs) - min(lngs)) > _MAX_EXTENT_DEGREES or (max(lats) - min(lats)) > _MAX_EXTENT_DEGREES:
+        raise bad
+    # Zero-area (all points collinear / identical) polygons are not plots.
+    area2 = 0.0
+    for (x1, y1), (x2, y2) in zip(zip(lngs, lats), zip(lngs[1:], lats[1:])):
+        area2 += x1 * y2 - x2 * y1
+    if abs(area2) < 1e-12:
+        raise bad
+
+
 def is_configured(settings: Settings | None = None) -> bool:
     settings = settings or get_settings()
     return bool(settings.sentinel_hub_client_id and settings.sentinel_hub_client_secret)
@@ -136,10 +183,7 @@ def get_ndvi_for_geometry(
             "and SENTINEL_HUB_CLIENT_SECRET (see backend/.env.example)."
         )
 
-    if geojson_polygon.get("type") != "Polygon" or not geojson_polygon.get("coordinates"):
-        raise GeospatialServiceUnavailable(
-            "Plot does not have a mapped boundary polygon yet."
-        )
+    validate_polygon(geojson_polygon)
 
     token = _get_access_token(settings)
 

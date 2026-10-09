@@ -1,6 +1,10 @@
 import { supabase } from "./supabaseClient";
 
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL as string) || "http://localhost:8000";
+// VITE_API_BASE_URL selects the FastAPI backend. Local development falls back to
+// http://localhost:8000; a production build with no value uses same-origin
+// relative URLs (e.g. behind a reverse proxy) instead of silently pointing at localhost.
+const configuredApiBase = ((import.meta.env?.VITE_API_BASE_URL as string | undefined) ?? "").trim().replace(/\/+$/, "");
+const API_BASE_URL = configuredApiBase || (import.meta.env?.DEV ? "http://localhost:8000" : "");
 
 export function getApiBaseUrl(): string {
   return API_BASE_URL;
@@ -21,6 +25,11 @@ async function getHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+/** Authenticated request to the FastAPI backend (same token handling as every other call in this file). */
+export async function authenticatedFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = await getHeaders();
+  return fetch(`${API_BASE_URL}${path}`, { ...init, headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
+}
 
 export interface RecommendationRequestPayload {
   plot_id: string;

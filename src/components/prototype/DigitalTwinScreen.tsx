@@ -7,6 +7,8 @@ import { boundaryToSvgPath } from "../../lib/svgPath";
 import { AnimatedCounter } from "./FarmPlotScreen";
 import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory, useLiveTwin } from "../../data/digitalTwins";
 import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
+import { supabase } from "../../lib/supabaseClient";
+import { getCropBaseline } from "../../constants/cropBaselines";
 
 
 
@@ -28,7 +30,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   onNavigate,
   showToast
 }) => {
-  const { t } = useTranslation();
+  const { t, tOptional, locale } = useTranslation();
+  // Data-driven display strings (labels, short notes) are looked up by slug so the English text can stay the key's default.
+  const tx = (text: string | undefined | null): string =>
+    text ? tOptional(`p2.tx.${text.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`, text) : "";
   const [activePlotId, setActivePlotId] = useState("");
   const [simMode, setSimMode] = useState<"Past" | "Current" | "Prediction">("Current");
   const [isSyncing, setIsSyncing] = useState(false);
@@ -39,7 +44,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
 
   // Living updates states
-  const [lastSyncMinutes, setLastSyncMinutes] = useState(2);
+  const [lastSyncMinutes, setLastSyncMinutes] = useState(0);
   const [isChangingPlot, setIsChangingPlot] = useState(false);
 
   const triggerToast = (msg: string, type: "success" | "info" | "warning" = "success") => {
@@ -102,6 +107,33 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
   const activePlot = plots.find((p) => p.id === activePlotId) || plots[0];
 
+  const [soilRow, setSoilRow] = useState<{
+    ph: number | null;
+    nitrogen_kg_ha: number | null;
+    phosphorus_kg_ha: number | null;
+    potassium_kg_ha: number | null;
+    organic_carbon_percent: number | null;
+    electrical_conductivity: number | null;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setSoilRow(null);
+    if (!activePlotId) return;
+    supabase
+      .from("soil_reports")
+      .select("ph, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, electrical_conductivity")
+      .eq("plot_id", activePlotId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: { data: typeof soilRow }) => {
+        if (!cancelled) setSoilRow(data ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePlotId]);
+
   const { snapshots, isLoading: isTwinsLoading } =
     useDigitalTwinSnapshots(activePlotId);
   const { prediction, isLoading: isPredictionLoading } = useTwinPrediction(activePlotId);
@@ -123,10 +155,10 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           <Cpu className="w-10 h-10 text-gray-300" />
         </div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          {t('digitaltwinscreen.no_plots_title') || "No Digital Twin Available"}
+          {t('digitaltwinscreen.no_plots_title') || t("p2.ui.no_digital_twin_available_l2azsh")}
         </h2>
         <p className="text-gray-500 max-w-md">
-          {t('digitaltwinscreen.no_plots_message') || "Please add a farm plot to your account to view its digital twin telemetry, historical data, and AI-driven analysis."}
+          {t('digitaltwinscreen.no_plots_message') || t("p2.ui.please_add_a_farm_plot_to_your_account_to_vi_1ijmezq")}
         </p>
       </motion.div>
     );
@@ -135,14 +167,16 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   // Derived properties based on simulation mode with fallbacks for plots lacking telemetry
   const isPrediction = simMode === "Prediction";
   const activeNDVI = isPrediction ? (prediction?.predicted_ndvi ?? 0) : (activeSnapshot?.ndvi ?? (activePlot?.ndviTimeline ? activePlot.ndviTimeline[simMode] : 0));
-  const activeSoilHealth = activeSnapshot?.crop_health_score ?? (activePlot?.soilHealth ? activePlot.soilHealth[simMode] : 0);
+  const activeSoilHealthOrNull: number | null =
+    activeSnapshot?.crop_health_score ?? activePlot?.soilHealth?.[simMode] ?? null;
+  const activeSoilHealth = activeSoilHealthOrNull ?? 0;
   const activeYield = activeSnapshot?.yield_prediction
     ? `${activeSnapshot.yield_prediction} Tons`
     : (activePlot?.yieldEst ? activePlot.yieldEst[simMode] : "N/A");
   const activeDiseasePct = activeSnapshot?.disease_probability ?? (activePlot?.diseasePct ? activePlot.diseasePct[simMode] : 0);
   const activeDiseaseRisk = activeSnapshot?.risk_level ?? (activePlot?.diseaseRisk ? activePlot.diseaseRisk[simMode] : "Data Pending");
   
-  const activeConfidence = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? 0;
+  const activeConfidence: number | null = activeSnapshot?.confidence_score ?? activePlot?.confidence ?? null;
   const activeWhyDisease = activeSnapshot?.disease_explanation ?? activePlot?.whyDisease;
   const activeRecommendedAction = activeSnapshot?.recommended_action ?? activePlot?.recommendedAction;
   const activeAdvisoryReason = activeSnapshot?.advisory_reason ?? activePlot?.advisoryReason;
@@ -151,7 +185,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const realTemp = liveData?.live_weather.temperature_c ?? (envData.weather ? envData.weather.current.temperatureC : null);
   const realHumidity = liveData?.live_weather.humidity_pct ?? (envData.weather ? envData.weather.current.humidityPercent : null);
   const realWind = liveData?.live_weather.wind_kph ?? (envData.weather ? envData.weather.current.windSpeedKmh : null);
-  const realFoliar = activeSnapshot?.crop_health_score ?? 98;
+  const realFoliar: number | null = activeSnapshot?.crop_health_score ?? null;
 
   // Live AI scores — prefer live computed, fallback to DB snapshot
   const liveWaterStress = liveData?.scores.water_stress ?? 0;
@@ -159,7 +193,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const liveCropHealth = liveData?.scores.crop_health ?? activeSoilHealth;
   const liveYieldEst = liveData?.scores.yield_estimate_t_ha ?? null;
   const liveSoilState = liveData?.soil_state ?? "Unknown";
-  const liveRiskLevel = liveData?.risk_level ?? "Low";
+  const liveAvailable = !!liveData;
+  const liveRiskLevel = liveData?.risk_level ?? null;
   const liveDiseaseName = liveData?.disease_name ?? "Data Pending";
   const liveDiseaseExplanation = liveData?.disease_explanation ?? "";
 
@@ -172,7 +207,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     : "Loading...";
 
   // Dynamic average for the main Twin Health donut (uses live score when available)
-  const overallTwinHealth = Math.round(liveCropHealth || (activeSoilHealth + activeNDVI * 100) / 2 || 0);
+  const overallTwinHealth = Math.round(liveCropHealth || activeSoilHealth || 0);
+  const hasTwinHealth = liveAvailable || activeSoilHealthOrNull !== null;
 
   const telemetryBadges: TelemetryBadge[] = [
     {
@@ -216,8 +252,8 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     {
       id: "health",
       label: "Foliar Health",
-      value: `${realFoliar}%`,
-      interpretation: "Index against biophysical canopy model.",
+      value: realFoliar !== null ? `${Math.round(realFoliar)}%` : "N/A",
+      interpretation: realFoliar !== null ? "Latest stored Digital Twin crop-health score." : "No Digital Twin snapshot stored for this plot yet.",
       x: 50,
       y: 20
     },
@@ -261,15 +297,32 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     }
   ];
 
-  // Soil Nutrient horizontal values
-  const soilNutrients = [
-    { label: t('digitaltwinscreen.ph_score'), val: "6.2", pct: 85, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_slightly_acidic') },
-    { label: t('digitaltwinscreen.nitrogen_n'), val: "72 ppm", pct: 72, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_concentration') },
-    { label: t('digitaltwinscreen.phosphorus_p'), val: "48 ppm", pct: 48, color: "bg-amber-500", text: t('digitaltwinscreen.deficient__recommended_boost') },
-    { label: t('digitaltwinscreen.potassium_k'), val: "85 ppm", pct: 85, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_content') },
-    { label: t('digitaltwinscreen.organic_carbon'), val: "1.4%", pct: 78, color: "bg-emerald-500", text: t('digitaltwinscreen.excellent_microbial_base') },
-    { label: t('digitaltwinscreen.ec_electrical_conductivity'), val: "0.28 dS/m", pct: 52, color: "bg-emerald-500", text: t('digitaltwinscreen.optimal_salinity') }
-  ];
+  // Soil chemistry comes from the plot's latest saved soil report; nothing is assumed.
+  const baseline = getCropBaseline(activePlot?.crop || "");
+  const rangeNote = (v: number, min: number, max: number) =>
+    v < min ? "Below reference range" : v > max ? "Above reference range" : "Within reference range";
+  const soilNutrients: Array<{ label: string; val: string; pct: number; color: string; text: string }> = [];
+  if (soilRow) {
+    const rows: Array<[string, number | null, string, { target: number; min: number; max: number } | null]> = [
+      [t('digitaltwinscreen.ph_score'), soilRow.ph, "", baseline?.ph ?? null],
+      [t('digitaltwinscreen.nitrogen_n'), soilRow.nitrogen_kg_ha, " kg/ha", baseline?.nitrogen ?? null],
+      [t('digitaltwinscreen.phosphorus_p'), soilRow.phosphorus_kg_ha, " kg/ha", baseline?.phosphorus ?? null],
+      [t('digitaltwinscreen.potassium_k'), soilRow.potassium_kg_ha, " kg/ha", baseline?.potassium ?? null],
+      [t('digitaltwinscreen.organic_carbon'), soilRow.organic_carbon_percent, " %", baseline?.organic_carbon ?? null],
+      [t('digitaltwinscreen.ec_electrical_conductivity'), soilRow.electrical_conductivity, " dS/m", null],
+    ];
+    for (const [label, value, unit, ref] of rows) {
+      if (value === null || value === undefined) continue;
+      const within = ref ? value >= ref.min && value <= ref.max : true;
+      soilNutrients.push({
+        label,
+        val: `${value}${unit}`,
+        pct: ref ? Math.min(100, Math.max(3, Math.round((value / (ref.target * 1.3)) * 100))) : 0,
+        color: within ? "bg-emerald-500" : "bg-amber-500",
+        text: ref ? tx(rangeNote(value, ref.min, ref.max)) : tx("No reference range"),
+      });
+    }
+  }
 
   // Build a real SVG path from the history array for the chart
   const buildPathFromHistory = (getValue: (row: any) => number | null, scale: number, baseline: number) => {
@@ -283,16 +336,16 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
     return `M ${points.join(" L ")}`;
   };
 
-  const getChartData = () => {
+  const getChartData = (): { path: string | null; val: string } => {
     if (activeChartTab === "NDVI") {
       const path = buildPathFromHistory(r => r.ndvi, 100, 155);
       const val = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].ndvi ?? activeNDVI).toFixed(2) : activeNDVI.toFixed(2);
-      return { path: path ?? `M 20 ${140 - activeNDVI * 100} L 380 ${100 - activeNDVI * 100}`, val };
+      return { path, val };
     }
     if (activeChartTab === "Health") {
       const path = buildPathFromHistory(r => r.crop_health_score, 1.5, 165);
       const last = twinHistory.length > 0 ? (twinHistory[twinHistory.length - 1].crop_health_score ?? activeSoilHealth) : activeSoilHealth;
-      return { path: path ?? `M 20 ${180 - activeSoilHealth * 1.5} L 380 ${150 - activeSoilHealth * 1.5}`, val: `${Math.round(last)}%` };
+      return { path, val: `${Math.round(last)}%` };
     }
         if (activeChartTab === "Moisture") {
       const path = buildPathFromHistory(r => r.water_stress_score, 2.5, 170);
@@ -300,11 +353,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         const last = twinHistory[twinHistory.length - 1].water_stress_score ?? 0;
         return { path, val: `${Math.round(last)}%` };
       }
-      return { path: "M 20 170 L 380 170", val: "Not Connected" };
+      return { path: null, val: t("p2.common.not_available") };
     }
     // Temp
     const path = buildPathFromHistory(r => r.temperature_c, 2.5, 160);
-    return { path: path ?? "M 20 120 L 380 120", val: realTemp != null ? `${Math.round(realTemp)}°C` : "Unavailable" };
+    return { path, val: realTemp != null ? `${Math.round(realTemp)}°C` : t("p2.common.not_available") };
   };
 
   const chartData = getChartData();
@@ -373,7 +426,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             onClick={handleSync}
             disabled={isSyncing}
             className="inline-flex items-center justify-center p-2.5 bg-white border border-gray-250 text-gray-700 font-extrabold rounded-xl shadow-xs hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
-            title="Refresh twin data"
+            title={t("p2.ui.refresh_twin_data_5om0t2")}
           >
             <RefreshCw className={`w-4 h-4 text-gray-500 ${isSyncing ? "animate-spin" : ""}`} />
           </button>
@@ -472,7 +525,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           )}
           {activePlot.elevation !== undefined && activePlot.elevation > 0 && (
             <span className="px-2 py-0.5 rounded-md bg-slate-50 text-slate-600 border border-slate-200">
-              ⛰️ {activePlot.elevation}m MSL
+              ⛰️ {activePlot.elevation}{t("p2.ui.m_msl_4zv05o")}
             </span>
           )}
           {activePlot.village && (
@@ -494,12 +547,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
               </span>
-              LIVE AI Telemetry
-              <span className="px-1.5 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">LIVE</span>
+              {t("p2.ui.live_ai_telemetry_8f1fe6")}
+              <span className="px-1.5 py-0.5 text-[9px] font-black bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">{t("p2.ui.live_58neb")}</span>
             </h4>
             <p className="text-[10px] text-gray-400 mt-0.5">
-              Open-Meteo weather · computed {lastUpdatedLabel}
-              {liveError && <span className="ml-2 text-red-400">(offline — showing cached)</span>}
+              {t("p2.ui.open_meteo_weather_computed_eu8k7s")} {lastUpdatedLabel}
+              {liveError && <span className="ml-2 text-red-400">{t("p2.ui.offline_showing_cached_1vr8ao2")}</span>}
             </p>
           </div>
 
@@ -521,12 +574,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 {Math.ceil(secondsUntilRefresh / 60)}m
               </span>
             </div>
-            <span className="text-[9px] text-gray-400 font-mono">next refresh</span>
+            <span className="text-[9px] text-gray-400 font-mono">{t("p2.ui.next_refresh_zms3sl")}</span>
           </div>
         </div>
 
         {/* Disease Risk Alert Banner */}
-        {liveDiseaseRisk > 60 && (
+        {liveAvailable && liveDiseaseRisk > 60 && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -538,7 +591,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           >
             <span className="text-base shrink-0">{liveRiskLevel === "High" ? "🔴" : "🟡"}</span>
             <div>
-              <span className="font-black">{liveDiseaseName} Risk {liveDiseaseRisk.toFixed(0)}%</span>
+              <span className="font-black">{liveDiseaseName} {t("p2.ui.risk_5d5rq")} {liveDiseaseRisk.toFixed(0)}%</span>
               <span className="ml-2 font-medium opacity-80">{liveDiseaseExplanation}</span>
             </div>
           </motion.div>
@@ -614,17 +667,21 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   </svg>
                   <span className="absolute text-base">{score.icon}</span>
                 </div>
-                <span className={`text-sm font-black ${score.color}`}>
-                  {isLiveLoading ? "—" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
+                <span className={`text-sm font-black ${liveAvailable ? score.color : "text-gray-400"}`}>
+                  {isLiveLoading ? "—" : (!liveAvailable && score.label !== "Crop Health") || (score.label === "Yield Est." && liveYieldEst === null) ? "N/A" : score.label === "Crop Health" && !hasTwinHealth ? "N/A" : `${typeof score.value === "number" ? score.value.toFixed(score.unit === " t/ha" ? 1 : 0) : score.value}${score.unit}`}
                 </span>
                 {score.sublabel && (
-                  <span className="text-[9px] font-bold text-gray-400">{score.sublabel}</span>
+                  <span className="text-[9px] font-bold text-gray-400">{tx(score.sublabel)}</span>
                 )}
-                <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider text-center">{score.label}</span>
+                <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider text-center">{tx(score.label)}</span>
               </div>
             );
           })}
         </div>
+
+        {liveData?.model_note && (
+          <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">{liveData.model_note}</p>
+        )}
 
         {/* Live weather quick-read strip */}
         {liveData && (
@@ -639,7 +696,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             ].map(({ label, val, icon }) => (
               <div key={label} className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100">
                 <span className="text-xs">{icon}</span>
-                <span className="text-[10px] font-black text-gray-500 uppercase">{label}</span>
+                <span className="text-[10px] font-black text-gray-500 uppercase">{tx(label)}</span>
                 <span className="text-[11px] font-black text-gray-900">{val}</span>
               </div>
             ))}
@@ -662,7 +719,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="bg-white border border-gray-150 p-5 rounded-2xl shadow-xl flex items-center gap-3">
                 <RefreshCw className="w-5 h-5 text-primary animate-spin" />
                 <span className="text-xs font-black text-gray-800">
-                  {isTwinsLoading || isPredictionLoading ? "Syncing with Supabase AI Engine..." : "Calibrating biophysical simulation model..."}
+                  {isTwinsLoading || isPredictionLoading ? t("p2.ui.syncing_with_supabase_ai_engine_18a785y") : t("p2.ui.calibrating_biophysical_simulation_model_cf4vlm")}
                 </span>
               </div>
             </motion.div>
@@ -738,7 +795,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   <button
                     onMouseEnter={() => setHoveredBadge(badge.id)}
                     onMouseLeave={() => setHoveredBadge(null)}
-                    onClick={() => triggerToast(`${badge.label}: ${badge.value} (${badge.interpretation})`, "info")}
+                    onClick={() => triggerToast(`${tx(badge.label)}: ${tx(badge.value)} (${tx(badge.interpretation)})`, "info")}
                     className="w-3.5 h-3.5 rounded-full bg-emerald-400 hover:bg-white border-2 border-slate-950 flex items-center justify-center cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95 transition-all animate-pulse"
                   />
 
@@ -750,9 +807,9 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                         exit={{ opacity: 0, scale: 0.9, y: 5 }}
                         className="absolute bottom-6 left-1/2 -translate-x-1/2 w-44 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-2xl z-30 pointer-events-none text-left"
                       >
-                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">{badge.label}</p>
-                        <p className="text-sm font-black text-white mt-1 leading-none">{badge.value}</p>
-                        <p className="text-[9px] text-slate-400 leading-normal mt-1">{badge.interpretation}</p>
+                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">{tx(badge.label)}</p>
+                        <p className="text-sm font-black text-white mt-1 leading-none">{tx(badge.value)}</p>
+                        <p className="text-[9px] text-slate-400 leading-normal mt-1">{tx(badge.interpretation)}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -760,32 +817,22 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 bg-slate-900/75 border border-slate-800 rounded-2xl p-4 text-xs font-mono text-slate-400">
-              <div>
-                <span className="block text-[8px] text-slate-500 uppercase">Crop Vigor</span>
-                <span className="text-white font-bold">Foliar Chlorophyll: 78%</span>
-              </div>
-              <div>
-                <span className="block text-[8px] text-slate-500 uppercase">Water Transport</span>
-                <span className="text-white font-bold">Root Tension: Optimal</span>
-              </div>
-              <div>
-                <span className="block text-[8px] text-slate-500 uppercase">Growth Stage</span>
-                <span className="text-white font-bold">{activePlot.stage}</span>
-              </div>
+            <div className="bg-slate-900/75 border border-slate-800 rounded-2xl p-4 text-sm font-mono text-slate-300">
+              <span className="block text-xs text-slate-400 uppercase">{t("p2.twin.growth_stage")}</span>
+              <span className="text-white font-bold">{activePlot.stage || t("p2.common.not_available")}</span>
             </div>
-            
+
             {/* Data Completeness Gap Indicators */}
             {activeSnapshot?.data_completeness && (
               <div className="mt-2 flex gap-2">
                 {!activeSnapshot.data_completeness.ndvi && (
-                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">Missing NDVI</span>
+                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">{t("p2.ui.missing_ndvi_ju7hmy")}</span>
                 )}
                 {!activeSnapshot.data_completeness.weather && (
-                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">Missing Weather</span>
+                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">{t("p2.ui.missing_weather_1jpp98z")}</span>
                 )}
                 {!activeSnapshot.data_completeness.soil && (
-                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">Missing Soil</span>
+                  <span className="text-[9px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded-md border border-red-500/30">{t("p2.ui.missing_soil_jubkxs")}</span>
                 )}
               </div>
             )}
@@ -805,15 +852,15 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                   </div>
                   <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${card.status === "Optimal" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
                     }`}>
-                    {card.status}
+                    {tx(card.status)}
                   </span>
                 </div>
 
                 <div className="mt-4 text-left">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{card.label}</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">{tx(card.label)}</span>
                   <div className="flex items-baseline justify-between mt-1">
-                    <span className="text-base font-black text-gray-900">{card.value}</span>
-                    <span className="text-[9px] font-bold text-gray-450">{card.trendText}</span>
+                    <span className="text-base font-black text-gray-900">{tx(card.value)}</span>
+                    <span className="text-[9px] font-bold text-gray-450">{tx(card.trendText)}</span>
                   </div>
                 </div>
 
@@ -833,47 +880,25 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           </div>
 
           {/* 5. CROP GROWTH TIMELINE */}
-          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-6">
-            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-              <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-1.5">
-                <Calendar className="w-4.5 h-4.5 text-primary" /> Crop Growth Timeline
-              </h4>
-              <div className="text-[10px] font-bold text-gray-500 space-x-3">
-                <span>Days since planting: <strong>{activePlot.age * 365}</strong></span>
-                <span>Expected Harvest: <strong>Oct 2026</strong></span>
+          <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-3">
+            <h4 className="text-sm font-black text-gray-900 flex items-center gap-1.5">
+              <Calendar className="w-4.5 h-4.5 text-primary" /> {t("p2.twin.planting_title")}
+            </h4>
+            <dl className="text-sm">
+              <div className="flex justify-between gap-4 border-b border-gray-100 py-2">
+                <dt className="font-semibold text-gray-600">{t("p2.twin.plantation_age")}</dt>
+                <dd className="font-extrabold text-gray-900">{activePlot.age ? `${activePlot.age} ${t("p2.twin.years")}` : t("p2.common.not_available")}</dd>
               </div>
-            </div>
-
-            <div className="flex justify-between items-center relative pt-2">
-              <div className="absolute left-[30px] right-[30px] top-[14px] h-0.5 bg-gray-100 -z-10" />
-              <div className="absolute left-[30px] top-[14px] h-0.5 bg-primary -z-10 w-[74%]" />
-
-              <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full border-2 bg-emerald-50 border-primary text-primary flex items-center justify-center font-bold text-xs">✓</div>
-                <span className="text-[10px] font-bold text-gray-400 mt-2">Seedling</span>
+              <div className="flex justify-between gap-4 border-b border-gray-100 py-2">
+                <dt className="font-semibold text-gray-600">{t("p2.twin.planting_date")}</dt>
+                <dd className="font-extrabold text-gray-900">{activePlot.plantingDate ? new Date(activePlot.plantingDate).toLocaleDateString(locale) : t("p2.common.not_available")}</dd>
               </div>
-
-              <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full border-2 bg-emerald-50 border-primary text-primary flex items-center justify-center font-bold text-xs">✓</div>
-                <span className="text-[10px] font-bold text-gray-400 mt-2">Vegetative</span>
+              <div className="flex justify-between gap-4 py-2">
+                <dt className="font-semibold text-gray-600">{t("p2.twin.growth_stage")}</dt>
+                <dd className="font-extrabold text-gray-900">{activePlot.stage || t("p2.common.not_available")}</dd>
               </div>
-
-              <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full border-2 bg-emerald-50 border-primary text-primary flex items-center justify-center font-bold text-xs">✓</div>
-                <span className="text-[10px] font-bold text-gray-400 mt-2">Flowering</span>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full border-2 bg-primary border-primary text-white flex items-center justify-center font-bold text-xs shadow-md shadow-primary/20 scale-110">4</div>
-                <span className="text-[10px] font-black text-primary mt-2">Fruit Dev</span>
-                <span className="text-[8px] font-mono text-emerald-650 font-bold mt-0.5">82% Completed</span>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full border-2 bg-white border-gray-200 text-gray-300 flex items-center justify-center font-bold text-xs">5</div>
-                <span className="text-[10px] font-bold text-gray-300 mt-2">Harvest</span>
-              </div>
-            </div>
+            </dl>
+            <p className="text-sm font-medium text-gray-500">{t("p2.twin.no_harvest_estimate")}</p>
           </div>
 
           {/* 7. NDVI & HEALTH TREND */}
@@ -881,9 +906,9 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-1.5">
-                  <TrendingUp className="w-4.5 h-4.5 text-primary" /> Biophysical Reflectance Trends
+                  <TrendingUp className="w-4.5 h-4.5 text-primary" /> {t("p2.ui.biophysical_reflectance_trends_15ftksy")}
                 </h4>
-                <p className="text-[10px] text-gray-450 mt-1">Satellite indexes tracked over time.</p>
+                <p className="text-[10px] text-gray-450 mt-1">{t("p2.ui.satellite_indexes_tracked_over_time_u0mb07")}</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -918,13 +943,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="h-56 border border-gray-100 rounded-2xl relative p-4 flex flex-col justify-between overflow-hidden">
               <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
-              <div className="flex justify-between text-[9px] font-mono text-gray-400 relative z-10">
-                <span>0.90 Index</span>
-                <span>Optimal Bounds</span>
-              </div>
 
               <div className="relative flex-grow flex items-center justify-center my-2">
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 400 180">
+{chartData.path === null ? (
+                  <p className="text-sm font-medium text-gray-600">{t("p2.twin.no_history")}</p>
+                ) : (
+                                <svg className="w-full h-full overflow-visible" viewBox="0 0 400 180">
                   <line x1="0" y1="45" x2="400" y2="45" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
                   <line x1="0" y1="90" x2="400" y2="90" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
                   <line x1="0" y1="135" x2="400" y2="135" stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
@@ -940,12 +964,12 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                     strokeLinecap="round"
                   />
                 </svg>
+                )}
               </div>
 
               <div className="flex justify-between text-[9px] font-mono text-gray-400 border-t border-gray-100 pt-2 relative z-10">
-                <span>Start Phase</span>
-                <span>Target Mean</span>
-                <span>Active Reading ({chartData.val})</span>
+                <span>{t("p2.twin.oldest_reading")}</span>
+                <span>{t("p2.twin.latest_reading")} ({chartData.val})</span>
               </div>
             </div>
           </div>
@@ -988,7 +1012,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>{t('digitaltwinscreen.soil_quality')}</span>
-                  <span className="text-primary"><AnimatedCounter value={activeSoilHealth} />%</span>
+                  <span className="text-primary">{activeSoilHealthOrNull !== null ? <><AnimatedCounter value={activeSoilHealth} />%</> : "N/A"}</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeSoilHealth}%` }} />
@@ -997,7 +1021,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>{t('digitaltwinscreen.crop_health')}</span>
-                  <span className="text-primary"><AnimatedCounter value={Math.round(activeNDVI * 100)} />%</span>
+                  <span className="text-primary">{activeNDVI > 0 ? <><AnimatedCounter value={Math.round(activeNDVI * 100)} />%</> : t("p2.common.not_available")}</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-primary transition-all duration-700 ease-in-out" style={{ width: `${activeNDVI * 100}%` }} />
@@ -1006,7 +1030,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="space-y-1 text-xs font-semibold">
                 <div className="flex justify-between font-bold">
                   <span>{t('digitaltwinscreen.water_status')}</span>
-                  <span className="text-gray-400 font-medium">Not Connected (IoT)</span>
+                  <span className="text-gray-500 font-medium">{t("p2.twin.not_connected")}</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-gray-200" style={{ width: `0%` }} />
@@ -1019,24 +1043,16 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           {/* 3. DIGITAL TWIN CONFIDENCE (AI Validation card) */}
           <div className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs text-left space-y-3.5">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
-              Twin Validation Metrics
+              {t("p2.ui.twin_validation_metrics_c8rnm5")}
             </h4>
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-1 gap-2 text-center">
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">AI Confidence</span>
-                <span className="text-xs font-black text-primary">{activeConfidence}%</span>
-              </div>
-              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">Model Accuracy</span>
-                <span className="text-xs font-black text-primary">98%</span>
-              </div>
-              <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">Reliability</span>
-                <span className="text-xs font-black text-indigo-650 bg-indigo-50 border border-indigo-100 px-1 rounded-md">HIGH</span>
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">{t("p2.ui.ai_confidence_e3nxmj")}</span>
+                <span className="text-xs font-black text-primary">{activeConfidence !== null ? `${activeConfidence}%` : "N/A"}</span>
               </div>
             </div>
-            <p className="text-[9.5px] text-gray-450 leading-relaxed">
-              Predictions are generated using historical soil conditions, weather patterns, crop growth models, and simulated telemetry.
+            <p className="text-sm text-gray-600 leading-relaxed">
+              {t("p2.twin.validation_note")}
             </p>
           </div>
 
@@ -1044,7 +1060,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
           <div className="bg-white rounded-3xl border border-gray-150 p-5 shadow-xs text-left space-y-3.5">
             <div className="flex items-center justify-between border-b border-gray-100 pb-2">
               <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                Live Environmental Context
+                {t("p2.ui.live_environmental_context_117oqo")}
               </h4>
               {envData.centroid && (
                 <span className="text-[8px] font-mono text-gray-400">
@@ -1055,44 +1071,40 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">Plot Area</span>
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">{t("p2.ui.plot_area_13euvd1")}</span>
                 <span className="text-xs font-black text-primary">{activePlot.area?.toFixed(2) ?? "—"} ac</span>
               </div>
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">Current Weather</span>
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">{t("p2.ui.current_weather_7avspy")}</span>
                 <span className="text-xs font-black text-primary">
                   {envData.weather
                     ? `${Math.round(envData.weather.current.temperatureC)}°C · ${envData.weather.current.conditionText}`
                     : envData.weatherLoading
-                    ? "Loading…"
+                    ? t("p2.ui.loading_zg8wpd")
                     : envData.weatherError
-                    ? "Unavailable"
-                    : "No coordinates"}
+                    ? t("p2.ui.unavailable_virvex")
+                    : t("p2.ui.no_coordinates_6ff4zn")}
                 </span>
               </div>
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">Sentinel-2 NDVI</span>
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">{t("p2.ui.sentinel_2_ndvi_r1nf15")}</span>
                 <span className="text-xs font-black text-primary">
                   {envData.ndvi?.available
                     ? envData.ndvi.mean_ndvi?.toFixed(2)
                     : envData.ndviLoading
-                    ? "Loading…"
-                    : "Config required"}
+                    ? t("p2.ui.loading_zg8wpd")
+                    : t("p2.ui.config_required_1wuiv1y")}
                 </span>
               </div>
               <div className="bg-gray-50 border border-gray-150 p-2.5 rounded-xl space-y-0.5">
-                <span className="block text-[8px] font-bold text-gray-400 uppercase">Satellite Source</span>
+                <span className="block text-[8px] font-bold text-gray-400 uppercase">{t("p2.ui.satellite_source_vqpp0n")}</span>
                 <span className="text-[10px] font-black text-gray-700">
-                  {envData.ndvi?.source ?? "Sentinel-2 (via backend)"}
+                  {envData.ndvi?.source ?? t("p2.ui.sentinel_2_via_backend_1wv05r3")}
                 </span>
               </div>
             </div>
             <p className="text-[9.5px] text-gray-450 leading-relaxed">
-              This panel calls live services on demand: weather from Open-Meteo for this
-              plot's boundary centroid, and Sentinel-2 NDVI from the backend geospatial
-              service when Sentinel Hub credentials are configured. It's separate from the
-              historical Past/Current/Prediction telemetry above, which is backfilled by the
-              satellite ingestion pipeline.
+              {t("p2.ui.this_panel_calls_live_services_on_demand_wea_x8b5og")}
             </p>
           </div>
 
@@ -1102,18 +1114,18 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <Bot className="w-5 h-5 text-indigo-500 animate-bounce" />
             </span>
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
-              AI Forecast Models
+              {t("p2.ui.ai_forecast_models_w1hmda")}
             </h4>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Expected Yield</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{t("p2.ui.expected_yield_1ji0164")}</span>
                 <p className="text-lg font-black text-gray-950">{activeYield}</p>
-                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activeConfidence}% Conf.</span>
+                <span className="text-[8px] font-bold text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2 py-0.5 rounded-full">{activeConfidence !== null ? `${activeConfidence}% Conf.` : t("p2.ui.no_confidence_score_jk2k50")}</span>
               </div>
 
               <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl space-y-1 text-left">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Harvest Ready</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{t("p2.ui.harvest_ready_v9qpmt")}</span>
                 <p className="text-lg font-black text-gray-950">72%</p>
                 <div className="w-full h-1 bg-gray-250 rounded-full overflow-hidden mt-2">
                   <div className="h-full bg-primary" style={{ width: "72%" }} />
@@ -1124,7 +1136,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             {/* AI Explanation / Why */}
             <div className="space-y-3.5 text-xs text-gray-700 font-semibold pt-2 border-t border-gray-100">
               <div className="flex justify-between items-center">
-                <span className="text-gray-400">Disease Probability</span>
+                <span className="text-gray-400">{t("p2.ui.disease_probability_xzxpt6")}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-emerald-600 font-black"><AnimatedCounter value={activeDiseasePct} />% ({activeDiseaseRisk})</span>
                   <div className="relative w-7 h-7">
@@ -1146,15 +1158,13 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
               {!activeWhyDisease ? (
                 <div className="bg-gray-50 border border-gray-150 p-3 rounded-2xl text-[10px] text-gray-450 font-semibold">
-                  Insufficient telemetry data to generate disease probability.
+                  {t("p2.ui.insufficient_telemetry_data_to_generate_dise_1sk6yt8")}
                 </div>
               ) : (
                 <div className="bg-emerald-50/40 border border-emerald-100/50 p-3 rounded-2xl text-[10px] text-emerald-850 font-semibold space-y-1">
-                  <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">Model Explanation (Why?):</p>
+                  <p className="font-extrabold uppercase text-[9px] tracking-wider text-primary">{t("p2.ui.model_explanation_why_1uyth6z")}</p>
                   <ul className="list-disc pl-3.5 space-y-1 leading-normal">
                     <li>{activeWhyDisease}</li>
-                    <li>Stable ambient humidity index (64%)</li>
-                    <li>NDVI greenness ratio meets chlorophyll expectations</li>
                   </ul>
                 </div>
               )}
@@ -1168,6 +1178,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             </h4>
 
             <div className="space-y-3 text-xs">
+              {soilNutrients.length === 0 && (
+                <p className="text-xs font-semibold text-gray-500">
+                  {t("p2.ui.no_saved_soil_report_for_this_plot_upload_on_1x0asxv")}
+                </p>
+              )}
               {soilNutrients.map((nut) => (
                 <div key={nut.label} className="space-y-1.5">
                   <div className="flex justify-between font-bold text-gray-700">
@@ -1190,7 +1205,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <FlaskConical className="w-4.5 h-4.5 text-primary" /> {t('digitaltwinscreen.ai_agronomy_advisory')}
               </h4>
               <span className="text-[9px] font-black text-indigo-750 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                {activeConfidence ?? "—"}% {t('digitaltwinscreen.confidence_1')}
+                {activeConfidence !== null ? `${activeConfidence}% ${t('digitaltwinscreen.confidence_1')}` : ""}
               </span>
             </div>
 
@@ -1241,18 +1256,18 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.sensors_connected')}</span>
                 <span className="inline-flex items-center gap-1.5 text-gray-400">
-                  <span className="w-2 h-2 rounded-full bg-gray-300" /> 0 Connected (No IoT hardware)
+                  <span className="w-2 h-2 rounded-full bg-gray-300" /> {t("p2.ui.0_connected_no_iot_hardware_bhmvey")}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.weather_feed')}</span>
                 {envData.weather ? (
                   <span className="inline-flex items-center gap-1.5 text-emerald-650">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live (Open-Meteo)
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t("p2.ui.live_open_meteo_cio0i3")}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-gray-400">
-                    <span className="w-2 h-2 rounded-full bg-gray-300" /> {envData.weatherLoading ? "Connecting..." : "Unavailable / No Coordinates"}
+                    <span className="w-2 h-2 rounded-full bg-gray-300" /> {envData.weatherLoading ? t("p2.ui.connecting_h7kdf3") : t("p2.ui.unavailable_no_coordinates_11nyhes")}
                   </span>
                 )}
               </div>
@@ -1260,18 +1275,18 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <span>{t('digitaltwinscreen.satellite_feed')}</span>
                 {envData.ndvi?.available ? (
                   <span className="inline-flex items-center gap-1.5 text-emerald-650">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Active (Sentinel-2)
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t("p2.ui.active_sentinel_2_512yyz")}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-amber-650">
-                    <span className="w-2 h-2 rounded-full bg-amber-400" /> Config Required
+                    <span className="w-2 h-2 rounded-full bg-amber-400" /> {t("p2.ui.config_required_1xx0es6")}
                   </span>
                 )}
               </div>
               <div className="flex justify-between items-center">
                 <span>{t('digitaltwinscreen.drone_sync')}</span>
                 <span className="inline-flex items-center gap-1.5 text-gray-400">
-                  <span className="w-2 h-2 rounded-full bg-gray-300" /> Not Connected
+                  <span className="w-2 h-2 rounded-full bg-gray-300" /> {t("p2.ui.not_connected_10txv6d")}
                 </span>
               </div>
               <div className="flex justify-between items-center">

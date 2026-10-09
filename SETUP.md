@@ -1,162 +1,83 @@
-# NutriPalm AI -- Setup & Configuration Guide
+# NutriPalm AI -- Setup
 
-## Overview
+## 1. Prerequisites
 
-NutriPalm AI is a precision agriculture advisory platform combining:
-- **OCR Pipeline** (Tesseract + Poppler) for soil report extraction
-- **FastAPI backend** with JWT-secured endpoints
-- **React frontend** (Vite + TypeScript) with Supabase integration
-- **AI Recommendation Engine** for crop advisory generation
+| Tool | Needed for |
+|------|-----------|
+| Node.js 20+ and npm | frontend |
+| Python 3.11+ | backend |
+| A Supabase project | auth + database |
+| Tesseract OCR and Poppler | soil-report OCR on scanned PDFs / images |
+| Sentinel Hub OAuth client (optional) | live Sentinel-2 NDVI |
+| Google Maps JS API key (optional) | Google satellite imagery in the boundary surveyor |
 
----
+Tesseract and Poppler are **external programs** (not Python packages). Install them with your
+OS package manager (`apt-get install tesseract-ocr poppler-utils`, `brew install tesseract poppler`)
+or on Windows install the binaries and set `TESSERACT_CMD` / `POPPLER_PATH` in `backend/.env`.
+Without them, text-layer PDFs still work but scanned/image reports cannot be read, and the
+6 "real OCR" backend tests fail with "tesseract binary not found".
 
-## Prerequisites
-
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Node.js | >= 18.x | Frontend runtime |
-| Python | >= 3.11 | Backend runtime |
-| Tesseract OCR | >= 5.x | Soil report image parsing |
-| Poppler | >= 26.x | PDF-to-image rendering |
-
----
-
-## 1. Clone & Install
+## 2. Install
 
 ```bash
-git clone https://github.com/gee-46/NutriPalm-AI.git
-cd NutriPalm-AI
 npm install
-cd backend && pip install -r requirements.txt
+cd backend && python -m venv .venv && . .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
----
+## 3. Environment variables
 
-## 2. Environment Variables
+Copy the two example files and fill them in:
 
-### Frontend (.env in root)
+* `.env.example` -> `.env.local` (frontend; `VITE_*` only, public values)
+* `backend/.env.example` -> `backend/.env` (server-side secrets)
 
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-VITE_API_BASE_URL=http://localhost:8001
-```
+The frontend fails closed: if `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` are missing, sign-in is
+refused with a configuration error (there is no offline/mock login).
 
-### Backend (backend/.env)
+## 4. Database
 
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+Apply every file in `supabase/migrations/` **in numeric order** (`001` ... `011`) with the Supabase
+CLI (`supabase db push`) or the SQL editor. Migration `011` adds the `farmers` table, plot->farmer
+link, soil-report micronutrient storage, and tightens row-level security (ownership checks on
+INSERT/UPDATE, explicit DELETE policies). All statements are idempotent.
 
-# JWT Authentication - Supabase Dashboard -> Project Settings -> API -> JWT Secret
-SUPABASE_JWT_SECRET=your-supabase-jwt-secret
+Every user-data table has row-level security; the backend additionally checks ownership in code
+because it uses the service-role key (which bypasses RLS).
 
-# OCR Engine Paths
-TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
-POPPLER_PATH=D:\tools\poppler-26.02.0\Library\bin
-
-CORS_ORIGINS=http://localhost:5173,http://localhost:4173
-```
-
----
-
-## 3. JWT Authentication
-
-The backend verifies Supabase-issued JWTs on all protected routes.
-
-### How it works
-
-```
-Browser -> POST /api/soil-reports/upload
-           Authorization: Bearer <supabase-access-token>
-             |
-           FastAPI auth/jwt_dependency.py
-             |
-           1. Extract Bearer token
-           2. Verify against SUPABASE_JWT_SECRET
-           3. Validate expiry, aud, iss, sub
-           4. Inject user_id into route handler
-```
-
-### Getting Your JWT Secret
-
-1. Go to Supabase Dashboard
-2. Project Settings -> API -> JWT Settings
-3. Copy JWT Secret -> paste as SUPABASE_JWT_SECRET
-
-### Protected Endpoints
-
-| Method | Path | Auth |
-|--------|------|------|
-| POST | /api/soil-reports/upload | Bearer JWT |
-| GET | /api/recommendations/{id} | Bearer JWT |
-| GET | /api/health | Public |
-
----
-
-## 4. Supabase Database Schema
-
-### soil_reports table
-
-```sql
-CREATE TABLE soil_reports (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  plot_id UUID REFERENCES plots(id) ON DELETE CASCADE,
-  owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  nitrogen_kg_ha NUMERIC,
-  phosphorus_kg_ha NUMERIC,
-  potassium_kg_ha NUMERIC,
-  organic_carbon_percent NUMERIC,
-  ph NUMERIC,
-  electrical_conductivity NUMERIC,
-  zinc_mg_kg NUMERIC,
-  sulphur_mg_kg NUMERIC,
-  boron_mg_kg NUMERIC,
-  iron_mg_kg NUMERIC,
-  manganese_ppm NUMERIC,
-  copper_mg_kg NUMERIC,
-  status TEXT DEFAULT 'Completed',
-  source_filename TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE soil_reports ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own reports" ON soil_reports
-  USING (auth.uid() = owner_id);
-```
-
----
-
-## 5. Running Locally
+## 5. Run
 
 ```bash
-# Backend
-cd backend
-python -m uvicorn app.main:app --reload --port 8001
-
-# Frontend (from project root)
+# backend (from backend/)
+python -m uvicorn app.main:app --reload --port 8000
+# frontend (from repo root)
 npm run dev
 ```
 
-API docs: http://localhost:8001/docs
+API docs: http://localhost:8000/docs . Health check: `GET /health`.
 
----
-
-## 6. Running Tests
+## 6. Tests and checks
 
 ```bash
-python -m pytest backend/tests -v
-# Expected: 97 passed
+npm run build          # type-check + production build
+npm run lint
+cd backend && python -m pytest -q
 ```
 
----
+## 7. Protected endpoints
 
-## 7. Troubleshooting
+All `/api/*` routes require `Authorization: Bearer <Supabase access token>`; the user id is taken
+from the verified token, never from the request body.
 
-| Issue | Solution |
-|-------|----------|
-| 401 on upload | Check SUPABASE_JWT_SECRET |
-| 404 on /api/soil-reports/upload | Ensure backend running on 8001 |
-| OCR empty text | Verify Tesseract + Poppler in PATH |
-| area_unit validation error | Use 'acre' not 'acres' in DB |
-| CORS errors | Add frontend origin to CORS_ORIGINS |
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | /api/soil-reports/upload | OCR a soil report for one of your plots |
+| POST | /api/recommendations | generate + save a recommendation (needs a crop price) |
+| GET | /api/recommendations, /api/recommendations/{id} | your saved recommendations |
+| GET | /api/geospatial/ndvi/{plot_id} | Sentinel-2 NDVI for your plot (`available:false` if not configured) |
+| GET | /api/geospatial/bhunaksha/{plot_id} | cadastral lookup (currently reports unavailable) |
+| GET | /api/plots/{plot_id}/twin/live | live Digital Twin scores (Open-Meteo at the plot's centroid) |
+| GET | /api/plots/{plot_id}/twin/prediction | NDVI trend from stored non-synthetic snapshots |
+| GET | /health | public liveness probe |
+
+Requests for another user's plot, report or recommendation return **404**, identical to a missing id.

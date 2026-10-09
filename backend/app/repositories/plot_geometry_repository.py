@@ -61,6 +61,9 @@ class SupabasePlotGeometryRepository:
                 .execute()
             )
         except APIError as exc:
+            if getattr(exc, "code", None) == "22P02":
+                # Malformed UUID: indistinguishable from an unknown plot.
+                raise PlotNotFound(f"Plot '{plot_id}' was not found.") from exc
             if getattr(exc, "code", None) == "42P01":
                 raise RepositoryNotConfigured(
                     "Plot data source is not configured: "

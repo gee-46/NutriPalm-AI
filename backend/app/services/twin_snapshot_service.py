@@ -25,18 +25,19 @@ class TwinSnapshotService:
 
         # Fetch latest NDVI
         ndvi_resp = self.client.table("ndvi_readings") \
-            .select("ndvi_mean") \
+            .select("ndvi_mean, is_synthetic") \
             .eq("plot_id", str(plot_id)) \
             .lte("captured_date", target_date_iso) \
             .order("captured_date", desc=True) \
             .limit(1) \
             .execute()
         ndvi_data = getattr(ndvi_resp, "data", [])
-        ndvi_val = ndvi_data[0].get("ndvi_mean") if ndvi_data else None
+        ndvi_row = ndvi_data[0] if ndvi_data else {}
+        ndvi_val = ndvi_row.get("ndvi_mean")
 
         # Fetch latest Weather
         weather_resp = self.client.table("weather_observations") \
-            .select("temperature_c, humidity_pct, rainfall_mm") \
+            .select("temperature_c, humidity_pct, rainfall_mm, is_synthetic") \
             .eq("plot_id", str(plot_id)) \
             .eq("observed_date", target_date_iso) \
             .maybe_single() \
@@ -55,7 +56,7 @@ class TwinSnapshotService:
         
         # Derive completeness
         completeness = DataCompleteness(
-            ndvi=bool(ndvi_val),
+            ndvi=ndvi_val is not None,
             weather=bool(weather_data),
             soil=bool(soil_data)
         )
@@ -68,7 +69,10 @@ class TwinSnapshotService:
             "humidity_pct": weather_data.get("humidity_pct"),
             "rainfall_mm": weather_data.get("rainfall_mm"),
             "data_completeness": completeness,
-            "is_synthetic": True # For Phase 1 & 2 testing
+            # A fused snapshot is synthetic only if one of its inputs is. Real
+            # NDVI + weather rows must not be flagged (and then dropped from
+            # predictions) just because this service wrote them.
+            "is_synthetic": bool(ndvi_row.get("is_synthetic")) or bool(weather_data.get("is_synthetic")),
         }
 
         # Concurrency Contract: Upsert via ON CONFLICT DO UPDATE

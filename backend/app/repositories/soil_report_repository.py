@@ -54,6 +54,8 @@ class SoilReportWriter(Protocol):
         organic_carbon_percent: float,
         ph: float,
         electrical_conductivity: float | None = None,
+        micronutrients: dict | None = None,
+        validation_summary: dict | None = None,
     ) -> dict:
         """Persist a new soil report row and return the inserted row."""
         ...
@@ -98,6 +100,11 @@ class SupabaseSoilReportRepository:
                 .execute()
             )
         except APIError as exc:
+            if getattr(exc, "code", None) == "22P02":
+                # Malformed UUID: indistinguishable from an unknown report.
+                raise SoilReportNotFound(
+                    f"Soil report '{soil_report_id}' was not found."
+                ) from exc
             if getattr(exc, "code", None) == "42P01":
                 raise RepositoryNotConfigured(
                     "Soil report data source is not configured: "
@@ -125,6 +132,8 @@ class SupabaseSoilReportRepository:
         organic_carbon_percent: float,
         ph: float,
         electrical_conductivity: float | None = None,
+        micronutrients: dict | None = None,
+        validation_summary: dict | None = None,
     ) -> dict:
         client = get_supabase_client()
 
@@ -137,6 +146,8 @@ class SupabaseSoilReportRepository:
             "organic_carbon_percent": organic_carbon_percent,
             "ph": ph,
             "electrical_conductivity": electrical_conductivity,
+            "micronutrients": micronutrients,
+            "validation_summary": validation_summary,
             "status": "Completed",
         }
 

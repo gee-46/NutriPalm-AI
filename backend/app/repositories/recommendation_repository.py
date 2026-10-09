@@ -15,6 +15,8 @@ from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from typing import Any, Protocol
 
+from postgrest.exceptions import APIError
+
 from app.database import get_supabase_client
 from app.exceptions import NotAuthorized, RecommendationNotFound
 from app.services.recommendation_service import RecommendationResult
@@ -112,13 +114,21 @@ class SupabaseRecommendationRepository:
     ) -> dict:
         client = get_supabase_client()
 
-        response = (
-            client.table(self.TABLE)
-            .select("*")
-            .eq("id", recommendation_id)
-            .maybe_single()
-            .execute()
-        )
+        try:
+            response = (
+                client.table(self.TABLE)
+                .select("*")
+                .eq("id", recommendation_id)
+                .maybe_single()
+                .execute()
+            )
+        except APIError as exc:
+            if getattr(exc, "code", None) == "22P02":
+                # Malformed UUID: indistinguishable from an unknown id.
+                raise RecommendationNotFound(
+                    f"Recommendation '{recommendation_id}' was not found."
+                ) from exc
+            raise
 
         row = getattr(response, "data", None)
 

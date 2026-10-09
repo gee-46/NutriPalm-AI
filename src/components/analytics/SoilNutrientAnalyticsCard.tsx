@@ -57,14 +57,14 @@ function extractValue(val: any): number | null {
   return null;
 }
 
-export const SoilNutrientAnalyticsCard: React.FC<SoilNutrientAnalyticsCardProps> = ({
+const SoilNutrientAnalyticsCardInner: React.FC<SoilNutrientAnalyticsCardProps> = ({
   report,
-  cropType = "Oil Palm",
+  cropType,
   title = "Nutrient Deficiency Breakdown",
   showMiniRadar = true,
 }) => {
   const [hoveredAxis, setHoveredAxis] = useState<number | null>(null);
-  const baseline: CropBenchmark = getCropBaseline(cropType);
+  const baseline: CropBenchmark = getCropBaseline(cropType) as CropBenchmark;
 
   // Extract raw numerical values from any incoming format
   const rawN = extractValue(report?.nitrogen_kg_ha ?? report?.nitrogen ?? report?.N);
@@ -438,4 +438,20 @@ export const SoilNutrientAnalyticsCard: React.FC<SoilNutrientAnalyticsCardProps>
       </div>
     </div>
   );
+};
+
+/**
+ * Wrapper: reference ranges only exist for known crops. For any other crop we
+ * say so rather than judging the soil against another crop's targets.
+ */
+export const SoilNutrientAnalyticsCard: React.FC<SoilNutrientAnalyticsCardProps> = (props) => {
+  if (!getCropBaseline(props.cropType)) {
+    return (
+      <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-sm font-semibold text-gray-600">
+        No reference nutrient ranges are available for {props.cropType ? `"${props.cropType}"` : "this plot's crop"}, so the
+        soil values are not compared against targets.
+      </div>
+    );
+  }
+  return <SoilNutrientAnalyticsCardInner {...props} />;
 };

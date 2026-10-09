@@ -324,7 +324,7 @@ class LiveTwinService:
             return None
 
         lat, lon = plot.get("latitude"), plot.get("longitude")
-        if not lat or not lon:
+        if lat is None or lon is None:
             log.error("Plot %s has no GPS coordinates", plot_id)
             return None
 
@@ -336,9 +336,14 @@ class LiveTwinService:
         cur = weather["current"]
         daily = weather["daily_7d"]
 
-        temp = cur.get("temperature_c") or 30.0
-        humidity = cur.get("humidity_pct") or 70.0
-        wind = cur.get("wind_kph") or 10.0
+        # Never substitute made-up weather: if the provider omitted a value
+        # the scores cannot be computed honestly, so report "unavailable".
+        temp = cur.get("temperature_c")
+        humidity = cur.get("humidity_pct")
+        wind = cur.get("wind_kph")
+        if temp is None or humidity is None or wind is None:
+            log.error("Open-Meteo returned incomplete current weather for plot %s", plot_id)
+            return None
         rainfall_7d = sum(d["rainfall_mm"] for d in daily if d.get("rainfall_mm"))
 
         # 3. Get last known NDVI
@@ -351,9 +356,18 @@ class LiveTwinService:
         )
         crop_health = compute_crop_health(ndvi, water_stress, disease_risk)
         soil_state, soil_score, soil_interpretation = compute_soil_state(rainfall_7d, humidity)
-        yield_est, yield_risk = compute_yield_forecast(
-            crop_health, water_stress, plot.get("stage", "Fruit Dev")
-        )
+        # The yield model is an oil-palm FFB model (20 t/ha base). Applying it to another crop
+        # would present a made-up yield, so it is only computed for oil palm.
+        is_oil_palm = (plot.get("crop") or "").strip().lower().replace(" ", "_") == "oil_palm"
+        if is_oil_palm:
+            yield_est, yield_risk = compute_yield_forecast(crop_health, water_stress, plot.get("stage"))
+            model_note = None
+        else:
+            yield_est, yield_risk = None, "Not estimated for this crop"
+            model_note = (
+                "Disease-risk and yield models are V1 defaults calibrated for oil palm. "
+                "Yield is not estimated for other crops and the disease score is indicative only."
+            )
 
         # 5. Determine overall risk level
         if disease_risk > 65 or water_stress > 70:
@@ -401,6 +415,7 @@ class LiveTwinService:
             "disease_name": disease_name,
             "disease_explanation": disease_explanation,
             "yield_risk": yield_risk,
+            "model_note": model_note,
             "risk_level": risk_level,
             "ndvi_last_known": ndvi,
             "ndvi_data_age_days": None,  # Could compute from analysis_date
@@ -409,3 +424,10 @@ class LiveTwinService:
 
 def get_live_twin_service(supabase_client) -> LiveTwinService:
     return LiveTwinService(supabase_client)
+
+
+def get_live_twin_service_dependency() -> LiveTwinService:
+    """FastAPI dependency (overridable in tests) that builds the service."""
+    from app.database import get_supabase_client
+
+    return LiveTwinService(get_supabase_client())

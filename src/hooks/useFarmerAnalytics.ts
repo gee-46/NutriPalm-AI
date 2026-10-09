@@ -1,541 +1,296 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
+
+/**
+ * Analytics for the signed-in user, computed only from rows in their account.
+ * Anything with no underlying data is `null` (never a default number), so the
+ * UI can say "no data" instead of implying a measurement.
+ */
 
 export interface ProfileData {
   id: string;
-  full_name: string;
-  email: string;
-  phone_number?: string;
-  district?: string;
-  state?: string;
-  village?: string;
-  preferred_language?: string;
+  full_name: string | null;
+  email: string | null;
+  phone_number?: string | null;
+  district?: string | null;
+  state?: string | null;
+  village?: string | null;
+  preferred_language?: string | null;
 }
 
 export interface SoilReportData {
   id: string;
   plot_id: string;
-  nitrogen: number;
-  phosphorus: number;
-  potassium: number;
-  organic_carbon: number;
+  nitrogen_kg_ha: number;
+  phosphorus_kg_ha: number;
+  potassium_kg_ha: number;
+  organic_carbon_percent: number;
   ph: number;
-  electrical_conductivity?: number;
-  status: string;
-  report_date: string;
+  electrical_conductivity: number | null;
+  created_at: string;
 }
 
-export interface DigitalTwinData {
-  id: string;
+export interface TwinRow {
   plot_id: string;
-  crop_health_score: number;
-  water_stress_score: number;
-  nutrient_health_score: number;
-  growth_stage: string;
-  yield_prediction: number;
-  risk_level: string;
-  updated_at?: string;
+  analysis_date: string;
+  crop_health_score: number | null;
+  water_stress_score: number | null;
+  ndvi: number | null;
+  yield_prediction: number | null;
+  risk_level: string | null;
+  growth_stage: string | null;
 }
 
 export interface PlotData {
   id: string;
   name: string;
-  crop: string;
-  area: number;
-  area_unit: string;
-  soil: string;
-  status: string;
-  boundary?: any;
-  digital_twins?: DigitalTwinData[];
-  soil_reports?: SoilReportData[];
+  crop: string | null;
+  area: number | null;
+  status: string | null;
+  boundary_mapped: boolean | null;
+  created_at: string;
 }
 
-// ---------------------------------------------------------------------------
-// Robust Mock Fallback Data (Matching SEED_PLOTS in plots.ts)
-// ---------------------------------------------------------------------------
-const MOCK_PROFILE: ProfileData = {
-  id: "mock-user",
-  full_name: "Swaminathan Gowda",
-  email: "swamy.g@gmail.com",
-  district: "Dakshina Kannada",
-  state: "Karnataka",
-  village: "Rangampeta",
-  preferred_language: "Kannada"
-};
+export interface SoilAverages {
+  N: number;
+  P: number;
+  K: number;
+  OC: number;
+  pH: number;
+}
 
-const MOCK_PLOTS: PlotData[] = [
-  {
-    id: "plot-1",
-    name: "Swamy North Plot (Plot 2A)",
-    crop: "Oil Palm",
-    area: 12.5,
-    area_unit: "acres",
-    soil: "Loamy (Optimal)",
-    status: "Healthy",
-    digital_twins: [
-      {
-        id: "twin-1",
-        plot_id: "plot-1",
-        crop_health_score: 88,
-        water_stress_score: 42,
-        nutrient_health_score: 85,
-        growth_stage: "Fruit Development",
-        yield_prediction: 18.6,
-        risk_level: "Low"
-      }
-    ],
-    soil_reports: [
-      {
-        id: "report-1",
-        plot_id: "plot-1",
-        nitrogen: 135,
-        phosphorus: 24,
-        potassium: 160,
-        organic_carbon: 1.82,
-        ph: 5.85,
-        electrical_conductivity: 1.2,
-        status: "Completed",
-        report_date: "2026-07-25"
-      }
-    ]
-  },
-  {
-    id: "plot-2",
-    name: "Kothagudem South Field",
-    crop: "Oil Palm",
-    area: 8.2,
-    area_unit: "acres",
-    soil: "Red Clayey",
-    status: "Moderate",
-    digital_twins: [
-      {
-        id: "twin-2",
-        plot_id: "plot-2",
-        crop_health_score: 72,
-        water_stress_score: 38,
-        nutrient_health_score: 70,
-        growth_stage: "Flowering",
-        yield_prediction: 13.0,
-        risk_level: "Low"
-      }
-    ],
-    soil_reports: [
-      {
-        id: "report-2",
-        plot_id: "plot-2",
-        nitrogen: 110,
-        phosphorus: 18,
-        potassium: 140,
-        organic_carbon: 1.45,
-        ph: 6.2,
-        electrical_conductivity: 0.95,
-        status: "Completed",
-        report_date: "2026-07-22"
-      }
-    ]
-  },
-  {
-    id: "plot-3",
-    name: "Devamma Palm Zone 1",
-    crop: "Coconut Palm",
-    area: 5.0,
-    area_unit: "acres",
-    soil: "Sandy Clay",
-    status: "Needs Attention",
-    digital_twins: [
-      {
-        id: "twin-3",
-        plot_id: "plot-3",
-        crop_health_score: 55,
-        water_stress_score: 46,
-        nutrient_health_score: 52,
-        growth_stage: "Flowering",
-        yield_prediction: 6.5,
-        risk_level: "Moderate"
-      }
-    ],
-    soil_reports: [
-      {
-        id: "report-3",
-        plot_id: "plot-3",
-        nitrogen: 90,
-        phosphorus: 12,
-        potassium: 115,
-        organic_carbon: 1.1,
-        ph: 5.4,
-        electrical_conductivity: 0.8,
-        status: "Completed",
-        report_date: "2026-07-20"
-      }
-    ]
-  },
-  {
-    id: "plot-4",
-    name: "Swamy East Plantation",
-    crop: "Oil Palm",
-    area: 7.8,
-    area_unit: "acres",
-    soil: "Loamy (Optimal)",
-    status: "Healthy",
-    digital_twins: [
-      {
-        id: "twin-4",
-        plot_id: "plot-4",
-        crop_health_score: 79,
-        water_stress_score: 40,
-        nutrient_health_score: 76,
-        growth_stage: "Fruiting",
-        yield_prediction: 10.2,
-        risk_level: "Low"
-      }
-    ],
-    soil_reports: [
-      {
-        id: "report-4",
-        plot_id: "plot-4",
-        nitrogen: 125,
-        phosphorus: 20,
-        potassium: 150,
-        organic_carbon: 1.6,
-        ph: 5.8,
-        electrical_conductivity: 1.1,
-        status: "Completed",
-        report_date: "2026-07-15"
-      }
-    ]
-  },
-  {
-    id: "plot-5",
-    name: "Hassan Cocoa Plot",
-    crop: "Cocoa",
-    area: 6.0,
-    area_unit: "acres",
-    soil: "Sandy Loam",
-    status: "Critical",
-    digital_twins: [
-      {
-        id: "twin-5",
-        plot_id: "plot-5",
-        crop_health_score: 38,
-        water_stress_score: 28,
-        nutrient_health_score: 40,
-        growth_stage: "Vegetative",
-        yield_prediction: 2.1,
-        risk_level: "Critical"
-      }
-    ],
-    soil_reports: [
-      {
-        id: "report-5",
-        plot_id: "plot-5",
-        nitrogen: 70,
-        phosphorus: 8,
-        potassium: 90,
-        organic_carbon: 0.85,
-        ph: 5.2,
-        electrical_conductivity: 0.6,
-        status: "Completed",
-        report_date: "2026-07-10"
-      }
-    ]
-  }
-];
+export interface AnalyticsData {
+  plotCount: number;
+  acres: number;
+  plotsWithSoilReport: number;
+  plotsWithTwin: number;
+  recommendationCount: number;
+  cropDistribution: Array<{ name: string; acres: number; pct: number }>;
+  avgCropHealth: number | null;
+  avgWaterStress: number | null;
+  latestNdvi: number | null;
+  latestYieldPrediction: number | null;
+  latestRisk: string | null;
+  growthStage: string | null;
+  soil: SoilAverages | null;
+  latestTwinDate: string | null;
+  latestSoilDate: string | null;
+}
+
+const mean = (values: number[]): number | null =>
+  values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+
+const round = (v: number | null, digits = 0): number | null =>
+  v === null ? null : Number(v.toFixed(digits));
 
 export function useFarmerAnalytics() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
-  const [plots, setPlots] = useState<PlotData[]>(MOCK_PLOTS);
+  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [plots, setPlots] = useState<PlotData[]>([]);
+  const [twins, setTwins] = useState<TwinRow[]>([]);
+  const [soilReports, setSoilReports] = useState<SoilReportData[]>([]);
+  const [recommendationPlotIds, setRecommendationPlotIds] = useState<string[]>([]);
   const [selectedPlotId, setSelectedPlotId] = useState<string | "ALL">("ALL");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Authenticated state listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setCurrentUser(session?.user ?? null);
+      if (!session?.user) setIsLoading(false);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setCurrentUser(session?.user ?? null);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch real database records
   useEffect(() => {
     let active = true;
 
-    async function loadData() {
+    async function load() {
       if (!currentUser) {
-        // Fall back to mock values immediately if logged out
-        setProfile(MOCK_PROFILE);
-        setPlots(MOCK_PLOTS);
-        setIsLoading(false);
+        setProfile(null);
+        setPlots([]);
+        setTwins([]);
+        setSoilReports([]);
+        setRecommendationPlotIds([]);
         return;
       }
 
       setIsLoading(true);
+      setError(null);
       try {
-        // 1. Fetch Farmer Profile
-        const { data: profileData, error: profileErr } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, phone_number, district, state, village, preferred_language")
-          .eq("id", currentUser.id)
-          .maybeSingle();
+        const [profileRes, plotsRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, email, phone_number, district, state, village, preferred_language")
+            .eq("id", currentUser.id)
+            .maybeSingle(),
+          supabase
+            .from("plots")
+            .select("id, name, crop, area, status, boundary_mapped, created_at")
+            .eq("owner_id", currentUser.id)
+            .order("created_at", { ascending: false }),
+        ]);
+        if (profileRes.error) throw profileRes.error;
+        if (plotsRes.error) throw plotsRes.error;
 
-        if (profileErr) throw profileErr;
-        
-        // 2. Fetch Plots with linked Digital Twins & Soil Lab Reports (with soft try-catch on joins)
-        // Since soil_reports might not exist as a table, we first fetch plots & twins.
-        const { data: plotsData, error: plotsErr } = await supabase
-          .from("plots")
-          .select(`
-            id, name, crop, area, area_unit, soil, status, boundary,
-            digital_twins (
-              id, plot_id, crop_health_score, water_stress_score, nutrient_health_score,
-              growth_stage, yield_prediction, risk_level
-            )
-          `)
-          .eq("owner_id", currentUser.id)
-          .order("created_at", { ascending: false });
+        const plotRows = (plotsRes.data ?? []) as PlotData[];
+        const plotIds = plotRows.map((p) => p.id);
 
-        if (plotsErr) throw plotsErr;
+        let twinRows: TwinRow[] = [];
+        let soilRows: SoilReportData[] = [];
+        let recRows: Array<{ plot_id: string }> = [];
 
-        let finalPlots: PlotData[] = (plotsData || []).map((p: any) => ({
-          ...p,
-          soil_reports: [] // Will populate if table exists
-        }));
+        if (plotIds.length > 0) {
+          const [twinRes, soilRes, recRes] = await Promise.all([
+            supabase
+              .from("digital_twins")
+              .select("plot_id, analysis_date, crop_health_score, water_stress_score, ndvi, yield_prediction, risk_level, growth_stage, is_synthetic")
+              .in("plot_id", plotIds)
+              .order("analysis_date", { ascending: false })
+              .limit(1000),
+            supabase
+              .from("soil_reports")
+              .select("id, plot_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph, electrical_conductivity, created_at")
+              .eq("owner_id", currentUser.id)
+              .order("created_at", { ascending: false }),
+            supabase.from("recommendations").select("plot_id").eq("owner_id", currentUser.id),
+          ]);
+          if (twinRes.error) throw twinRes.error;
+          if (soilRes.error) throw soilRes.error;
+          if (recRes.error) throw recRes.error;
 
-        // Try querying soil reports separately
-        try {
-          const { data: reportsData, error: reportsErr } = await supabase
-            .from("soil_reports")
-            .select("id, plot_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph, electrical_conductivity, status, created_at")
-            .eq("owner_id", currentUser.id);
-
-          if (!reportsErr && reportsData) {
-            const mappedReports = reportsData.map((r: any) => ({
-              id: r.id,
-              plot_id: r.plot_id,
-              nitrogen: r.nitrogen_kg_ha,
-              phosphorus: r.phosphorus_kg_ha,
-              potassium: r.potassium_kg_ha,
-              organic_carbon: r.organic_carbon_percent,
-              ph: r.ph,
-              electrical_conductivity: r.electrical_conductivity,
-              status: r.status,
-              report_date: r.created_at ? r.created_at.split("T")[0] : new Date().toISOString().split("T")[0]
-            }));
-
-            finalPlots = finalPlots.map((p) => ({
-              ...p,
-              soil_reports: mappedReports.filter((r: any) => r.plot_id === p.id)
-            }));
-          } else if (reportsErr) {
-            console.error("Supabase query error fetching soil reports:", reportsErr);
-          }
-        } catch (e) {
-          console.warn("soil_reports table not queryable, falling back to mock soil reports");
-          // Add default mock reports so calculations don't break
-          finalPlots = finalPlots.map((p) => {
-            const mock = MOCK_PLOTS.find((mp) => mp.crop.toLowerCase() === p.crop.toLowerCase()) || MOCK_PLOTS[0];
-            return {
-              ...p,
-              soil_reports: [
-                {
-                  id: `report-${p.id}`,
-                  plot_id: p.id,
-                  nitrogen: mock.soil_reports?.[0]?.nitrogen || 120,
-                  phosphorus: mock.soil_reports?.[0]?.phosphorus || 20,
-                  potassium: mock.soil_reports?.[0]?.potassium || 140,
-                  organic_carbon: mock.soil_reports?.[0]?.organic_carbon || 1.4,
-                  ph: mock.soil_reports?.[0]?.ph || 5.8,
-                  electrical_conductivity: 1.0,
-                  status: "Completed",
-                  report_date: new Date().toISOString().split("T")[0]
-                }
-              ]
-            };
-          });
+          // Synthetic (test) snapshots are never shown as account analytics.
+          twinRows = ((twinRes.data ?? []) as Array<TwinRow & { is_synthetic?: boolean | null }>).filter(
+            (r) => r.is_synthetic !== true
+          );
+          soilRows = (soilRes.data ?? []) as SoilReportData[];
+          recRows = (recRes.data ?? []) as Array<{ plot_id: string }>;
         }
 
-        if (active) {
-          if (profileData) setProfile(profileData);
-          // If the user has no plots in DB, let setPlots receive [] to show onboarding
-          setPlots(finalPlots);
-        }
+        if (!active) return;
+        setProfile((profileRes.data as ProfileData | null) ?? null);
+        setPlots(plotRows);
+        setTwins(twinRows);
+        setSoilReports(soilRows);
+        setRecommendationPlotIds(recRows.map((r) => r.plot_id));
       } catch (err) {
-        console.error("Supabase ingestion failed, using fallback mocks:", err);
+        console.error("Analytics load failed:", err);
         if (active) {
-          setProfile(MOCK_PROFILE);
-          setPlots(MOCK_PLOTS);
+          setPlots([]);
+          setTwins([]);
+          setSoilReports([]);
+          setRecommendationPlotIds([]);
+          setError(err instanceof Error ? err.message : "Could not load your analytics.");
         }
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
     }
 
-    loadData();
-
+    load();
     return () => {
       active = false;
     };
   }, [currentUser]);
 
-  // ---------------------------------------------------------------------------
-  // Calculations Engine
-  // ---------------------------------------------------------------------------
-  const totalAcres = plots.reduce((sum, p) => sum + p.area, 0);
+  // If the selected plot disappears (e.g. reload), fall back to the whole account.
+  useEffect(() => {
+    if (selectedPlotId !== "ALL" && plots.length > 0 && !plots.some((p) => p.id === selectedPlotId)) {
+      setSelectedPlotId("ALL");
+    }
+  }, [plots, selectedPlotId]);
 
-  const getComputedData = () => {
-    if (plots.length === 0) {
-      return {
-        acres: 0,
-        avgCropHealth: 0,
-        cropDistribution: [],
-        soilNutrients: { N: 0, P: 0, K: 0, OC: 0, pH: 0 },
-        yieldDelta: 0,
-        canopyStress: "Optimal",
-        waterDeficit: 0,
-        soilStatus: "Pending Scan",
-        telemetryStatus: "Offline",
-        growthStage: "N/A"
-      };
+  const analyticsData: AnalyticsData = useMemo(() => {
+    const scope = selectedPlotId === "ALL" ? plots : plots.filter((p) => p.id === selectedPlotId);
+    const scopeIds = new Set(scope.map((p) => p.id));
+
+    // rows arrive newest-first, so the first match per plot is the latest
+    const latestTwinByPlot = new Map<string, TwinRow>();
+    for (const row of twins) {
+      if (scopeIds.has(row.plot_id) && !latestTwinByPlot.has(row.plot_id)) latestTwinByPlot.set(row.plot_id, row);
+    }
+    const latestSoilByPlot = new Map<string, SoilReportData>();
+    for (const row of soilReports) {
+      if (scopeIds.has(row.plot_id) && !latestSoilByPlot.has(row.plot_id)) latestSoilByPlot.set(row.plot_id, row);
     }
 
-    if (selectedPlotId === "ALL") {
-      // 1. Total acres
-      const acres = totalAcres;
+    const acres = scope.reduce((s, p) => s + (p.area ?? 0), 0);
 
-      // 2. Weighted average crop health score
-      let weightedHealthSum = 0;
-      let totalAreaForHealth = 0;
-      plots.forEach((p) => {
-        const twin = p.digital_twins?.[0];
-        const health = twin && !Number.isNaN(Number(twin.crop_health_score)) ? Number(twin.crop_health_score) : 75;
-        weightedHealthSum += health * (p.area || 1);
-        totalAreaForHealth += (p.area || 1);
-      });
-      const avgCropHealth = totalAreaForHealth > 0 ? Math.round(weightedHealthSum / totalAreaForHealth) : 75;
+    const cropAcres = new Map<string, number>();
+    for (const p of scope) {
+      const name = p.crop || "Unspecified";
+      cropAcres.set(name, (cropAcres.get(name) ?? 0) + (p.area ?? 0));
+    }
+    const cropDistribution = [...cropAcres.entries()].map(([name, a]) => ({
+      name,
+      acres: a,
+      pct: acres > 0 ? Math.round((a / acres) * 100) : 0,
+    }));
 
-      // 3. Crop Distribution
-      const cropMap: Record<string, number> = {};
-      plots.forEach((p) => {
-        const cropName = p.crop || "Unknown Crop";
-        cropMap[cropName] = (cropMap[cropName] || 0) + (p.area || 0);
-      });
-      const cropDistribution = Object.keys(cropMap).map((crop) => ({
-        name: crop,
-        acres: cropMap[crop],
-        pct: totalAcres > 0 ? Math.round((cropMap[crop] / totalAcres) * 100) : 0
-      }));
+    const twinList = [...latestTwinByPlot.values()];
+    const health = twinList.map((t) => t.crop_health_score).filter((v): v is number => typeof v === "number");
+    const water = twinList.map((t) => t.water_stress_score).filter((v): v is number => typeof v === "number");
+    const single = scope.length === 1 ? latestTwinByPlot.get(scope[0].id) ?? null : null;
 
-      // 4. Average soil macronutrients
-      let sumN = 0, sumP = 0, sumK = 0, sumOC = 0, sumPH = 0;
-      let reportCount = 0;
-      plots.forEach((p) => {
-        const report = p.soil_reports?.[0];
-        if (report) {
-          sumN += Number(report.nitrogen) || 0;
-          sumP += Number(report.phosphorus) || 0;
-          sumK += Number(report.potassium) || 0;
-          sumOC += Number(report.organic_carbon) || 0;
-          sumPH += Number(report.ph) || 0;
-          reportCount++;
+    const soilList = [...latestSoilByPlot.values()];
+    const soil: SoilAverages | null = soilList.length
+      ? {
+          N: round(mean(soilList.map((r) => Number(r.nitrogen_kg_ha))), 0)!,
+          P: round(mean(soilList.map((r) => Number(r.phosphorus_kg_ha))), 0)!,
+          K: round(mean(soilList.map((r) => Number(r.potassium_kg_ha))), 0)!,
+          OC: round(mean(soilList.map((r) => Number(r.organic_carbon_percent))), 2)!,
+          pH: round(mean(soilList.map((r) => Number(r.ph))), 2)!,
         }
-      });
-      const soilNutrients = {
-        N: reportCount > 0 ? Math.round(sumN / reportCount) : 120,
-        P: reportCount > 0 ? Math.round(sumP / reportCount) : 20,
-        K: reportCount > 0 ? Math.round(sumK / reportCount) : 140,
-        OC: reportCount > 0 ? Number((sumOC / reportCount).toFixed(2)) : 1.4,
-        pH: reportCount > 0 ? Number((sumPH / reportCount).toFixed(2)) : 5.8
-      };
+      : null;
 
-      // 5. Yield Improvement Average
-      let sumYield = 0;
-      plots.forEach((p) => {
-        const twin = p.digital_twins?.[0];
-        const val = twin && !Number.isNaN(Number(twin.yield_prediction)) ? Number(twin.yield_prediction) : 18.2;
-        sumYield += val > 100 ? val / 10 : val; 
-      });
-      const yieldDelta = plots.length > 0 ? Number((sumYield / plots.length).toFixed(1)) : 18.2;
+    const newest = (dates: Array<string | undefined>) =>
+      dates.filter((d): d is string => !!d).sort().slice(-1)[0] ?? null;
 
-      // 6. Water stress
-      let sumWater = 0;
-      plots.forEach((p) => {
-        const twin = p.digital_twins?.[0];
-        sumWater += twin && !Number.isNaN(Number(twin.water_stress_score)) ? Number(twin.water_stress_score) : 40;
-      });
-      const avgWaterDeficit = plots.length > 0 ? Math.round(sumWater / plots.length) : 40;
-      let canopyStress = "Optimal";
-      if (avgWaterDeficit < 30) canopyStress = "High Stress";
-      else if (avgWaterDeficit < 60) canopyStress = "Moderate Risk";
+    return {
+      plotCount: scope.length,
+      acres,
+      plotsWithSoilReport: latestSoilByPlot.size,
+      plotsWithTwin: latestTwinByPlot.size,
+      recommendationCount: recommendationPlotIds.filter((id) => scopeIds.has(id)).length,
+      cropDistribution,
+      avgCropHealth: round(mean(health)),
+      avgWaterStress: round(mean(water)),
+      latestNdvi: single?.ndvi ?? null,
+      latestYieldPrediction: single?.yield_prediction ?? null,
+      latestRisk: single?.risk_level ?? null,
+      growthStage: single?.growth_stage ?? null,
+      soil,
+      latestTwinDate: newest(twinList.map((t) => t.analysis_date)),
+      latestSoilDate: newest(soilList.map((r) => r.created_at)),
+    };
+  }, [plots, twins, soilReports, recommendationPlotIds, selectedPlotId]);
 
-      return {
-        acres,
-        avgCropHealth,
-        cropDistribution,
-        soilNutrients,
-        yieldDelta,
-        canopyStress,
-        waterDeficit: avgWaterDeficit,
-        soilStatus: "Report Analyzed",
-        telemetryStatus: "Live Active Sync",
-        growthStage: "Mixed Canopy"
-      };
-    } else {
-      // Single Plot Mode
-      const plot = plots.find((p) => p.id === selectedPlotId);
-      if (!plot) return getComputedData(); // fallback
+  /** Chronological Digital Twin history for the selected plot (real rows only). */
+  const twinHistory: TwinRow[] = useMemo(
+    () =>
+      selectedPlotId === "ALL"
+        ? []
+        : twins.filter((t) => t.plot_id === selectedPlotId).slice().reverse(),
+    [twins, selectedPlotId]
+  );
 
-      const twin = plot.digital_twins?.[0];
-      const report = plot.soil_reports?.[0];
-
-      const cropDistribution = [
-        { name: plot.crop, acres: plot.area, pct: 100 }
-      ];
-
-      const health = twin ? Number(twin.crop_health_score) : 75;
-      const waterDeficit = twin ? Number(twin.water_stress_score) : 40;
-      let canopyStress = "Optimal";
-      if (waterDeficit < 35) canopyStress = "High Stress";
-      else if (waterDeficit < 65) canopyStress = "Moderate Risk";
-
-      const soilNutrients = {
-        N: report ? Number(report.nitrogen) : 120,
-        P: report ? Number(report.phosphorus) : 20,
-        K: report ? Number(report.potassium) : 140,
-        OC: report ? Number(report.organic_carbon) : 1.4,
-        pH: report ? Number(report.ph) : 5.8
-      };
-
-      const yieldVal = twin ? Number(twin.yield_prediction) : 18.2;
-      const yieldDelta = yieldVal > 100 ? yieldVal / 10 : yieldVal;
-
-      return {
-        acres: plot.area,
-        avgCropHealth: health,
-        cropDistribution,
-        soilNutrients,
-        yieldDelta,
-        canopyStress,
-        waterDeficit,
-        soilStatus: report ? "Report Analyzed" : "Pending Scan",
-        telemetryStatus: twin ? "Live Active Sync" : "Offline",
-        growthStage: twin ? twin.growth_stage : "Seedling"
-      };
-    }
-  };
+  const latestSoilReportForSelection: SoilReportData | null = useMemo(() => {
+    if (selectedPlotId === "ALL") return null;
+    return soilReports.find((r) => r.plot_id === selectedPlotId) ?? null;
+  }, [soilReports, selectedPlotId]);
 
   return {
     isLoading,
+    error,
     profile,
     plots,
     selectedPlotId,
     setSelectedPlotId,
-    analyticsData: getComputedData()
+    analyticsData,
+    twinHistory,
+    latestSoilReportForSelection,
   };
 }
