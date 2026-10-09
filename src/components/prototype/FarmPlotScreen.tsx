@@ -142,7 +142,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
       svgPath: boundaryToSvgPath(data.geoJSON),
     });
     if (showToast) {
-      showToast(`Boundary updated for ${selectedPlot.name} (${data.areaAcres.toFixed(2)} acres)`, "success");
+      showToast(t("p2.toast.boundary_updated", { name: selectedPlot.name, acres: data.areaAcres.toFixed(2) }), "success");
     }
   };
 
@@ -416,7 +416,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           
-                            {t('farmplotscreen.total_area')} <strong className="text-primary font-black">{totalArea.toFixed(1)} Acres</strong>
+                            {t('farmplotscreen.total_area')} <strong className="text-primary font-black">{totalArea.toFixed(1)} {t("p2.ui.acres_4cvm2f")}</strong>
         </span>
         <span className="flex items-center gap-1.5 bg-white border border-gray-200 px-3.5 py-1.5 rounded-full shadow-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />  {t('farmplotscreen.healthy_plots')} <strong className="text-primary font-black">{healthyPlotsCount}</strong>
@@ -464,7 +464,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               )}
             </h3>
             {avgSoilHealth === null && (
-              <p className="text-[10px] text-gray-400 mt-1 font-semibold">Pending Soil Test</p>
+              <p className="text-[10px] text-gray-400 mt-1 font-semibold">{t("p2.ui.pending_soil_test_11j68eb")}</p>
             )}
           </div>
           <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden mt-4">
@@ -606,7 +606,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.crop_distribution')}</p>
                 <div className="space-y-2">
                   {cropShare.length === 0 ? (
-                    <p className="text-gray-500 font-semibold">No plots yet.</p>
+                    <p className="text-gray-500 font-semibold">{t("p2.ui.no_plots_yet_hsgrw")}</p>
                   ) : (
                     cropShare.map((c) => (
                       <div key={c.name}>
@@ -627,20 +627,20 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               <div className="space-y-2">
                 <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t('farmplotscreen.plot_health_ratios')}</p>
                 <div className="space-y-1.5 pt-1 font-semibold">
-                  <div className="flex justify-between"><span>Assessed plots</span><span>{plots.filter((p) => p.status !== "Not Assessed").length} / {plots.length}</span></div>
-                  <div className="flex justify-between"><span>Healthy</span><span>{plots.filter((p) => p.status === "Healthy").length}</span></div>
-                  <div className="flex justify-between"><span>Needs attention / critical</span><span>{plots.filter((p) => p.status === "Needs Attention" || p.status === "Critical").length}</span></div>
-                  <p className="text-gray-400 text-[10px] font-medium leading-normal">Health is only reported once a Digital Twin or report has assessed a plot.</p>
+                  <div className="flex justify-between"><span>{t("p2.ui.assessed_plots_qtoqbg")}</span><span>{plots.filter((p) => p.status !== "Not Assessed").length} / {plots.length}</span></div>
+                  <div className="flex justify-between"><span>{t("p2.ui.healthy_tcs2hi")}</span><span>{plots.filter((p) => p.status === "Healthy").length}</span></div>
+                  <div className="flex justify-between"><span>{t("p2.ui.needs_attention_critical_540cc")}</span><span>{plots.filter((p) => p.status === "Needs Attention" || p.status === "Critical").length}</span></div>
+                  <p className="text-gray-400 text-[10px] font-medium leading-normal">{t("p2.ui.health_is_only_reported_once_a_digital_twin__xba3xm")}</p>
                 </div>
               </div>
 
               {/* Data on file (replaces invented irrigation/water metrics) */}
               <div className="space-y-2">
-                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">Data on file</p>
+                <p className="font-bold text-gray-400 uppercase text-[9px] tracking-wider">{t("p2.ui.data_on_file_10p54cu")}</p>
                 <div className="space-y-2 pt-1 font-semibold">
-                  <div className="flex justify-between"><span>Surveyed boundaries</span><span className="text-primary">{plots.filter((p) => p.boundaryMapped).length} / {plots.length}</span></div>
-                  <div className="flex justify-between"><span>Soil reports attached</span><span className="text-primary">{plots.filter((p) => p.soilReportAttached).length} / {plots.length}</span></div>
-                  <div className="flex justify-between"><span>IoT soil-moisture sensors</span><span className="text-gray-400">None connected</span></div>
+                  <div className="flex justify-between"><span>{t("p2.ui.surveyed_boundaries_qdzhe0")}</span><span className="text-primary">{plots.filter((p) => p.boundaryMapped).length} / {plots.length}</span></div>
+                  <div className="flex justify-between"><span>{t("p2.ui.soil_reports_attached_1y5kbz3")}</span><span className="text-primary">{plots.filter((p) => p.soilReportAttached).length} / {plots.length}</span></div>
+                  <div className="flex justify-between"><span>{t("p2.ui.iot_soil_moisture_sensors_1jd2kvi")}</span><span className="text-gray-400">{t("p2.ui.none_connected_a5mv48")}</span></div>
                 </div>
               </div>
             </div>
@@ -655,17 +655,17 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             </h3>
             <div className="relative pl-6 border-l border-gray-100 space-y-6 text-xs text-gray-700">
               {recentPlots.length === 0 ? (
-                <p className="text-gray-500 font-semibold">No plot activity yet.</p>
+                <p className="text-gray-500 font-semibold">{t("p2.ui.no_plot_activity_yet_dfdepc")}</p>
               ) : (
                 recentPlots.map((p) => (
                   <div key={p.id} className="relative">
                     <span className="absolute -left-[29px] top-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-primary shadow-xs" />
                     <div className="space-y-0.5">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold">{p.boundaryMapped ? "Plot registered with surveyed boundary" : "Plot registered (no boundary yet)"}</span>
+                        <span className="font-bold">{p.boundaryMapped ? t("p2.ui.plot_registered_with_surveyed_boundary_x7o7vh") : t("p2.ui.plot_registered_no_boundary_yet_1901ure")}</span>
                         <span className="text-[8px] font-mono text-gray-400">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ""}</span>
                       </div>
-                      <p className="text-gray-500">{p.name} ({p.crop || "crop not set"}, {Number(p.area).toFixed(2)} acres)</p>
+                      <p className="text-gray-500">{p.name} ({p.crop || t("p2.ui.crop_not_set_4y8vws")}, {Number(p.area).toFixed(2)} {t("p2.ui.acres_86fss2")}</p>
                     </div>
                   </div>
                 ))
@@ -693,7 +693,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <div className="flex items-center gap-1.5">
                   {(selectedPlot.isDemo || selectedPlot.id.startsWith("plot-")) && (
                     <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
-                      Demo Plot
+                      {t("p2.ui.demo_plot_mkuhnb")}
                     </span>
                   )}
                   {/* Health Badge */}
@@ -708,31 +708,31 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             {/* Specs detail list */}
             <div className="space-y-3 text-xs text-gray-700 font-semibold">
               <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-gray-400">Boundary Geometry</span>
+                <span className="text-gray-400">{t("p2.ui.boundary_geometry_1tsa0sh")}</span>
                 <div className="flex items-center gap-2">
                   {selectedPlot.boundaryMapped && selectedPlot.geoJSON ? (
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Mapped (GPS/GIS)
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> {t("p2.ui.mapped_gps_gis_50d5lr")}
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                      ⚠️ Not Mapped
+                      {t("p2.ui.not_mapped_1vn7wui")}
                     </span>
                   )}
                   <button
                     type="button"
                     onClick={() => setIsDirectSurveyOpen(true)}
                     className="p-1 px-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1 transition-all cursor-pointer"
-                    title="Open Full-Screen Satellite Survey"
+                    title={t("p2.ui.open_full_screen_satellite_survey_1ckyi90")}
                   >
                     <Maximize2 className="w-3 h-3 text-emerald-600" />
-                    <span>Survey</span>
+                    <span>{t("p2.ui.survey_1tpq9t")}</span>
                   </button>
                 </div>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.landholder')}</span>
-                <span className="font-bold text-gray-900">{selectedPlot.farmer || "Account Owner"}</span>
+                <span className="font-bold text-gray-900">{selectedPlot.farmer || t("p2.ui.account_owner_1lo3p5l")}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="text-gray-400">{t('farmplotscreen.acreage')}</span>
@@ -771,7 +771,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   {typeof selectedPlot.soilHealth?.Current === 'number' ? (
                     <span className="text-primary font-bold">{selectedPlot.soilHealth.Current}%</span>
                   ) : (
-                    <span className="text-gray-400 font-medium text-xs">No data</span>
+                    <span className="text-gray-400 font-medium text-xs">{t("p2.ui.no_data_1e4ltia")}</span>
                   )}
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -791,15 +791,15 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t('farmplotscreen.environmental_snapshot')}</h4>
                 {envData.weather ? (
                   <span className="text-[8px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-md">
-                    Live · {envData.weather.source}
+                    {t("p2.ui.live_1xcz23u")} {envData.weather.source}
                   </span>
                 ) : envData.weatherLoading ? (
                   <span className="text-[8px] font-black uppercase tracking-wider text-gray-400 flex items-center gap-1">
-                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Loading
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" /> {t("p2.ui.loading_lrk1f9")}
                   </span>
                 ) : (
                   <span className="text-[8px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-150 px-1.5 py-0.5 rounded-md">
-                    Demo data
+                    {t("p2.ui.demo_data_ml71c0")}
                   </span>
                 )}
               </div>
@@ -840,7 +840,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Sun className="w-4.5 h-4.5 text-primary mx-auto" />
                   <span className="block text-[8px] font-bold text-gray-400 uppercase">
-                    {envData.weather ? "Condition" : t('farmplotscreen.solar')}
+                    {envData.weather ? t("p2.ui.condition_1v6fdn8") : t('farmplotscreen.solar')}
                   </span>
                   <span className="text-[10px] font-extrabold text-gray-800">
                     {envData.weather ? envData.weather.current.conditionText : selectedPlot.solarRad}
@@ -851,7 +851,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 <div className="bg-gray-50 border border-gray-150 p-2 rounded-xl text-center space-y-0.5">
                   <Sparkles className="w-4.5 h-4.5 text-primary mx-auto" />
                   <span className="block text-[8px] font-bold text-gray-400 uppercase">
-                    {envData.weather ? "Rain" : t('farmplotscreen.uv_index')}
+                    {envData.weather ? t("p2.ui.rain_5czln") : t('farmplotscreen.uv_index')}
                   </span>
                   <span className="text-xs font-extrabold text-gray-800">
                     {envData.weather?.current.precipitationMm != null
@@ -867,10 +867,10 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   {envData.ndvi?.available ? (
                     <span className="text-xs font-extrabold text-primary">{envData.ndvi.mean_ndvi?.toFixed(2)}</span>
                   ) : envData.ndviLoading ? (
-                    <span className="text-[9px] font-bold text-gray-400">Loading…</span>
+                    <span className="text-[9px] font-bold text-gray-400">{t("p2.ui.loading_zg8wpd")}</span>
                   ) : envData.ndvi && !envData.ndvi.available ? (
                     <span className="text-[9px] font-bold text-amber-600" title={envData.ndvi.reason ?? undefined}>
-                      Config required
+                      {t("p2.ui.config_required_1wuiv1y")}
                     </span>
                   ) : (
                     <span className="text-xs font-extrabold text-primary">{selectedPlot.ndvi}</span>
@@ -885,7 +885,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   <span>
                     {envData.ndvi.available
                       ? `Status: ${envData.ndvi.status ?? "—"} · ${envData.ndvi.acquisition_date ?? "—"}`
-                      : "Sentinel-2 unavailable — configuration required"}
+                      : t("p2.ui.sentinel_2_unavailable_configuration_require_azug9h")}
                   </span>
                   <span className="font-semibold">{envData.ndvi.source}</span>
                 </div>
@@ -897,19 +897,19 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
             {/* ================= 7. Data status (no invented AI findings) ================= */}
             <div className="space-y-2.5">
-              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">Data status</h4>
+              <h4 className="text-[10px] font-black text-gray-450 uppercase tracking-wider">{t("p2.ui.data_status_j8o4v5")}</h4>
               <div className="space-y-2 text-xs text-gray-700">
                 <div className="p-2.5 bg-gray-50 border border-gray-100 rounded-xl">
-                  <p className="font-extrabold">{selectedPlot.boundaryMapped ? "Boundary surveyed" : "No boundary surveyed yet"}</p>
+                  <p className="font-extrabold">{selectedPlot.boundaryMapped ? t("p2.ui.boundary_surveyed_7ppbhk") : t("p2.ui.no_boundary_surveyed_yet_1xd1s73")}</p>
                 </div>
                 <div className="p-2.5 bg-gray-50 border border-gray-100 rounded-xl">
-                  <p className="font-extrabold">{selectedPlot.soilReportAttached ? "Soil report on file" : "No soil report uploaded"}</p>
+                  <p className="font-extrabold">{selectedPlot.soilReportAttached ? t("p2.ui.soil_report_on_file_1wbms17") : t("p2.ui.no_soil_report_uploaded_d1p1yb")}</p>
                 </div>
                 <div className="p-2.5 bg-gray-50 border border-gray-100 rounded-xl">
                   <p className="font-extrabold">
                     {typeof selectedPlot.soilHealth?.Current === "number"
                       ? `Digital Twin crop-health score: ${selectedPlot.soilHealth.Current}%`
-                      : "No Digital Twin snapshot stored"}
+                      : t("p2.ui.no_digital_twin_snapshot_stored_1hg6vt3")}
                   </p>
                 </div>
               </div>
@@ -922,7 +922,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                 className="w-full bg-slate-900 hover:bg-slate-800 text-emerald-400 font-extrabold py-3 rounded-xl transition-all border border-emerald-500/30 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <Maximize2 className="w-4 h-4 text-emerald-400" />
-                <span>{selectedPlot?.boundaryMapped ? "Re-Survey Boundary (Full-Screen Satellite)" : "Survey Boundary (Full-Screen Satellite)"}</span>
+                <span>{selectedPlot?.boundaryMapped ? t("p2.ui.re_survey_boundary_full_screen_satellite_erz5d5") : t("p2.ui.survey_boundary_full_screen_satellite_b7oy0l")}</span>
               </button>
 
               <button
@@ -1011,7 +1011,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                                                     {t('farmplotscreen.gis_wizard_step')} {addStep}  {t('farmplotscreen.of_3')}
                                                   </span>
                 <span className="text-xs font-bold text-gray-400">
-                  {addStep === 1 ? "Plot Info" : addStep === 2 ? "Location Specs" : "Success"}
+                  {addStep === 1 ? t("p2.ui.plot_info_13ezwbq") : addStep === 2 ? t("p2.ui.location_specs_1mwktro") : t("p2.ui.success_1kckkqk")}
                 </span>
               </div>
 
@@ -1129,7 +1129,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                           onChange={(e) => setNewPlotData(prev => ({ ...prev, farmerId: e.target.value }))}
                           className="w-full px-3 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-semibold focus:border-primary"
                         >
-                          <option value="">{farmers.length ? "No farmer selected" : "No farmers registered yet"}</option>
+                          <option value="">{farmers.length ? t("p2.ui.no_farmer_selected_1rswszk") : t("p2.ui.no_farmers_registered_yet_1ywoz5e")}</option>
                           {farmers.map((f) => (
                             <option key={f.id} value={f.id}>{f.name}</option>
                           ))}
@@ -1164,7 +1164,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                             ))}
                           </datalist>
                           <p className="text-[9px] text-gray-400 font-medium leading-snug">
-                            Fertilizer recommendations are available for: {SUPPORTED_CROP_NAMES.join(", ")}. Other crops can be recorded but get no recommendation.
+                            {t("p2.ui.fertilizer_recommendations_are_available_for_10j6j3l")} {SUPPORTED_CROP_NAMES.join(", ")}{t("p2.ui.other_crops_can_be_recorded_but_get_no_recom_1jntbe0")}
                           </p>
                         </div>
                       </div>
@@ -1237,7 +1237,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         initialGeoJSON={importedGeoJSON}
                         areaUnit={wizardAreaUnit}
                         showToast={showToast}
-                        plotName={newPlotData.name || "New Farm Plot"}
+                        plotName={newPlotData.name || t("p2.ui.new_farm_plot_1mjxemc")}
                       />
 
                       <div className="grid grid-cols-2 gap-4">
@@ -1337,7 +1337,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         onClose={() => setIsDirectSurveyOpen(false)}
         onConfirm={handleDirectSurveyConfirm}
         initialGeoJSON={selectedPlot?.geoJSON}
-        plotName={selectedPlot?.name || "Farm Plot Boundary"}
+        plotName={selectedPlot?.name || t("p2.ui.farm_plot_boundary_1wpwr5y")}
         defaultAreaUnit={wizardAreaUnit}
         showToast={showToast}
       />

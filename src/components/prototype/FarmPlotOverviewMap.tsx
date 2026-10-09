@@ -15,6 +15,7 @@
  * - Smooth viewport fitting to encompass all plots or pan to the selected plot
  */
 
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -78,6 +79,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
   onForceScan,
   showToast,
 }) => {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const standardLayerRef = useRef<L.TileLayer | null>(null);
@@ -133,7 +135,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
         standardLayer.addTo(map);
         onBasemapModeChange("Terrain");
         if (showToast) {
-          showToast("Satellite imagery service unavailable — fallback to standard map.", "warning");
+          showToast(t("p2.toast.satellite_unavailable"), "warning");
         }
       }
     });
@@ -408,7 +410,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
-              Satellite View
+              {t("p2.ui.satellite_view_b4ddo1")}
             </button>
             <button
               type="button"
@@ -420,7 +422,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              Standard / Terrain
+              {t("p2.ui.standard_terrain_1x7wkiw")}
             </button>
           </div>
 
@@ -437,7 +439,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
                   : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
               }`}
             >
-              🌿 NDVI Crop Health
+              {t("p2.ui.ndvi_crop_health_ytdsfx")}
             </button>
             <button
               type="button"
@@ -448,7 +450,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
                   : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
               }`}
             >
-              💧 Soil & Moisture
+              {t("p2.ui.soil_moisture_to7msb")}
             </button>
             <button
               type="button"
@@ -459,7 +461,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
                   : "bg-white text-gray-600 border-gray-250 hover:bg-gray-50"
               }`}
             >
-              📐 Boundary View
+              {t("p2.ui.boundary_view_vqgjvo")}
             </button>
           </div>
         </div>
@@ -470,7 +472,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
             type="button"
             onClick={handleZoomIn}
             className="w-8 h-8 rounded-lg border border-gray-250 bg-white flex items-center justify-center text-xs font-bold hover:bg-gray-50 cursor-pointer shadow-xs"
-            title="Zoom In"
+            title={t("p2.ui.zoom_in_edl6sr")}
           >
             <ZoomIn className="w-3.5 h-3.5 text-gray-700" />
           </button>
@@ -478,7 +480,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
             type="button"
             onClick={handleZoomOut}
             className="w-8 h-8 rounded-lg border border-gray-250 bg-white flex items-center justify-center text-xs font-bold hover:bg-gray-50 cursor-pointer shadow-xs"
-            title="Zoom Out"
+            title={t("p2.ui.zoom_out_jiknm0")}
           >
             <ZoomOut className="w-3.5 h-3.5 text-gray-700" />
           </button>
@@ -486,10 +488,10 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
             type="button"
             onClick={handleCenterMap}
             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-250 bg-white text-xs font-bold hover:bg-gray-50 cursor-pointer shadow-xs text-gray-700"
-            title="Center All Plots"
+            title={t("p2.ui.center_all_plots_1eqonrj")}
           >
             <Maximize2 className="w-3 h-3 text-gray-500" />
-            Fit Plots
+            {t("p2.ui.fit_plots_24058c")}
           </button>
         </div>
       </div>
@@ -502,11 +504,11 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
           <div className="flex items-center gap-2 pointer-events-auto">
             <div className="bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[10px] text-emerald-400 font-mono flex items-center gap-2 shadow-md">
               <Globe className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
-              <span>BASE: {basemapMode.toUpperCase()} | OVERLAY: {activeLayer.toUpperCase()}</span>
+              <span>{t("p2.ui.base_4ct1b6")} {basemapMode.toUpperCase()} {t("p2.ui.overlay_gtefsl")} {activeLayer.toUpperCase()}</span>
             </div>
             {isDemoDataset && (
               <div className="bg-amber-500/90 backdrop-blur-md text-slate-950 font-black text-[10px] px-3 py-2 rounded-xl shadow-md border border-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-                <span>⚠️ Sample Demo Plots</span>
+                <span>{t("p2.ui.sample_demo_plots_13tnhwh")}</span>
               </div>
             )}
           </div>
@@ -519,7 +521,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
               className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-700 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-[10px] flex items-center gap-1.5 transition-all cursor-pointer border-0 shadow-md pointer-events-auto"
             >
               <RefreshCw className={`w-3 h-3 ${isScanning ? "animate-spin" : ""}`} />
-              {isScanning ? "RE-INDEXING GNSS..." : "FORCE SATELLITE SYNC"}
+              {isScanning ? t("p2.ui.re_indexing_gnss_eijmei") : t("p2.ui.force_satellite_sync_1cptvr0")}
             </button>
           )}
         </div>
@@ -531,9 +533,9 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
               <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
                 <Layers className="w-5 h-5" />
               </div>
-              <h4 className="text-sm font-black text-white">No GPS Boundaries Mapped Yet</h4>
+              <h4 className="text-sm font-black text-white">{t("p2.ui.no_gps_boundaries_mapped_yet_1hpoy05")}</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Your plots do not have stored GPS polygon boundaries. Satellite NDVI and GIS overlays will activate as soon as you draw or import your farm boundaries.
+                {t("p2.ui.your_plots_do_not_have_stored_gps_polygon_bo_z9wnu4")}
               </p>
             </div>
           </div>
@@ -548,7 +550,7 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
 
         {/* Bottom Coordinates & EPSG Readout */}
         <div className="absolute bottom-3 left-4 z-[400] bg-slate-900/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-800 text-[9px] font-mono text-slate-400 flex items-center gap-2 shadow-xs pointer-events-none">
-          <span>WGS-84 (EPSG:4326)</span>
+          <span>{t("p2.ui.wgs_84_epsg_4326_1g8d4dc")}</span>
           {mouseCoords && (
             <span className="text-emerald-400">
               {mouseCoords.lat.toFixed(4)}° N, {mouseCoords.lng.toFixed(4)}° E

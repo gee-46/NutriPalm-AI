@@ -32,6 +32,7 @@ const HistoryChart: React.FC<{
   unit: string;
   max: number;
 }> = ({ rows, pick, label, unit, max }) => {
+  const { t } = useTranslation();
   const points = rows
     .map((r) => ({ t: new Date(r.analysis_date).getTime(), v: pick(r) }))
     .filter((p): p is { t: number; v: number } => p.v !== null && !isNaN(p.t));
@@ -41,7 +42,7 @@ const HistoryChart: React.FC<{
       <p className="text-xs font-black text-gray-900 uppercase tracking-widest">{label}</p>
       {points.length < 2 ? (
         <p className="text-xs font-semibold text-gray-500 mt-3">
-          Not enough stored history yet ({points.length} data point{points.length === 1 ? "" : "s"}).
+          {t("p2.ui.not_enough_stored_history_yet_nasscj")}{points.length} {t("p2.ui.data_point_1z2cwx")}{points.length === 1 ? "" : "s"}).
         </p>
       ) : (
         (() => {
@@ -61,7 +62,7 @@ const HistoryChart: React.FC<{
                 ))}
               </svg>
               <p className="text-[10px] font-semibold text-gray-500 mt-1">
-                {new Date(t0).toLocaleDateString()} → {new Date(t1).toLocaleDateString()} · latest {last.v}
+                {new Date(t0).toLocaleDateString()} → {new Date(t1).toLocaleDateString()} {t("p2.ui.latest_1baou1j")} {last.v}
                 {unit}
               </p>
             </>
@@ -98,7 +99,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
     return (
       <div role="alert" className="max-w-xl mx-auto my-12 bg-rose-50 border border-rose-200 rounded-3xl p-6 text-sm font-semibold text-rose-800 flex gap-3">
         <AlertTriangle className="w-5 h-5 shrink-0" />
-        <span>Could not load your analytics: {error}</span>
+        <span>{t("p2.ui.could_not_load_your_analytics_vm9ja2")} {error}</span>
       </div>
     );
   }
@@ -116,7 +117,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
         <div className="space-y-2">
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">{t("analytics.no_plots_registered")}</h2>
           <p className="text-xs text-gray-500 font-semibold leading-relaxed">
-            Add a farm plot to see analytics built from your own soil reports, recommendations and Digital Twin data.
+            {t("p2.ui.add_a_farm_plot_to_see_analytics_built_from__1p1sqca")}
           </p>
         </div>
         <button
@@ -143,17 +144,17 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
           </h1>
           <p className="text-sm font-semibold text-gray-500 mt-2">
             {profile?.full_name ? `${profile.full_name} · ` : ""}
-            Built only from the data stored in your account. Missing data is shown as “No data”.
+            {t("p2.ui.built_only_from_the_data_stored_in_your_acco_17vsr07")}
           </p>
         </div>
         <div className="relative w-full md:w-64">
           <select
-            aria-label="Plot"
+            aria-label={t("p2.ui.plot_5bxxk")}
             value={selectedPlotId}
             onChange={(e) => setSelectedPlotId(e.target.value)}
             className="appearance-none w-full bg-white border border-gray-250 text-xs font-bold text-gray-800 rounded-xl pl-3.5 pr-8 py-2.5 shadow-xs h-10 cursor-pointer"
           >
-            <option value="ALL">All plots ({plots.length})</option>
+            <option value="ALL">{t("p2.ui.all_plots_zb9d10")}{plots.length})</option>
             {plots.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -165,41 +166,41 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Mapped area" value={`${a.acres.toFixed(2)} acres`} note={`${a.plotCount} plot${a.plotCount === 1 ? "" : "s"}`} />
+        <Kpi label={t("p2.ui.mapped_area_ti8p8z")} value={`${a.acres.toFixed(2)} acres`} note={`${a.plotCount} plot${a.plotCount === 1 ? "" : "s"}`} />
         <Kpi
-          label="Crop health (Digital Twin)"
-          value={a.avgCropHealth !== null ? `${a.avgCropHealth}%` : "No data"}
+          label={t("p2.ui.crop_health_digital_twin_gve19o")}
+          value={a.avgCropHealth !== null ? `${a.avgCropHealth}%` : t("p2.ui.no_data_1e4ltia")}
           note={a.latestTwinDate ? `Latest snapshot ${fmtDate(a.latestTwinDate)}` : `${a.plotsWithTwin} plots with snapshots`}
         />
         <Kpi
-          label="Soil reports"
+          label={t("p2.ui.soil_reports_13vmfut")}
           value={`${a.plotsWithSoilReport} / ${a.plotCount}`}
-          note={a.latestSoilDate ? `Latest ${fmtDate(a.latestSoilDate)}` : "No report uploaded"}
+          note={a.latestSoilDate ? `Latest ${fmtDate(a.latestSoilDate)}` : t("p2.ui.no_report_uploaded_rvde50")}
         />
-        <Kpi label="Recommendations saved" value={String(a.recommendationCount)} />
+        <Kpi label={t("p2.ui.recommendations_saved_ukbb3u")} value={String(a.recommendationCount)} />
       </div>
 
       {selectedPlotId !== "ALL" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Kpi label="Latest NDVI" value={a.latestNdvi !== null ? a.latestNdvi.toFixed(2) : "No data"} />
-          <Kpi label="Water stress score" value={a.avgWaterStress !== null ? String(a.avgWaterStress) : "No data"} />
+          <Kpi label={t("p2.ui.latest_ndvi_1cr1b2z")} value={a.latestNdvi !== null ? a.latestNdvi.toFixed(2) : t("p2.ui.no_data_1e4ltia")} />
+          <Kpi label={t("p2.ui.water_stress_score_1t9p792")} value={a.avgWaterStress !== null ? String(a.avgWaterStress) : t("p2.ui.no_data_1e4ltia")} />
           <Kpi
-            label="Yield prediction"
-            value={a.latestYieldPrediction !== null ? String(a.latestYieldPrediction) : "No data"}
+            label={t("p2.ui.yield_prediction_7ay3op")}
+            value={a.latestYieldPrediction !== null ? String(a.latestYieldPrediction) : t("p2.ui.no_data_1e4ltia")}
           />
-          <Kpi label="Risk level" value={a.latestRisk ?? "No data"} note={a.growthStage ? `Stage: ${a.growthStage}` : undefined} />
+          <Kpi label={t("p2.ui.risk_level_a98p5m")} value={a.latestRisk ?? t("p2.ui.no_data_1e4ltia")} note={a.growthStage ? `Stage: ${a.growthStage}` : undefined} />
         </div>
       )}
 
       <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs">
-        <p className="text-xs font-black text-gray-900 uppercase tracking-widest mb-3">Crop distribution</p>
+        <p className="text-xs font-black text-gray-900 uppercase tracking-widest mb-3">{t("p2.ui.crop_distribution_bav45p")}</p>
         <div className="space-y-3">
           {a.cropDistribution.map((c) => (
             <div key={c.name}>
               <div className="flex justify-between text-xs font-semibold text-gray-700 mb-1">
                 <span>{c.name}</span>
                 <span>
-                  {c.acres.toFixed(2)} acres · {c.pct}%
+                  {c.acres.toFixed(2)} {t("p2.ui.acres_14g9m5q")} {c.pct}%
                 </span>
               </div>
               <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -212,18 +213,18 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
 
       {selectedPlotId === "ALL" ? (
         <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs text-sm font-semibold text-gray-600">
-          Select a single plot to see its Digital Twin history and soil nutrient breakdown.
+          {t("p2.ui.select_a_single_plot_to_see_its_digital_twin_6j7t5v")}
           {a.soil && (
             <p className="mt-3 text-xs text-gray-500">
-              Average of each plot's latest soil report — N {a.soil.N}, P {a.soil.P}, K {a.soil.K} kg/ha · OC {a.soil.OC}% · pH {a.soil.pH}
+              {t("p2.ui.average_of_each_plot_s_latest_soil_report_n_131fm0h")} {a.soil.N}, P {a.soil.P}, K {a.soil.K} kg/ha · OC {a.soil.OC}% · pH {a.soil.pH}
             </p>
           )}
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <HistoryChart rows={twinHistory} pick={(r) => r.crop_health_score} label="Crop health score" unit="%" max={100} />
-            <HistoryChart rows={twinHistory} pick={(r) => r.ndvi} label="NDVI" unit="" max={1} />
+            <HistoryChart rows={twinHistory} pick={(r) => r.crop_health_score} label={t("p2.ui.crop_health_score_lue0wn")} unit="%" max={100} />
+            <HistoryChart rows={twinHistory} pick={(r) => r.ndvi} label={t("p2.ui.ndvi_59to0")} unit="" max={1} />
           </div>
 
           {soilForCard ? (
@@ -235,13 +236,13 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ onNavigate }) 
             />
           ) : (
             <div className="bg-white rounded-2xl p-5 border border-gray-150 shadow-xs text-sm font-semibold text-gray-600">
-              No soil report uploaded for this plot yet.
+              {t("p2.ui.no_soil_report_uploaded_for_this_plot_yet_12gp9br")}
               {onNavigate && (
                 <button
                   onClick={() => onNavigate("Soil Reports")}
                   className="ml-3 text-primary font-bold underline border-0 bg-transparent cursor-pointer"
                 >
-                  Upload one
+                  {t("p2.ui.upload_one_xzjmem")}
                 </button>
               )}
             </div>

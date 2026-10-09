@@ -178,11 +178,11 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   };
 
   const processingTimeline = [
-    { key: "upload", label: "Uploading Document", pct: 20 },
-    { key: "ocr", label: "OCR Recognition", pct: 40 },
-    { key: "extraction", label: "Nutrient Extraction", pct: 60 },
-    { key: "analysis", label: "AI Analysis", pct: 80 },
-    { key: "completed", label: "Completed", pct: 100 }
+    { key: "upload", label: "p2.soil.step.upload", pct: 20 },
+    { key: "ocr", label: "p2.soil.step.ocr", pct: 40 },
+    { key: "extraction", label: "p2.soil.step.extraction", pct: 60 },
+    { key: "analysis", label: "p2.soil.step.analysis", pct: 80 },
+    { key: "completed", label: "p2.soil.step.completed", pct: 100 }
   ];
 
   const logDatabase = useRef([
@@ -468,7 +468,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         <div className="flex items-center justify-center p-12 bg-white rounded-3xl border border-slate-150 shadow-xs">
           <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
             <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
-            Synchronizing plot diagnostic history...
+            {t("p2.ui.synchronizing_plot_diagnostic_history_kjn5vy")}
           </div>
         </div>
       )}
@@ -489,12 +489,12 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 
                 {isUpdatingReport && savedReport && (
                   <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 rounded-2xl p-3 px-4 text-xs font-semibold text-emerald-800">
-                    <span>Updating diagnostic telemetry for <strong>{plot?.name}</strong></span>
+                    <span>{t("p2.ui.updating_diagnostic_telemetry_for_1yiu6po")} <strong>{plot?.name}</strong></span>
                     <button
                       onClick={() => setIsUpdatingReport(false)}
                       className="text-xs text-emerald-700 hover:text-emerald-950 underline font-bold cursor-pointer border-0 bg-transparent"
                     >
-                      Cancel / View Saved Report
+                      {t("p2.ui.cancel_view_saved_report_ug93ug")}
                     </button>
                   </div>
                 )}
@@ -622,7 +622,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <span className={`block text-[8px] font-bold ${
                           isActive ? "text-primary" : isDone ? "text-gray-800" : "text-gray-400"
                         } leading-tight uppercase`}>
-                          {step.label}
+                          {t(step.label)}
                         </span>
                       </div>
                     );
@@ -677,12 +677,11 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                     <div>
                       <h3 className="text-base font-extrabold text-amber-950">
-                        Low Confidence Extraction — Report Not Saved
+                        {t("p2.ui.low_confidence_extraction_report_not_saved_xlcu28")}
                       </h3>
                       <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 text-amber-800">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        Plot: <strong className="text-amber-950">{plot?.name || selectedPlotId}</strong> ({plot?.crop || "crop not set"}) • 
-                        Status: <span className="font-bold text-amber-700">Unsaved (Low OCR confidence)</span>
+                        {t("p2.ui.plot_4la7xu")} <strong className="text-amber-950">{plot?.name || selectedPlotId}</strong> ({plot?.crop || t("p2.ui.crop_not_set_4y8vws")}{t("p2.ui.status_1imz9vw")} <span className="font-bold text-amber-700">{t("p2.ui.unsaved_low_ocr_confidence_12za4rm")}</span>
                       </p>
                     </div>
                   </div>
@@ -696,7 +695,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       }}
                       className="flex-1 md:flex-initial bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer transition-colors shadow-xs border-0"
                     >
-                      Re-upload Clearer Report
+                      {t("p2.ui.re_upload_clearer_report_bnr2cm")}
                     </button>
                   </div>
                 </div>
@@ -712,8 +711,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </h3>
                       <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 text-gray-650">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                        Plot: <strong className="text-slate-900">{plot?.name || selectedPlotId}</strong> ({plot?.crop || "crop not set"}) • 
-                        Saved: {activeDisplayReport.created_at ? new Date(activeDisplayReport.created_at).toLocaleDateString() : "Active"}
+                        {t("p2.ui.plot_4la7xu")} <strong className="text-slate-900">{plot?.name || selectedPlotId}</strong> ({plot?.crop || t("p2.ui.crop_not_set_4y8vws")}{t("p2.ui.saved_1p21j9r")} {activeDisplayReport.created_at ? new Date(activeDisplayReport.created_at).toLocaleDateString() : t("p2.ui.active_1s25b71")}
                       </p>
                     </div>
                   </div>
@@ -727,14 +725,14 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       }}
                       className="flex-1 md:flex-initial border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl cursor-pointer transition-colors shadow-xs bg-white"
                     >
-                      Update Report
+                      {t("p2.ui.update_report_1lddlms")}
                     </button>
 
                     <button
                       onClick={handleTriggerRecommendation}
                       className="flex-1 md:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-xs border-0"
                     >
-                      Generate AI Recommendation
+                      {t("p2.ui.generate_ai_recommendation_1dpyonh")}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -777,7 +775,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <div className="flex justify-between items-center">
                           <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{t('soilreportscreen.ai_summary')}</h4>
                           <span className="text-[9px] font-black px-2 py-0.5 rounded-full border text-emerald-750 bg-emerald-50 border-emerald-100">
-                            {savedReport ? "SAVED" : "NOT SAVED"}
+                            {savedReport ? t("p2.ui.saved_4m5lmo") : t("p2.ui.not_saved_zkf3bn")}
                           </span>
                         </div>
                         <p className="text-xs text-gray-700 leading-relaxed font-semibold mt-3">
@@ -786,8 +784,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 text-[10px] text-gray-450 uppercase font-black">
-                        <div>Crop Context: <span className="text-gray-700 font-bold capitalize">{plot?.crop || "—"}</span></div>
-                        <div className="text-right">Database: <span className="text-gray-700 font-bold">{savedReport ? "Saved" : "Not saved"}</span></div>
+                        <div>{t("p2.ui.crop_context_1q8yxqs")} <span className="text-gray-700 font-bold capitalize">{plot?.crop || "—"}</span></div>
+                        <div className="text-right">{t("p2.ui.database_4f3aag")} <span className="text-gray-700 font-bold">{savedReport ? t("p2.ui.saved_4mqpq8") : t("p2.ui.not_saved_7h0rzn")}</span></div>
                       </div>
                     </div>
 
@@ -798,7 +796,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     <div className="flex justify-between items-center">
                       <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">{t('soilreportscreen.nutrient_density_breakdown')}</h4>
                       <span className="text-[10px] font-bold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-0.5 rounded-full">
-                        Lab Extracted Values
+                        {t("p2.ui.lab_extracted_values_mgggvw")}
                       </span>
                     </div>
                     
@@ -807,7 +805,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <div className="flex justify-between mb-1.5">
                           <span>{t('soilreportscreen.nitrogen_n')}</span>
                           <span className="font-bold text-emerald-700">
-                            {rawN !== null ? `${rawN} kg/ha` : "Not Found"}
+                            {rawN !== null ? `${rawN} kg/ha` : t("p2.ui.not_found_6siyku")}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -822,7 +820,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <div className="flex justify-between mb-1.5">
                           <span>{t('soilreportscreen.phosphorus_p')}</span>
                           <span className="font-bold text-emerald-700">
-                            {rawP !== null ? `${rawP} kg/ha` : "Not Found"}
+                            {rawP !== null ? `${rawP} kg/ha` : t("p2.ui.not_found_6siyku")}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -837,7 +835,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <div className="flex justify-between mb-1.5">
                           <span>{t('soilreportscreen.potassium_k')}</span>
                           <span className="font-bold text-emerald-700">
-                            {rawK !== null ? `${rawK} kg/ha` : "Not Found"}
+                            {rawK !== null ? `${rawK} kg/ha` : t("p2.ui.not_found_6siyku")}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -852,7 +850,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                         <div className="flex justify-between mb-1.5">
                           <span>{t('soilreportscreen.organic_carbon_c')}</span>
                           <span className="font-bold text-emerald-700">
-                            {rawOC !== null ? `${rawOC} %` : "Not Found"}
+                            {rawOC !== null ? `${rawOC} %` : t("p2.ui.not_found_6siyku")}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -918,35 +916,35 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
                   {/* Micronutrients Breakdown Grid */}
                   <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-4">
-                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">Micronutrients Telemetry</h4>
+                    <h4 className="text-xs font-black text-gray-900 uppercase tracking-widest">{t("p2.ui.micronutrients_telemetry_96qw94")}</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {/* Sulphur */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
-                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Sulphur (S)</span>
+                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">{t("p2.ui.sulphur_s_u3ilue")}</span>
                         <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(s)}</span>
                         <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(s).toLowerCase()})</span>
                       </div>
                       {/* Boron */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
-                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Boron (B)</span>
+                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">{t("p2.ui.boron_b_iym8gc")}</span>
                         <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(b)}</span>
                         <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(b).toLowerCase()})</span>
                       </div>
                       {/* Iron */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
-                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Iron (Fe)</span>
+                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">{t("p2.ui.iron_fe_1rl2zo3")}</span>
                         <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(fe)}</span>
                         <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(fe).toLowerCase()})</span>
                       </div>
                       {/* Manganese */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
-                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Manganese (Mn)</span>
+                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">{t("p2.ui.manganese_mn_1c3wb62")}</span>
                         <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(mn)}</span>
                         <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(mn).toLowerCase()})</span>
                       </div>
                       {/* Copper */}
                       <div className="rounded-2xl p-3.5 border bg-gray-50 border-gray-100 flex flex-col justify-between">
-                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">Copper (Cu)</span>
+                        <span className="text-[9px] font-black text-gray-455 uppercase tracking-wider">{t("p2.ui.copper_cu_3nzcgf")}</span>
                         <span className="text-base font-black text-gray-950 mt-1.5">{fmtMicro(cu)}</span>
                         <span className="text-[8px] font-extrabold uppercase mt-1 text-gray-500">({microBadge(cu).toLowerCase()})</span>
                       </div>
@@ -964,8 +962,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       <Sparkles className="w-4.5 h-4.5 text-primary" /> {t('soilreportscreen.soil_treatment_advice')}
                     </h4>
                     <p className="text-xs font-semibold text-gray-600 leading-relaxed">
-                      Fertilizer doses and costs are calculated by the NutriPalm recommendation engine from this saved
-                      report. Open the Recommendations screen to generate and save them.
+                      {t("p2.ui.fertilizer_doses_and_costs_are_calculated_by_vgqwex")}
                     </p>
                   </div>
 
@@ -990,17 +987,17 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
                   <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">
-                    Agronomic Crop Deficiency & Benchmark Calibration
+                    {t("p2.ui.agronomic_crop_deficiency_benchmark_calibrat_worgzm")}
                   </h3>
                   <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                    Reference ranges (V1 defaults)
+                    {t("p2.ui.reference_ranges_v1_defaults_qntnt8")}
                   </span>
                 </div>
 
                 <SoilNutrientAnalyticsCard
                   report={activeDisplayReport}
                   cropType={plot?.crop}
-                  title="Nutrient Deficiency Breakdown & Polar Radar Footprint"
+                  title={t("p2.ui.nutrient_deficiency_breakdown_polar_radar_fo_1118g9x")}
                   showMiniRadar={true}
                 />
               </div>

@@ -10,6 +10,7 @@
  * - Emits: onBoundaryChange({ geoJSON, areaAcres, centroid })
  */
 
+import { useTranslation } from "../../translation/useTranslation";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -91,6 +92,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
   showToast,
   plotName = "New Farm Plot",
 }) => {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const drawnLayerRef = useRef<import("leaflet").Layer | null>(null);
@@ -156,7 +158,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         }
 
         if (geometry.type !== "Polygon") {
-          setPolygonError("Only polygon shapes are supported.");
+          setPolygonError(t("p2.toast.polygon_only"));
           return;
         }
 
@@ -182,7 +184,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         onBoundaryChange({ geoJSON: geoJSONPolygon, areaAcres: acres, centroid });
       } catch (err) {
         console.error("Polygon processing error:", err);
-        setPolygonError("Could not compute polygon area. Please redraw.");
+        setPolygonError(t("p2.toast.polygon_area_failed"));
       }
     },
     [onBoundaryChange]
@@ -319,10 +321,10 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         setSearchQuery("");
         triggerToast("Location found", "success");
       } else {
-        setSearchError("Location not found.");
+        setSearchError(t("p2.toast.location_not_found"));
       }
     } catch {
-      setSearchError("Failed to search location.");
+      setSearchError(t("p2.toast.search_failed"));
     } finally {
       setIsSearching(false);
     }
@@ -343,11 +345,11 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <h4 className="text-xs font-black text-white uppercase tracking-wider">
-              Google Maps Satellite GIS Survey
+              {t("p2.ui.google_maps_satellite_gis_survey_16o5d4n")}
             </h4>
           </div>
           <p className="text-[11px] text-slate-300 font-medium leading-tight">
-            Open in full screen to visually trace boundary corners on high-resolution satellite imagery.
+            {t("p2.ui.open_in_full_screen_to_visually_trace_bounda_i8mg8r")}
           </p>
         </div>
 
@@ -357,7 +359,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
           className="w-full sm:w-auto px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition-all active:scale-95 border-0 shrink-0"
         >
           <Maximize2 className="w-4 h-4" />
-          <span>Open Full-Screen Map</span>
+          <span>{t("p2.ui.open_full_screen_map_tpjql3")}</span>
         </button>
       </div>
 
@@ -368,7 +370,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         </div>
         <input
           type="text"
-          placeholder="Search village, mandal, or district..."
+          placeholder={t("p2.ui.search_village_mandal_or_district_u7l7q3")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => {
@@ -385,7 +387,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
           disabled={isSearching || !searchQuery.trim()}
           className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white px-3.5 h-full text-xs font-bold transition-all cursor-pointer shrink-0"
         >
-          {isSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin mx-auto" /> : "Find"}
+          {isSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin mx-auto" /> : t("p2.ui.find_55hsw")}
         </button>
       </div>
 
@@ -398,26 +400,26 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
           {/* Status Badge */}
           <div className="bg-slate-900/95 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-800 text-[9px] text-emerald-400 font-mono flex items-center gap-1.5 pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            {mapReady ? "SATELLITE BOUNDARY PREVIEW" : "LOADING MAP..."}
+            {mapReady ? t("p2.ui.satellite_boundary_preview_1wivof2") : t("p2.ui.loading_map_snjlkt")}
           </div>
 
           {/* Mini Toolbar */}
           <div className="flex items-center gap-1 pointer-events-auto">
             <button
               type="button"
-              title="Launch True Full-Screen Survey"
+              title={t("p2.ui.launch_true_full_screen_survey_1n7x3j0")}
               onClick={() => setIsFullScreenSurveyorOpen(true)}
               className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-bold border border-emerald-400 shadow-md flex items-center gap-1 text-[10px] cursor-pointer hover:bg-emerald-400 transition-all"
             >
               <Maximize2 className="w-3.5 h-3.5" />
-              <span>Full Screen</span>
+              <span>{t("p2.ui.full_screen_9ek6nq")}</span>
             </button>
 
             {/* Basemap switcher */}
             <div className="flex rounded-xl border border-slate-700 overflow-hidden bg-slate-900/90">
               <button
                 type="button"
-                title="Satellite View"
+                title={t("p2.ui.satellite_view_b4ddo1")}
                 onClick={() => setBasemap("satellite")}
                 className={`p-2 transition-all cursor-pointer ${
                   basemap === "satellite" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:bg-slate-800"
@@ -427,7 +429,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
               </button>
               <button
                 type="button"
-                title="Standard Map"
+                title={t("p2.ui.standard_map_b6w4xs")}
                 onClick={() => setBasemap("standard")}
                 className={`p-2 transition-all cursor-pointer border-l border-slate-700 ${
                   basemap === "standard" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:bg-slate-800"
@@ -440,7 +442,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         </div>
 
         <div className="absolute bottom-2.5 left-2.5 text-[8px] font-mono text-slate-500 z-[1000] pointer-events-none">
-          WGS 84 / EPSG:4326 | Tap &apos;Open Full-Screen Map&apos; to survey
+          {t("p2.ui.wgs_84_epsg_4326_tap_open_full_screen_map_to_1qq2asn")}
         </div>
       </div>
 
@@ -480,7 +482,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <div className="text-xs">
-                <span className="text-gray-500 font-semibold">Surveyed Boundary: </span>
+                <span className="text-gray-500 font-semibold">{t("p2.ui.surveyed_boundary_1phlt4g")} </span>
                 <span className="font-black text-emerald-800">{areaDisplay}</span>
               </div>
             </div>
@@ -489,7 +491,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
               onClick={() => setIsFullScreenSurveyorOpen(true)}
               className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer bg-transparent border-0"
             >
-              Adjust in Full Screen
+              {t("p2.ui.adjust_in_full_screen_34m170")}
             </button>
           </motion.div>
         )}

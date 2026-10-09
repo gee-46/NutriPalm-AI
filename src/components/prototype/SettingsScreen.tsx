@@ -10,7 +10,7 @@ interface SettingsScreenProps {
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, onSaveSuccess }) => {
-    const { t } = useTranslation();
+    const { t, lang, setLang } = useTranslation();
   const [activeTab, setActiveTab] = useState(activeSection || "Profile");
   const [isSaved, setIsSaved] = useState(false);
 
@@ -146,7 +146,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
   });
 
   // Selected language
-  const [language, setLanguage] = useState("English");
+  const chooseLanguage = (code: "en" | "kn") => {
+    setLang(code);
+    // Best effort: remember the choice on the account too (the device choice already applies immediately).
+    supabase.auth.getUser().then(({ data }: { data: { user: { id: string } | null } }) => {
+      if (data?.user) {
+        supabase.from("profiles").update({ preferred_language: code === "kn" ? "Kannada" : "English" }).eq("id", data.user.id).then(() => undefined);
+      }
+    });
+  };
 
   // Selected theme
   const [theme, setTheme] = useState("Green Mesh");
@@ -395,20 +403,26 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   className="space-y-4"
                 >
                   <h3 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2">{t('settingsscreen.language_preferences')}</h3>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.select_local_language_override')}</label>
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs font-medium focus:border-primary focus:outline-hidden transition-all cursor-pointer"
-                    >
-                      <option value="English">{t('settingsscreen.english_global')}</option>
-                      <option value="Telugu">{t('settingsscreen.telugu_regional_andhra_ts')}</option>
-                      <option value="Kannada">{t('settingsscreen.kannada_regional_karnataka')}</option>
-                      <option value="Bahasa">{t('settingsscreen.bahasa_indonesia_sumatra_kalimantan')}</option>
-                    </select>
-                    <p className="text-[10px] text-gray-400 mt-1">{t('settingsscreen.this_translates_farmer_report_prints_and')}</p>
-                  </div>
+                  <fieldset className="space-y-3">
+                    <legend className="mb-1 text-sm font-bold text-gray-800">{t("p2.lang.label")}</legend>
+                    {(["en", "kn"] as const).map((code) => (
+                      <label
+                        key={code}
+                        className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm font-bold ${lang === code ? "border-primary bg-emerald-50 text-gray-900" : "border-gray-300 bg-white text-gray-700"}`}
+                      >
+                        <input
+                          type="radio"
+                          name="app-language"
+                          checked={lang === code}
+                          onChange={() => chooseLanguage(code)}
+                          className="h-5 w-5 accent-[#2E7D32]"
+                        />
+                        {code === "en" ? t("p2.lang.english") : t("p2.lang.kannada")}
+                      </label>
+                    ))}
+                    <p className="text-sm font-medium text-gray-600">{t("p2.lang.help")}</p>
+                    <p className="text-sm font-medium text-gray-500">{t("p2.lang.backend_note")}</p>
+                  </fieldset>
                 </motion.div>
               )}
 
@@ -540,15 +554,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-gray-600">{t('settingsscreen.preferred_language')}</label>
                     <select
-                      value={editFields.preferredLanguage}
+                      value={editFields.preferredLanguage === "Kannada" ? "Kannada" : "English"}
                       onChange={(e) => setEditFields({ ...editFields, preferredLanguage: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-gray-250 bg-white text-xs focus:border-primary focus:outline-hidden transition-all cursor-pointer font-semibold"
                     >
-                      <option value="English">{t('settingsscreen.english')}</option>
-                      <option value="Hindi">{t('settingsscreen.hindi')}</option>
-                      <option value="Kannada">{t('settingsscreen.kannada')}</option>
-                      <option value="Telugu">{t('settingsscreen.telugu')}</option>
-                      <option value="Bahasa">{t('settingsscreen.bahasa')}</option>
+                      <option value="English">{t("p2.lang.english")}</option>
+                      <option value="Kannada">{t("p2.lang.kannada")}</option>
                     </select>
                   </div>
 

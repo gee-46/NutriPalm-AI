@@ -12,6 +12,8 @@
  * Fallback Provider: High-Resolution Satellite Engine (Esri World Imagery).
  */
 
+import { useTranslation } from "../../translation/useTranslation";
+import { renderRich } from "../../translation/richText";
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -115,6 +117,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
   defaultAreaUnit = "acres",
   showToast,
 }) => {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -271,7 +274,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
           setValidationError(null);
         }
       } catch {
-        setValidationError("Could not calculate boundary area.");
+        setValidationError(t("p2.toast.area_failed"));
       }
     },
     []
@@ -888,7 +891,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
         applyLocationFix(bestPositionRef.current);
       } else {
         setIsLocating(false);
-        setGpsError("Your device could not determine an accurate location. Try again outdoors.");
+        setGpsError(t("p2.toast.gps_inaccurate"));
       }
     };
 
@@ -954,7 +957,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
           if (err.code === err.PERMISSION_DENIED) {
             msg = "Location permission was denied. Allow location access in your browser and try again.";
           } else if (err.code === err.POSITION_UNAVAILABLE) {
-            msg = "Your device could not determine an accurate location. Try again outdoors.";
+            msg = t("p2.toast.gps_inaccurate");
           } else if (err.code === err.TIMEOUT) {
             msg = "Location request timed out. Try again.";
           }
@@ -971,7 +974,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
     } catch {
       stopGpsWatch();
       setIsLocating(false);
-      setGpsError("Could not start geolocation watch.");
+      setGpsError(t("p2.toast.gps_watch_failed"));
     }
   }, [stopGpsWatch, applyLocationFix, triggerToast]);
 
@@ -1234,10 +1237,10 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
             type="button"
             onClick={onClose}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer border border-slate-700 flex items-center gap-1.5 text-xs font-bold"
-            title="Return to plot management"
+            title={t("p2.ui.return_to_plot_management_1dvad46")}
           >
             <ArrowLeft className="w-4 h-4 text-slate-300" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{t("p2.ui.back_52rny")}</span>
           </button>
 
           <div className="flex flex-col">
@@ -1246,12 +1249,12 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               {activeEngine === "google" ? (
                 <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Google Maps Satellite
+                  {t("p2.ui.google_maps_satellite_mytxpu")}
                 </span>
               ) : (
                 <span className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1">
                   <Globe2 className="w-3 h-3 text-blue-400" />
-                  Satellite Engine (Keyless)
+                  {t("p2.ui.satellite_engine_keyless_17k44mf")}
                 </span>
               )}
             </div>
@@ -1269,7 +1272,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder="Search village, town, mandal, district or address..."
+                  placeholder={t("p2.ui.search_village_town_mandal_district_or_addre_2v2xhf")}
                   value={searchQuery}
                   onChange={(e) => handleSearchInputChange(e.target.value)}
                   onFocus={() => {
@@ -1295,7 +1298,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   disabled={isSearching || !searchQuery.trim()}
                   className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-slate-950 px-3.5 py-1.5 mr-1 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0"
                 >
-                  {isSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "Find"}
+                  {isSearching ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : t("p2.ui.find_55hsw")}
                 </button>
               </div>
 
@@ -1344,7 +1347,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   ? "bg-slate-800 hover:bg-slate-700 text-blue-300 border border-blue-500/30"
                   : "bg-blue-600 hover:bg-blue-500 text-white"
               }`}
-              title={gpsAccuracyM !== null ? "Refresh your current location" : "Locate using device/browser current location"}
+              title={gpsAccuracyM !== null ? t("p2.ui.refresh_your_current_location_x3zp9") : t("p2.ui.locate_using_device_browser_current_location_15p9znu")}
             >
               {isLocating ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-300" />
@@ -1355,10 +1358,10 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               )}
               <span className="hidden md:inline">
                 {isLocating
-                  ? "Getting your current location…"
+                  ? t("p2.ui.getting_your_current_location_w57i68")
                   : gpsAccuracyM !== null
-                  ? "Refresh Location"
-                  : "Use My Current Location"}
+                  ? t("p2.ui.refresh_location_j5hd41")
+                  : t("p2.ui.use_my_current_location_n67gq8")}
               </span>
             </button>
           </div>
@@ -1367,7 +1370,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
           <div className="hidden md:flex items-center gap-1.5 mt-1.5 overflow-x-auto w-full">
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-emerald-400" />
-              Quick Jump:
+              {t("p2.ui.quick_jump_ktpelu")}
             </span>
             {QUICK_LOCATIONS.map((loc) => (
               <button
@@ -1392,21 +1395,21 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md cursor-pointer border-0"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Draw Boundary</span>
+              <span>{t("p2.ui.draw_boundary_1xy3wtb")}</span>
             </button>
           )}
 
           <div className="hidden sm:inline-flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
-            {(["hybrid", "roadmap"] as const).map((t) => (
+            {(["hybrid", "roadmap"] as const).map((mt) => (
               <button
-                key={t}
+                key={mt}
                 type="button"
-                onClick={() => handleBasemapChange(t)}
+                onClick={() => handleBasemapChange(mt)}
                 className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                  mapType === t ? "bg-emerald-500 text-slate-950" : "text-slate-400 hover:text-white"
+                  mapType === mt ? "bg-emerald-500 text-slate-950" : "text-slate-400 hover:text-white"
                 }`}
               >
-                {t === "hybrid" ? "Satellite" : "Roads"}
+                {mt === "hybrid" ? t("p2.ui.satellite_1jb2lmc") : t("p2.ui.roads_4mffd8")}
               </button>
             ))}
           </div>
@@ -1415,7 +1418,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
             type="button"
             onClick={() => setShowKeyModal(true)}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 transition-all cursor-pointer border border-slate-700"
-            title="Google Maps API Key Configuration"
+            title={t("p2.ui.google_maps_api_key_configuration_qhqtt2")}
           >
             <Key className="w-4 h-4" />
           </button>
@@ -1424,7 +1427,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
             type="button"
             onClick={() => setShowHelpGuide(true)}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer border border-slate-700"
-            title="Step-by-step Survey Guide"
+            title={t("p2.ui.step_by_step_survey_guide_kehy9a")}
           >
             <HelpCircle className="w-4 h-4" />
           </button>
@@ -1446,7 +1449,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
         {isLoadingMaps && (
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-40">
             <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
-            <p className="text-sm font-bold text-slate-200">Loading High-Resolution Satellite Map...</p>
+            <p className="text-sm font-bold text-slate-200">{t("p2.ui.loading_high_resolution_satellite_map_223dij")}</p>
           </div>
         )}
 
@@ -1460,7 +1463,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               className="bg-slate-900/95 backdrop-blur-md border border-blue-500/50 p-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs text-blue-300"
             >
               <RefreshCw className="w-4 h-4 text-blue-400 animate-spin shrink-0" />
-              <span className="font-semibold">Getting your current location…</span>
+              <span className="font-semibold">{t("p2.ui.getting_your_current_location_w57i68")}</span>
             </motion.div>
           )}
 
@@ -1477,7 +1480,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 </div>
                 <div>
                   <span className="font-extrabold text-emerald-300 text-xs">{locationFoundNotice}</span>
-                  <p className="text-[10px] text-slate-300">Move map to your farm parcel and start drawing</p>
+                  <p className="text-[10px] text-slate-300">{t("p2.ui.move_map_to_your_farm_parcel_and_start_drawi_d4yzbq")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -1488,7 +1491,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                     className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl cursor-pointer border-0 shadow-md flex items-center gap-1"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
-                    <span>Draw Boundary</span>
+                    <span>{t("p2.ui.draw_boundary_1xy3wtb")}</span>
                   </button>
                 )}
                 <button
@@ -1513,7 +1516,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs font-bold text-amber-200">
-                    Location accuracy: ±{Math.round(gpsAccuracyM)} m (Low Accuracy)
+                    {t("p2.survey.accuracy_low", { m: Math.round(gpsAccuracyM) })}
                   </p>
                   <p className="text-[10px] text-amber-300/80 leading-snug mt-0.5">
                     {gpsWarning}
@@ -1527,7 +1530,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] rounded-lg cursor-pointer flex items-center gap-1 border-0"
                 >
                   <RefreshCw className="w-3 h-3" />
-                  <span>Try Again</span>
+                  <span>{t("p2.ui.try_again_1m8x8b8")}</span>
                 </button>
                 <button
                   type="button"
@@ -1537,7 +1540,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-[11px] rounded-lg cursor-pointer flex items-center gap-1 border border-slate-700"
                 >
                   <Search className="w-3 h-3" />
-                  <span>Search Village</span>
+                  <span>{t("p2.ui.search_village_dj3j0b")}</span>
                 </button>
               </div>
             </motion.div>
@@ -1554,10 +1557,10 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 <Crosshair className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[11px] font-bold text-blue-300">
-                    Location accuracy: ±{Math.round(gpsAccuracyM)} m
+                    {t("p2.survey.accuracy", { m: Math.round(gpsAccuracyM) })}
                   </p>
                   <p className="text-[9px] text-slate-400 leading-snug mt-0.5">
-                    {formattedLocationTime ? `Acquired at ${formattedLocationTime} • ` : ""}Map centered on your current position.
+                    {formattedLocationTime ? `${t("p2.survey.acquired_at", { time: formattedLocationTime })} • ` : ""}{t("p2.survey.centered")}
                   </p>
                 </div>
               </div>
@@ -1566,10 +1569,10 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   type="button"
                   onClick={handleUseCurrentLocation}
                   className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer border border-slate-700 flex items-center gap-1 text-[10px] font-medium"
-                  title="Refresh Location"
+                  title={t("p2.ui.refresh_location_j5hd41")}
                 >
                   <RefreshCw className="w-3 h-3 text-blue-400" />
-                  <span className="hidden sm:inline">Refresh</span>
+                  <span className="hidden sm:inline">{t("p2.ui.refresh_y5das4")}</span>
                 </button>
                 {!isDrawingActive && (
                   <button
@@ -1577,7 +1580,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                     onClick={handleStartDrawing}
                     className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] rounded-lg cursor-pointer border-0"
                   >
-                    Draw Boundary
+                    {t("p2.ui.draw_boundary_1xy3wtb")}
                   </button>
                 )}
               </div>
@@ -1603,7 +1606,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   onClick={handleUseCurrentLocation}
                   className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] rounded-lg cursor-pointer border-0"
                 >
-                  Try Again
+                  {t("p2.ui.try_again_1m8x8b8")}
                 </button>
                 <button
                   type="button"
@@ -1635,7 +1638,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 else leafletMapRef.current?.zoomIn();
               }}
               className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer border-b border-slate-800"
-              title="Zoom in"
+              title={t("p2.ui.zoom_in_edl7kb")}
             >
               <ZoomIn className="w-4 h-4" />
             </button>
@@ -1646,7 +1649,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 else leafletMapRef.current?.zoomOut();
               }}
               className="p-2.5 text-slate-300 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
-              title="Zoom out"
+              title={t("p2.ui.zoom_out_jilbc8")}
             >
               <ZoomOut className="w-4 h-4" />
             </button>
@@ -1665,9 +1668,9 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
             </div>
 
             <div className="space-y-1">
-              <h3 className="font-black text-base text-white">Find Your Farm</h3>
+              <h3 className="font-black text-base text-white">{t("p2.ui.find_your_farm_155e91f")}</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Search your village name above or click <strong>Use My Current Location</strong>, then tap <strong>Draw Farm Boundary</strong>.
+                {renderRich(t("p2.survey.find_hint"), { a: <strong>{t("p2.survey.use_loc")}</strong>, b: <strong>{t("p2.survey.draw_farm")}</strong> })}
               </p>
             </div>
 
@@ -1683,7 +1686,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 ) : (
                   <Navigation className="w-4 h-4 text-white" />
                 )}
-                <span>{isLocating ? "Getting your current location…" : "📍 Use My Current Location"}</span>
+                <span>{isLocating ? t("p2.ui.getting_your_current_location_w57i68") : t("p2.ui.use_my_current_location_coch5p")}</span>
               </button>
 
               <button
@@ -1692,10 +1695,10 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer border-0"
               >
                 <Edit3 className="w-4 h-4" />
-                <span>✏️ Draw Farm Boundary</span>
+                <span>{t("p2.ui.draw_farm_boundary_1cok33l")}</span>
               </button>
               <p className="text-[10px] text-slate-400 mt-1">
-                Or search above or pan map freely
+                {t("p2.ui.or_search_above_or_pan_map_freely_ndv8ig")}
               </p>
             </div>
           </motion.div>
@@ -1712,7 +1715,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               <div className="flex items-center gap-1.5">
                 <Ruler className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="font-extrabold text-[11px] text-white uppercase tracking-wider">
-                  Farm Boundary
+                  {t("p2.ui.farm_boundary_1cgfk8d")}
                 </span>
               </div>
               <div className="inline-flex bg-slate-800 p-0.5 rounded-md border border-slate-700">
@@ -1733,18 +1736,18 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
 
             <div className="space-y-1 text-xs">
               <div className="flex justify-between items-baseline">
-                <span className="text-[11px] text-slate-400">Area:</span>
+                <span className="text-[11px] text-slate-400">{t("p2.ui.area_4d4x3a")}</span>
                 <span className="font-mono font-black text-emerald-400 text-xs">
                   {areaAcres !== null
                     ? areaUnit === "hectares"
                       ? `${acresToHectares(areaAcres).toFixed(2)} ha`
                       : `${areaAcres.toFixed(2)} acres`
-                    : "Connecting..."}
+                    : t("p2.ui.connecting_h7kdf3")}
                 </span>
               </div>
 
               <div className="flex justify-between items-baseline">
-                <span className="text-[11px] text-slate-400">Perimeter:</span>
+                <span className="text-[11px] text-slate-400">{t("p2.ui.perimeter_17h1738")}</span>
                 <span className="font-mono font-bold text-white text-xs">
                   {segmentStats.perimeterM > 1000
                     ? `${(segmentStats.perimeterM / 1000).toFixed(2)} km`
@@ -1753,9 +1756,9 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               </div>
 
               <div className="flex justify-between items-baseline pt-1 border-t border-slate-800/80">
-                <span className="text-[10px] text-slate-400">Points:</span>
+                <span className="text-[10px] text-slate-400">{t("p2.ui.points_9km374")}</span>
                 <span className="font-mono font-semibold text-slate-300 text-[11px]">
-                  {vertices.length} vertices
+                  {vertices.length} {t("p2.ui.vertices_162d14w")}
                 </span>
               </div>
             </div>
@@ -1773,7 +1776,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
             >
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
               <span className="font-bold text-[11px] sm:text-xs">
-                Drawing Active — Click corners/edges of your farm on the satellite map. ({vertices.length} points placed)
+                {t("p2.survey.drawing_active", { n: vertices.length })}
               </span>
             </motion.div>
           ) : null}
@@ -1798,7 +1801,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 }`}
               >
                 <span>①</span>
-                <span className="hidden sm:inline">Find Farm</span>
+                <span className="hidden sm:inline">{t("p2.ui.find_farm_giq49i")}</span>
               </button>
 
               <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
@@ -1819,7 +1822,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 }`}
               >
                 <span>②</span>
-                <span className="hidden sm:inline">Draw Boundary</span>
+                <span className="hidden sm:inline">{t("p2.ui.draw_boundary_1xy3wtb")}</span>
               </button>
 
               <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
@@ -1842,7 +1845,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 }`}
               >
                 <span>③</span>
-                <span className="hidden sm:inline">Adjust</span>
+                <span className="hidden sm:inline">{t("p2.ui.adjust_1s2iyra")}</span>
               </button>
 
               <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
@@ -1864,7 +1867,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 }`}
               >
                 <span>④</span>
-                <span className="hidden sm:inline">Confirm</span>
+                <span className="hidden sm:inline">{t("p2.ui.confirm_vxe75l")}</span>
               </button>
             </div>
 
@@ -1878,7 +1881,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer border-0"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
-                  <span>Draw Farm Boundary</span>
+                  <span>{t("p2.ui.draw_farm_boundary_1gc13dr")}</span>
                 </button>
               )}
 
@@ -1889,20 +1892,20 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                     type="button"
                     onClick={handleUndo}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer border border-slate-700 flex items-center gap-1 text-xs font-semibold"
-                    title="Undo last point"
+                    title={t("p2.ui.undo_last_point_k26lob")}
                   >
                     <Undo2 className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="hidden md:inline">Undo</span>
+                    <span className="hidden md:inline">{t("p2.ui.undo_5f62z")}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowClearConfirm(true)}
                     className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 transition-all cursor-pointer border border-slate-700 flex items-center gap-1 text-xs font-semibold"
-                    title="Clear boundary"
+                    title={t("p2.ui.clear_boundary_xd1qbo")}
                   >
                     <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                    <span className="hidden md:inline">Clear</span>
+                    <span className="hidden md:inline">{t("p2.ui.clear_4e4oee")}</span>
                   </button>
 
                   {/* Toggle Edit/Add points */}
@@ -1914,10 +1917,10 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                         ? "bg-emerald-500 text-slate-950 border-emerald-400 font-bold"
                         : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
                     }`}
-                    title={isDrawingActive ? "Done adding points" : "Add more points"}
+                    title={isDrawingActive ? t("p2.ui.done_adding_points_396kjv") : t("p2.ui.add_more_points_3qf6dk")}
                   >
                     <Edit3 className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">{isDrawingActive ? "Done Adding" : "Edit / Add"}</span>
+                    <span className="hidden md:inline">{isDrawingActive ? t("p2.ui.done_adding_vdic9k") : t("p2.ui.edit_add_18vbl5t")}</span>
                   </button>
                 </>
               )}
@@ -1938,7 +1941,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 }`}
               >
                 <Check className="w-4 h-4" />
-                <span>Confirm & Save</span>
+                <span>{t("p2.ui.confirm_save_1uyhwv2")}</span>
               </button>
             </div>
           </div>
@@ -1960,9 +1963,9 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               </div>
 
               <div className="space-y-1">
-                <h3 className="font-black text-base text-white">Clear Farm Boundary?</h3>
+                <h3 className="font-black text-base text-white">{t("p2.ui.clear_farm_boundary_fp17t1")}</h3>
                 <p className="text-xs text-slate-300">
-                  This will remove all {vertices.length} points and allow you to start fresh.
+                  {t("p2.survey.clear_body", { n: vertices.length })}
                 </p>
               </div>
 
@@ -1972,14 +1975,14 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   onClick={() => setShowClearConfirm(false)}
                   className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800 border border-slate-700 cursor-pointer"
                 >
-                  Cancel
+                  {t("p2.ui.cancel_1sz100x")}
                 </button>
                 <button
                   type="button"
                   onClick={handleClear}
                   className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-400 text-white cursor-pointer border-0"
                 >
-                  Yes, Clear
+                  {t("p2.ui.yes_clear_y4mcbd")}
                 </button>
               </div>
             </motion.div>
@@ -2003,8 +2006,8 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                     <Check className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-white">Confirm Farm Boundary</h3>
-                    <p className="text-xs text-slate-400">Review surveyed measurements</p>
+                    <h3 className="font-black text-base text-white">{t("p2.ui.confirm_farm_boundary_193mzsd")}</h3>
+                    <p className="text-xs text-slate-400">{t("p2.ui.review_surveyed_measurements_h9nzh9")}</p>
                   </div>
                 </div>
                 <button
@@ -2019,17 +2022,17 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               {/* Summary Stats Box */}
               <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Farm Name:</span>
+                  <span className="text-slate-400 font-medium">{t("p2.ui.farm_name_4c9rzg")}</span>
                   <span className="font-bold text-white">{plotName}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Total Area:</span>
+                  <span className="text-slate-400 font-medium">{t("p2.ui.total_area_5fpoei")}</span>
                   <span className="font-mono font-black text-emerald-400 text-sm">
                     {areaAcres !== null ? `${areaAcres.toFixed(2)} acres (${acresToHectares(areaAcres).toFixed(2)} ha)` : "--"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Perimeter:</span>
+                  <span className="text-slate-400 font-medium">{t("p2.ui.perimeter_17h1738")}</span>
                   <span className="font-mono font-bold text-white">
                     {segmentStats.perimeterM > 1000
                       ? `${(segmentStats.perimeterM / 1000).toFixed(2)} km`
@@ -2037,9 +2040,9 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Boundary Points:</span>
+                  <span className="text-slate-400 font-medium">{t("p2.ui.boundary_points_16mo3wo")}</span>
                   <span className="font-mono font-semibold text-slate-300">
-                    {vertices.length} vertices
+                    {vertices.length} {t("p2.ui.vertices_162d14w")}
                   </span>
                 </div>
               </div>
@@ -2050,14 +2053,14 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   onClick={() => setShowConfirmModal(false)}
                   className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800 border border-slate-700 cursor-pointer"
                 >
-                  Back to Map
+                  {t("p2.ui.back_to_map_n2aq5l")}
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirm}
                   className="flex-1 py-2.5 rounded-xl text-xs font-black bg-emerald-500 hover:bg-emerald-400 text-slate-950 cursor-pointer border-0 shadow-lg shadow-emerald-500/20"
                 >
-                  ✓ Confirm & Save Boundary
+                  {t("p2.ui.confirm_save_boundary_ycx4xr")}
                 </button>
               </div>
             </motion.div>
@@ -2081,8 +2084,8 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                     <Key className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-white">Google Maps API Setup</h3>
-                    <p className="text-xs text-slate-400">Configure key for Google Satellite tiles</p>
+                    <h3 className="font-black text-base text-white">{t("p2.ui.google_maps_api_setup_1a47jbi")}</h3>
+                    <p className="text-xs text-slate-400">{t("p2.ui.configure_key_for_google_satellite_tiles_12b0242")}</p>
                   </div>
                 </div>
                 <button
@@ -2096,11 +2099,11 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  VITE_GOOGLE_MAPS_API_KEY:
+                  {t("p2.ui.vite_google_maps_api_key_e88kc6")}
                 </label>
                 <input
                   type="text"
-                  placeholder="AIzaSy..."
+                  placeholder={t("p2.ui.aizasy_1mfv2mq")}
                   value={tempApiKey}
                   onChange={(e) => setTempApiKey(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none"
@@ -2108,12 +2111,12 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               </div>
 
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[10px] text-slate-400 space-y-1">
-                <p className="font-bold text-slate-300">Map Engine Status:</p>
+                <p className="font-bold text-slate-300">{t("p2.ui.map_engine_status_ax12z9")}</p>
                 {mapsLoadError && (
-                  <p className="text-amber-400 font-semibold">• Notice: {mapsLoadError}</p>
+                  <p className="text-amber-400 font-semibold">{t("p2.survey.notice", { message: mapsLoadError })}</p>
                 )}
-                <p>• If active billing is enabled on Google Cloud, <strong>Maps JavaScript API</strong> provides free monthly loads.</p>
-                <p>• If no key is provided, NutriPalm seamlessly uses the high-resolution keyless satellite engine so your boundary survey continues uninterrupted.</p>
+                <p>{renderRich(t("p2.survey.billing"), { a: <strong>Maps JavaScript API</strong> })}</p>
+                <p>{t("p2.survey.keyless")}</p>
               </div>
 
               <div className="flex items-center justify-between gap-2 pt-2">
@@ -2125,7 +2128,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   }}
                   className="px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800 border border-slate-700 cursor-pointer"
                 >
-                  Use Keyless Satellite
+                  {t("p2.ui.use_keyless_satellite_6czpdf")}
                 </button>
                 <button
                   type="button"
@@ -2137,7 +2140,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                   }}
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-slate-950 cursor-pointer border-0"
                 >
-                  Apply & Load Google Maps
+                  {t("p2.ui.apply_load_google_maps_17tfe1j")}
                 </button>
               </div>
             </motion.div>
@@ -2158,7 +2161,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Info className="w-5 h-5 text-emerald-400" />
-                  <h3 className="font-black text-base text-white">Farmer Boundary Survey Guide</h3>
+                  <h3 className="font-black text-base text-white">{t("p2.ui.farmer_boundary_survey_guide_1bsrwja")}</h3>
                 </div>
                 <button
                   type="button"
@@ -2171,23 +2174,23 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
 
               <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
                 <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <p className="font-bold text-white">1. Find Farm</p>
-                  <p>Search your village/town, choose from live suggestions, or tap <strong>Use My Current Location</strong> to center the satellite map on your plot.</p>
+                  <p className="font-bold text-white">{t("p2.ui.1_find_farm_1nhhsw1")}</p>
+                  <p>{renderRich(t("p2.survey.step1"), { a: <strong>{t("p2.survey.use_loc")}</strong> })}</p>
                 </div>
 
                 <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <p className="font-bold text-white">2. Draw Farm Boundary</p>
-                  <p>Tap <strong>Draw Farm Boundary</strong>, then click each corner around your field perimeter.</p>
+                  <p className="font-bold text-white">{t("p2.ui.2_draw_farm_boundary_15azefp")}</p>
+                  <p>{renderRich(t("p2.survey.step2"), { a: <strong>{t("p2.survey.draw_farm")}</strong> })}</p>
                 </div>
 
                 <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <p className="font-bold text-white">3. Adjust Boundary</p>
-                  <p>Drag any point to align with bunds or fences. Use <strong>Undo</strong> or <strong>Edit / Add</strong> as needed.</p>
+                  <p className="font-bold text-white">{t("p2.ui.3_adjust_boundary_uetl3x")}</p>
+                  <p>{renderRich(t("p2.survey.step3"), { a: <strong>{t("p2.survey.undo")}</strong>, b: <strong>{t("p2.survey.edit_add")}</strong> })}</p>
                 </div>
 
                 <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                  <p className="font-bold text-white">4. Confirm & Save</p>
-                  <p>Review total acreage and perimeter, then tap <strong>Confirm & Save Boundary</strong>.</p>
+                  <p className="font-bold text-white">{t("p2.ui.4_confirm_save_oi1hy")}</p>
+                  <p>{renderRich(t("p2.survey.step4"), { a: <strong>{t("p2.survey.confirm_save")}</strong> })}</p>
                 </div>
               </div>
 
@@ -2196,7 +2199,7 @@ export const GoogleMapBoundarySurveyor: React.FC<GoogleMapBoundarySurveyorProps>
                 onClick={() => setShowHelpGuide(false)}
                 className="w-full py-2.5 bg-emerald-500 text-slate-950 font-extrabold text-xs rounded-xl cursor-pointer hover:bg-emerald-400 transition-all border-0"
               >
-                Got it
+                {t("p2.ui.got_it_1v2z292")}
               </button>
             </motion.div>
           </div>

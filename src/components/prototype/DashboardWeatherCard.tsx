@@ -1,98 +1,70 @@
 import React from "react";
-import { Sun } from "lucide-react";
+import { CloudSun } from "lucide-react";
 import type { Plot } from "../../data/plots";
-import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
+import { usePlotWeather } from "../../hooks/usePlotWeather";
+import { weatherConditionKey } from "../../lib/weatherText";
+import { useTranslation } from "../../translation/useTranslation";
 
 interface DashboardWeatherCardProps {
   /** A saved plot with a mapped boundary; weather is fetched for its centroid. */
   plot: Plot | undefined;
+  onOpen?: () => void;
 }
 
-const dayLabel = (isoDate: string) => {
-  const d = new Date(`${isoDate}T00:00:00`);
-  return isNaN(d.getTime()) ? isoDate : d.toLocaleDateString(undefined, { weekday: "short" });
-};
-
 /**
- * Weather for one of the user's real plots (Open-Meteo, via the plot centroid).
+ * Compact weather for one of the user's real plots (Open-Meteo, via the plot centroid).
  * Every value is fetched; when nothing is available the card says so.
  */
-export const DashboardWeatherCard: React.FC<DashboardWeatherCardProps> = ({ plot }) => {
-  const env = useEnvironmentalData(plot);
-  const w = env.weather;
+export const DashboardWeatherCard: React.FC<DashboardWeatherCardProps> = ({ plot, onOpen }) => {
+  const { t, locale } = useTranslation();
+  const wx = usePlotWeather(plot);
+  const w = wx.weather;
+  const na = t("p2.common.not_available");
 
   return (
-    <div className="bg-gradient-to-tr from-[#1B4D22] to-[#2E7D32] text-white rounded-3xl p-6 shadow-md relative overflow-hidden text-left">
-      <div className="absolute top-0 right-0 w-36 h-36 bg-white/5 rounded-full filter blur-2xl pointer-events-none" />
-      <div className="relative z-10 space-y-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest">
-              Weather at your plot
-            </p>
-            <h4 className="text-lg font-extrabold mt-1">{plot ? plot.name : "No mapped plot"}</h4>
-          </div>
-          <Sun className="w-10 h-10 text-amber-300" />
-        </div>
-
-        {!plot || !env.centroid ? (
-          <p className="text-xs font-semibold text-emerald-100">
-            Map a plot boundary to see the weather at its location.
-          </p>
-        ) : env.weatherLoading && !w ? (
-          <p className="text-xs font-semibold text-emerald-100">Loading weather…</p>
-        ) : env.weatherError && !w ? (
-          <p role="alert" className="text-xs font-semibold text-amber-200">
-            Weather is unavailable right now: {env.weatherError}
-          </p>
-        ) : w ? (
-          <>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black tracking-tight">{Math.round(w.current.temperatureC)}°C</span>
-              <span className="text-xs text-emerald-200">{w.current.conditionText}</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/10 text-center text-xs">
-              <div>
-                <p className="text-[9px] text-emerald-200 uppercase font-bold tracking-wider">Humidity</p>
-                <p className="font-extrabold mt-0.5">
-                  {w.current.humidityPercent !== null ? `${Math.round(w.current.humidityPercent)}%` : "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[9px] text-emerald-200 uppercase font-bold tracking-wider">Wind</p>
-                <p className="font-extrabold mt-0.5">
-                  {w.current.windSpeedKmh !== null ? `${Math.round(w.current.windSpeedKmh)} km/h` : "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[9px] text-emerald-200 uppercase font-bold tracking-wider">Rain now</p>
-                <p className="font-extrabold mt-0.5">
-                  {w.current.precipitationMm !== null ? `${w.current.precipitationMm} mm` : "—"}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2.5 pt-2">
-              <p className="text-[9px] font-bold text-emerald-200 uppercase tracking-widest mb-2">Forecast</p>
-              {w.forecast.slice(0, 5).map((fc) => (
-                <div key={fc.date} className="flex justify-between items-center text-xs">
-                  <span className="w-16 text-emerald-100 font-semibold">{dayLabel(fc.date)}</span>
-                  <span className="text-emerald-100">{fc.conditionText}</span>
-                  <span className="w-24 text-right font-extrabold">
-                    {Math.round(fc.minTempC)}–{Math.round(fc.maxTempC)}°
-                    {fc.precipitationProbabilityPercent !== null ? ` · ${fc.precipitationProbabilityPercent}%` : ""}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-[9px] text-emerald-200">
-              Source: {w.source}, observed {new Date(w.current.observationTime).toLocaleString()}
-            </p>
-          </>
-        ) : null}
+    <div className="space-y-3 text-left">
+      <div className="flex items-center gap-2">
+        <CloudSun className="h-5 w-5 text-primary" aria-hidden="true" />
+        <h3 className="text-base font-extrabold text-gray-900">{t("p2.dash.weather_for")}</h3>
       </div>
+
+      {!plot || !wx.centroid ? (
+        <p className="text-sm font-medium text-gray-700">{t("p2.weather.no_boundary")}</p>
+      ) : wx.loading && !w ? (
+        <p role="status" className="text-sm font-medium text-gray-600">{t("p2.common.loading")}</p>
+      ) : wx.error && !w ? (
+        <p role="alert" className="text-sm font-semibold text-rose-800">{t("p2.weather.unavailable")}</p>
+      ) : w ? (
+        <>
+          <p className="text-3xl font-black text-gray-900">
+            {Math.round(w.current.temperatureC)}°C{" "}
+            <span className="text-base font-semibold text-gray-600">{t(weatherConditionKey(w.current.conditionCode))}</span>
+          </p>
+          <dl className="grid grid-cols-3 gap-2 text-sm">
+            <div>
+              <dt className="font-semibold text-gray-600">{t("p2.weather.humidity")}</dt>
+              <dd className="font-extrabold text-gray-900">{w.current.humidityPercent !== null ? `${Math.round(w.current.humidityPercent)}%` : na}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-gray-600">{t("p2.weather.wind")}</dt>
+              <dd className="font-extrabold text-gray-900">{w.current.windSpeedKmh !== null ? `${Math.round(w.current.windSpeedKmh)} km/h` : na}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-gray-600">{t("p2.weather.rain_now")}</dt>
+              <dd className="font-extrabold text-gray-900">{w.current.precipitationMm !== null ? `${w.current.precipitationMm} mm` : na}</dd>
+            </div>
+          </dl>
+          <p className="text-sm font-medium text-gray-500">
+            {t("p2.weather.observed", { source: w.source, time: new Date(w.current.observationTime).toLocaleString(locale) })}
+          </p>
+        </>
+      ) : null}
+
+      {onOpen && (
+        <button type="button" onClick={onOpen} className="min-h-11 cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50">
+          {t("p2.weather.more")}
+        </button>
+      )}
     </div>
   );
 };

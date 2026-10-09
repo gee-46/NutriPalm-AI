@@ -166,7 +166,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
         if (data?.session) {
           onAuthSuccess();
         } else {
-          setSuccessMessage("Registration successful! Please check your email to verify your account.");
+          setSuccessMessage(t("p2.auth.registered"));
           setAuthMode("login");
         }
       } else if (authMode === "forgot") {
@@ -174,14 +174,14 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        setSuccessMessage("Password reset email sent! Check your inbox.");
+        setSuccessMessage(t("p2.auth.reset_sent"));
         setAuthMode("login");
       } else if (authMode === "reset") {
         const { error } = await supabase.auth.updateUser({
           password: password,
         });
         if (error) throw error;
-        setSuccessMessage("Password updated successfully! You can now sign in.");
+        setSuccessMessage(t("p2.auth.password_updated"));
         setAuthMode("login");
       }
     } catch (err: any) {
@@ -453,16 +453,16 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                 </div>
 
                 <h3 className="text-2xl md:text-3xl font-extrabold text-gray-955 tracking-tight leading-tight mb-2">
-                  {authMode === "login" && "Welcome to NutriPalm AI Console"}
-                  {authMode === "signup" && "Create your Agronomist Account"}
-                  {authMode === "forgot" && "Reset your Password"}
-                  {authMode === "reset" && "Setup New Password"}
+                  {authMode === "login" && t("p2.ui.welcome_to_nutripalm_ai_console_181axex")}
+                  {authMode === "signup" && t("p2.ui.create_your_agronomist_account_1xwupq6")}
+                  {authMode === "forgot" && t("p2.ui.reset_your_password_1c6wr5c")}
+                  {authMode === "reset" && t("p2.ui.setup_new_password_140df9h")}
                 </h3>
                 <p className="text-xs text-gray-600 leading-relaxed mb-6">
-                  {authMode === "login" && "Enter your credentials to access the digital agronomy dashboard."}
-                  {authMode === "signup" && "Register a new profile to start managing farm plots and twins."}
-                  {authMode === "forgot" && "Provide your email address to receive a secure password recovery link."}
-                  {authMode === "reset" && "Enter a new secure password for your console account."}
+                  {authMode === "login" && t("p2.ui.enter_your_credentials_to_access_the_digital_7q4kka")}
+                  {authMode === "signup" && t("p2.ui.register_a_new_profile_to_start_managing_far_10dc2v1")}
+                  {authMode === "forgot" && t("p2.ui.provide_your_email_address_to_receive_a_secu_o09rrj")}
+                  {authMode === "reset" && t("p2.ui.enter_a_new_secure_password_for_your_console_2gd75i")}
                 </p>
 
                 {/* Tab Switcher for Sign In / Sign Up */}
@@ -545,7 +545,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                   {authMode !== "forgot" && (
                     <div className="space-y-1.5">
                       <label htmlFor="auth-password" className="block text-[10px] font-black text-gray-700 uppercase tracking-wider">
-                        {authMode === "reset" ? "New Password" : "Password"}
+                        {authMode === "reset" ? t("p2.ui.new_password_1yrcf6q") : t("p2.ui.password_p1lsci")}
                       </label>
                       <input
                         type="password"
@@ -614,10 +614,10 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                                                                         </>
                     ) : (
                       <>
-                        {authMode === "login" && "Launch Console"}
-                        {authMode === "signup" && "Create Account"}
-                        {authMode === "forgot" && "Send Reset Link"}
-                        {authMode === "reset" && "Update Password"}
+                        {authMode === "login" && t("p2.ui.launch_console_1c2depd")}
+                        {authMode === "signup" && t("p2.ui.create_account_112k72o")}
+                        {authMode === "forgot" && t("p2.ui.send_reset_link_14v0o3g")}
+                        {authMode === "reset" && t("p2.ui.update_password_15bh4q3")}
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </>
                     )}
