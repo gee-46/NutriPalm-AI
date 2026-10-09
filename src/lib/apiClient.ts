@@ -25,6 +25,11 @@ async function getHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+/** Authenticated request to the FastAPI backend (same token handling as every other call in this file). */
+export async function authenticatedFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = await getHeaders();
+  return fetch(`${API_BASE_URL}${path}`, { ...init, headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
+}
 
 export interface RecommendationRequestPayload {
   plot_id: string;
