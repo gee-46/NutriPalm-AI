@@ -144,3 +144,14 @@ npm run e2e:stack-selftest      # emulator vs the real supabase-js client
 E2E_PYTHON=/path/to/python npm run e2e   # browser E2E (needs internet for tiles/geocoding/weather, and Edge or Chrome)
 npm run verify:remote           # BLOCKED: real scratch Supabase project, see docs/SCRATCH_SUPABASE_VERIFICATION.md
 ```
+
+
+---
+
+## Erratum (added during Phase 2)
+
+Section 3 reported the Digital Twin as free of fabricated values. Phase 2 inspection found hard-coded figures that this
+audit missed (static "Foliar Chlorophyll 78 %", "Model Accuracy 98 %", "Reliability HIGH", a fixed growth-stage stepper with
+"Expected Harvest Oct 2026", two invented notifications and a guided tour with unmeasured claims). They were removed on
+`phase2/farmer-first-frontend`; see `docs/PHASE2_FRONTEND_STATUS.md` section 4. Treat the Phase 1 "no fabricated data"
+statement as **not fully accurate for the Digital Twin screen on the Phase 1 branch**.
