@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import digital_twins, geospatial, recommendations, soil_reports
+from app.routers import digital_twins, geospatial, recommendations, soil_reports, crop_suitability
 
 logging.basicConfig(level=logging.INFO)
 
@@ -42,6 +42,7 @@ app.include_router(recommendations.router)
 app.include_router(soil_reports.router)
 app.include_router(geospatial.router)
 app.include_router(digital_twins.router)
+app.include_router(crop_suitability.router)
 
 
 

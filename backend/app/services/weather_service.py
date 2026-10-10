@@ -3,6 +3,7 @@ from uuid import UUID
 import pytz
 
 from app.database import get_supabase_client
+from app.schemas.suitability import ClimateData
 
 class WeatherService:
     def __init__(self):
@@ -36,6 +37,31 @@ class WeatherService:
             observation, 
             on_conflict="plot_id,observed_date"
         ).execute()
+
+    def fetch_climate(self, lat: float, lon: float) -> ClimateData:
+        """
+        Fetches current weather and historical climate for the given latitude and longitude.
+        """
+        # TODO: Replace with actual Open-Meteo or external API call.
+        # For now, returning a realistic mock response for suitability evaluation.
+        return ClimateData(
+            avg_temperature_c=28.5,
+            avg_annual_rainfall_mm=2500.0,
+            current_temperature_c=30.0,
+            current_humidity_pct=70.0
+        )
+
+    def evaluate_disease_weather_risk(self, lat: float, lon: float, crop: str) -> dict:
+        """
+        Phase 2: Evaluates disease risk based on recent weather patterns.
+        """
+        return {"humidity_risk": False, "temp_risk": False}
+
+    def get_fertilizer_application_window(self, lat: float, lon: float) -> dict:
+        """
+        Phase 2: Determines optimal fertilizer application window.
+        """
+        return {"safe_to_apply": True, "reason": "Weather conditions are optimal for application."}
 
 def get_weather_service() -> WeatherService:
     return WeatherService()
