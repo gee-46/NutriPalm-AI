@@ -28,6 +28,10 @@ class RecommendationNotFound(NutriPalmError):
     """The referenced recommendation_id does not exist."""
 
 
+class DiseaseAssessmentNotFound(NutriPalmError):
+    """The referenced disease assessment id does not exist."""
+
+
 class NotAuthorized(NutriPalmError):
     """The authenticated user does not own the requested resource."""
 
