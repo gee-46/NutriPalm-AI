@@ -197,6 +197,13 @@ def test_plot_recorded_with_another_crop_cannot_be_assessed_as_that_crop(api):
     assert r.status_code == 422 and "arecanut" in r.json()["detail"]
 
 
+def test_plot_recorded_with_an_unsupported_crop_cannot_be_assessed_as_a_supported_one(api):
+    api.plots.plots["plot-a-oil"] = PlotContext("plot-a-oil", A, "Oil Palm", None, None)
+    r = api.client.post("/api/disease/assess", json={**BUD_ROT, "plot_id": "plot-a-oil"}, headers=H())
+    assert r.status_code == 422 and "Oil Palm" in r.json()["detail"]
+    assert api.store.rows == {}
+
+
 def test_plot_with_no_recorded_crop_can_be_assessed_for_a_supported_crop(api):
     r = api.client.post("/api/disease/assess", json={**BUD_ROT, "plot_id": "plot-a-unknown-crop"}, headers=H())
     assert r.status_code == 201

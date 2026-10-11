@@ -193,7 +193,7 @@ export const DiseaseResult: React.FC<{ result: DiseaseAssessment; vocab: Disease
         <RecommendationCard
           kind="disease"
           title={t("p2.common.limitations")}
-          limitations={result.expert_review_status === "pending" ? [t("p2.dis.expert_pending"), ...result.limitations] : result.limitations}
+          limitations={result.expert_review_status === "pending" ? [t("p2.dis.expert_pending"), ...result.limitations.filter((l) => !/plant pathologist/i.test(l))] : result.limitations}
           missing={result.missing_inputs}
         />
       )}

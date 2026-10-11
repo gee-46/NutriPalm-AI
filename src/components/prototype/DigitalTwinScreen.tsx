@@ -139,7 +139,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
   const { prediction, isLoading: isPredictionLoading } = useTwinPrediction(activePlotId);
   const historyDays = activeTimeframe === "7d" ? 7 : activeTimeframe === "30d" ? 30 : 90;
   const { history: twinHistory } = useDigitalTwinHistory(activePlotId, historyDays as 7 | 30 | 90);
-  const { liveData, isLoading: isLiveLoading, lastUpdated, secondsUntilRefresh, error: liveError } = useLiveTwin(activePlotId);
+  const { liveData, isLoading: isLiveLoading, lastUpdated, secondsUntilRefresh, error: liveError } = useLiveTwin(activePlotId, activePlot?.boundaryMapped === true);
   
   const activeSnapshot = snapshots[simMode];
   const envData = useEnvironmentalData(activePlot);

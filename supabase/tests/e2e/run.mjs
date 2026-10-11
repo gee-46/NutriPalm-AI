@@ -74,7 +74,7 @@ const dbGet = async (table, q = "select=*") => (await fetch(`${stack.url}/rest/v
 // Known, accepted console noise (documented in docs/PHASE1_AUDIT.md)
 const IGNORE_CONSOLE = [
   // Chrome logs every non-2xx response as a console error. Only the deliberate ones are accepted, matched by URL:
-  /status of 404 \(Not Found\) @ http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports)/, // B probing A's ids
+  /status of 404 \(Not Found\) @ http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports|disease)/, // B probing A's ids
   /status of 401 \(Unauthorized\) @ http:\/\/127\.0\.0\.1:8000\/api\/recommendations/, // tokenless / forged call
   /status of (401|403|404|406|409) .* @ http:\/\/127\.0\.0\.1:54321\/rest\/v1\//, // deliberate REST attacks
   // framework-level: framer-motion pathLength animation on the boot splash SVGs (static `d`), not app logic
@@ -271,16 +271,65 @@ try {
     await page.waitForTimeout(2500);
   };
 
-  // ---- disease intelligence: honest unavailable state, no invented result
+  // ---- disease intelligence: real backend assessment, source-attributed, never a diagnosis
+  // A coconut plot owned by A (inserted with the service role, as plots are normally created through the survey flow).
+  const cocoPlot = (await dbPost(stack, "plots", { owner_id: uidA, name: "Coconut Garden", crop: "Coconut", area: 1.2, area_unit: "acres", state: "Karnataka", district: "Udupi" }))[0];
+  check("P2-disease", "test coconut plot created for A", !!cocoPlot?.id, JSON.stringify(cocoPlot));
+  await page.reload({ waitUntil: "networkidle" });
+  await waitForConsole(page);
   await goto(page, "Disease Intelligence");
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(2500);
   let p2t = await mainText();
   await page.screenshot({ path: path.join(shots, "P2-01-disease.png"), fullPage: true });
-  check("P2-disease", "unavailable state is shown (the backend has no disease service)", /Disease assessment is not available yet/.test(p2t), p2t.slice(0, 300));
-  check("P2-disease", "no disease name / risk result is displayed", !/Possible disease|Low risk|Moderate risk|High risk/.test(p2t));
-  check("P2-disease", "submit is disabled and no request is made to a disease endpoint", (await page.getByRole("button", { name: "Check disease risk" }).isDisabled()) && noPost(/\/api\/disease/));
+  check("P2-disease", "the service is available and the symptom list is loaded from the backend", !/Disease assessment is not available yet/.test(p2t) && (await page.locator("main input[type=checkbox]").count()) > 20, p2t.slice(0, 200));
   check("P2-disease", "only arecanut and coconut are offered", (await page.locator("#disease-crop option").allInnerTexts()).filter((x) => !/Choose/.test(x)).join("|") === "Arecanut (ಅಡಿಕೆ)|Coconut (ತೆಂಗು)");
-  check("P2-disease", "every input has a label and photos are not pretended", (await page.locator("main label").count()) >= 5 && /Photos cannot be uploaded yet/.test(p2t));
+  check("P2-disease", "every input has a label and photos are not pretended", (await page.locator("main label").count()) >= 10 && /Photos cannot be uploaded yet/.test(p2t));
+  await page.getByRole("button", { name: "Check disease risk" }).click();
+  check("P2-disease", "submitting with nothing chosen is refused with a message and no request", /Choose a plot first/.test(await mainText()) && noPost(/\/api\/disease\/assess/));
+  await pickPlot("#disease-plot", "Coconut Garden");
+  await page.getByRole("button", { name: "Check disease risk" }).click();
+  check("P2-disease", "a plot without symptoms is refused client-side", /Choose at least one symptom/.test(await mainText()) && noPost(/\/api\/disease\/assess/));
+  await page.getByLabel("Spear (spindle) leaf withering or drying").check();
+  await page.getByLabel("Spindle comes out easily when pulled").check();
+  await page.locator("#cond-high_rainfall_area").selectOption("yes");
+  const disPost = page.waitForResponse((r) => /\/api\/disease\/assess$/.test(r.url()) && r.request().method() === "POST", { timeout: 30000 });
+  await page.getByRole("button", { name: "Check disease risk" }).click();
+  const disResp = await disPost;
+  const disBody = JSON.parse(disResp.request().postData() || "{}");
+  check("P2-disease", "browser called POST /api/disease/assess with the user's bearer token (201)", disResp.status() === 201 && /^Bearer ey/.test(disResp.request().headers()["authorization"] || ""), disResp.status());
+  check("P2-disease", "request sends symptom codes, plot and crop - and no owner/user/region fields", disBody.plot_id === cocoPlot.id && disBody.crop === "coconut" && disBody.symptom_codes?.length === 2 && !("owner_id" in disBody) && !("user_id" in disBody) && !("state" in disBody), JSON.stringify(disBody));
+  await page.waitForTimeout(1500);
+  p2t = await mainText();
+  await page.screenshot({ path: path.join(shots, "P2-01b-disease-result.png"), fullPage: true });
+  check("P2-disease", "result is labelled a screening, not a diagnosis, and the disease is only 'possible'", /Screening result — not a diagnosis/.test(p2t) && /Possible disease — not confirmed/.test(p2t) && /Bud rot of coconut/.test(p2t), p2t.slice(0, 300));
+  check("P2-disease", "risk category is shown with words (High risk), with the cited ICAR-CPCRI source linked over https", /High risk/.test(p2t) && (await page.locator("main a[href^='https://epubs.icar.org.in']").count()) > 0);
+  check("P2-disease", "chemical guidance says NOT label-verified / information only - no dose, rate or product instruction is invented", /NOT label-verified/.test(p2t) && /not a dose/i.test(p2t) && /qualified agricultural officer/.test(p2t) && !/apply \d|spray \d+ ?(ml|g|kg)/i.test(p2t));
+  check("P2-disease", "management is grouped by the decision hierarchy", /Watch and confirm/.test(p2t) && /Garden cleanliness/.test(p2t) && /Biological methods/.test(p2t));
+  const disRows = await dbGet("disease_assessments", "select=*");
+  check("P2-disease", "assessment saved for A with the token's owner id, plot, risk, versions", disRows.length === 1 && disRows[0].owner_id === uidA && disRows[0].plot_id === cocoPlot.id && disRows[0].risk_level === "high" && !!disRows[0].kb_version && !!disRows[0].rule_version && disRows[0].top_disease_id === "coconut_bud_rot", JSON.stringify(disRows.map((r) => ({ o: r.owner_id, r: r.risk_level }))));
+  const assessIdA = disRows[0]?.id;
+  await page.reload({ waitUntil: "networkidle" });
+  await waitForConsole(page);
+  await goto(page, "Disease Intelligence");
+  await page.waitForTimeout(1500);
+  await pickPlot("#disease-plot", "Coconut Garden");
+  await page.waitForTimeout(1500);
+  check("P2-disease", "the saved assessment is listed again after a reload and can be reopened", /Earlier checks for this plot/.test(await mainText()) && (await page.getByRole("button", { name: "Open", exact: true }).count()) === 1);
+  await page.getByRole("button", { name: "Open", exact: true }).click();
+  await page.waitForTimeout(1500);
+  check("P2-disease", "reopened result shows the same disease and sources", /Bud rot of coconut/.test(await mainText()));
+  // insufficient evidence: an arecanut symptom on a coconut plot matches nothing
+  await page.reload({ waitUntil: "networkidle" });
+  await waitForConsole(page);
+  await goto(page, "Disease Intelligence");
+  await page.waitForTimeout(1500);
+  await pickPlot("#disease-plot", "Coconut Garden");
+  await page.getByLabel("Water-soaked lesions on nuts").check();
+  await page.getByRole("button", { name: "Check disease risk" }).click();
+  await page.waitForTimeout(2000);
+  p2t = await mainText();
+  check("P2-disease", "unmatched symptoms give an insufficient-evidence result (not a guess) with follow-up questions", /Not enough evidence to assess/.test(p2t) && /does not mean your palms are healthy/.test(p2t) && !/Possible disease/.test(p2t) && /Questions that would help/.test(p2t), p2t.slice(0, 300));
+  check("P2-disease", "both assessments are now saved for A only", (await dbGet("disease_assessments", "select=owner_id")).length === 2);
 
   // ---- crop suitability: shows real inputs + missing information, no ranking
   await goto(page, "Crop Suitability");
@@ -317,6 +366,7 @@ try {
   await page.waitForTimeout(2500);
   p2t = await mainText();
   check("P2-history", "lists the saved soil report, fertilizer advice and plots", /Soil report · Plot Alpha/.test(p2t) && /Fertilizer advice · Plot Alpha/.test(p2t) && /Plot added · Plot Beta/.test(p2t), p2t.slice(0, 400));
+  check("P2-history", "saved disease checks are listed with the plot name", /Disease check · Coconut Garden/.test(p2t) && /Risk: High risk/.test(p2t), p2t.slice(0, 300));
   await page.getByRole("button", { name: "Soil reports", exact: true }).click();
   await page.waitForTimeout(500);
   check("P2-history", "the filter really filters", !/Fertilizer advice · Plot/.test(await mainText()));
@@ -473,11 +523,25 @@ try {
     const r4 = await fetch(`${rest}/rest/v1/plots?id=eq.${ids.plot}`, { method: "DELETE", headers: rh }); out.restDelete = { status: r4.status, body: await r4.json() };
     const r5 = await fetch(`${rest}/rest/v1/soil_reports`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: JSON.parse(localStorage.getItem(key)).user.id, plot_id: ids.plot, nitrogen_kg_ha: 1, phosphorus_kg_ha: 1, potassium_kg_ha: 1, organic_carbon_percent: 1, ph: 7 }) }); out.restInsertOnA = { status: r5.status, body: await r5.json() };
     const r6 = await fetch(`${rest}/rest/v1/plots?select=id`, { headers: rh }); out.restOwnPlots = { status: r6.status, body: await r6.json() };
+    out.disAssess = await jget(`${api}/api/disease/assess`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plot_id: ids.cocoPlot, crop: "coconut", symptom_codes: ["spear_leaf_withering"] }) });
+    out.disGet = await jget(`${api}/api/disease/assessments/${ids.assess}`);
+    out.disList = await jget(`${api}/api/disease/assessments`);
+    out.disListA = await jget(`${api}/api/disease/assessments?plot_id=${ids.cocoPlot}`);
+    out.disForgedPlot = await jget(`${api}/api/disease/assess`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plot_id: "' OR 1=1 --", crop: "coconut", symptom_codes: ["spear_leaf_withering"] }) });
+    const r7 = await fetch(`${rest}/rest/v1/disease_assessments?id=eq.${ids.assess}`, { headers: rh }); out.restAssess = { status: r7.status, body: await r7.json() };
+    const r8 = await fetch(`${rest}/rest/v1/disease_assessments`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: JSON.parse(localStorage.getItem(key)).user.id, plot_id: ids.cocoPlot, crop: "coconut", risk_level: "low", request: {}, result: {}, kb_version: "x", rule_version: "y" }) }); out.restAssessInsert = { status: r8.status, body: await r8.json().catch(() => null) };
+    const r9 = await fetch(`${rest}/rest/v1/disease_assessments?id=eq.${ids.assess}`, { method: "DELETE", headers: rh }); out.restAssessDelete = { status: r9.status, body: await r9.json().catch(() => []) };
     return out;
-  }, { api: "http://127.0.0.1:8000", rest: stack.url, ids: { plot: plotA.id, rec: recA.id, soil: soilA.id } });
+  }, { api: "http://127.0.0.1:8000", rest: stack.url, ids: { plot: plotA.id, rec: recA.id, soil: soilA.id, cocoPlot: cocoPlot.id, assess: assessIdA } });
   for (const k of ["twinLive", "twinPred", "ndvi", "cadastral", "rec", "recCreate", "upload"]) {
     check("B-attack", `API ${k}: B's token against A's resource -> 404 with no data`, attacks[k].status === 404 && !JSON.stringify(attacks[k].body).includes(plotA.id.slice(0, 8) + "x"), `${attacks[k].status} ${JSON.stringify(attacks[k].body)}`);
   }
+  check("B-attack", "disease: B assessing A's plot is 404 with no data (and nothing is saved)", attacks.disAssess.status === 404 && !JSON.stringify(attacks.disAssess.body).includes("Karnataka") && !JSON.stringify(attacks.disAssess.body).includes("Udupi"), `${attacks.disAssess.status} ${JSON.stringify(attacks.disAssess.body)}`);
+  check("B-attack", "disease: B reading A's saved assessment by id is 404", attacks.disGet.status === 404 && JSON.stringify(attacks.disGet.body) === JSON.stringify({ detail: "Assessment not found." }), JSON.stringify(attacks.disGet));
+  check("B-attack", "disease: B's history is empty, also when filtered by A's plot id", attacks.disList.status === 200 && attacks.disList.body.length === 0 && attacks.disListA.body.length === 0, JSON.stringify([attacks.disList, attacks.disListA]));
+  check("B-attack", "disease: a forged plot id is 404", attacks.disForgedPlot.status === 404, JSON.stringify(attacks.disForgedPlot));
+  check("B-attack", "disease: REST read of A's assessment returns no rows; insert on A's plot is rejected; delete removes nothing", attacks.restAssess.body.length === 0 && attacks.restAssessInsert.status >= 400 && attacks.restAssessDelete.body.length === 0, JSON.stringify([attacks.restAssess, attacks.restAssessInsert, attacks.restAssessDelete]));
+  check("B-attack", "disease: A's assessments are intact and still only A's after B's attacks", (await dbGet("disease_assessments", "select=owner_id")).length === 2 && (await dbGet("disease_assessments", "select=owner_id")).every((r) => r.owner_id === uidA));
   check("B-attack", "API recommendation list for B is empty", attacks.recList.status === 200 && attacks.recList.body.length === 0, JSON.stringify(attacks.recList));
   check("B-attack", "REST read of A's plot returns no rows", attacks.restPlot.status === 200 && attacks.restPlot.body.length === 0, JSON.stringify(attacks.restPlot));
   check("B-attack", "REST read of A's soil reports returns no rows", attacks.restSoil.body.length === 0);
@@ -496,13 +560,17 @@ try {
   check("console", "no uncaught page errors / unexpected console errors across both sessions", consoleIssues.length === 0, consoleIssues.slice(0, 6).join(" || "));
   const allHttp = [...events.http, ...sb.events.http];
   const expected = (h) =>
-    /^404 (GET|POST) http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports)/.test(h) || // B's attacks on A's ids
+    /^404 (GET|POST) http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports|disease)/.test(h) || // B's attacks on A's ids
     /^401 GET http:\/\/127\.0\.0\.1:8000\/api\/recommendations/.test(h) || // deliberate tokenless / forged calls
     /^(401|403|404|406|409) \S+ http:\/\/127\.0\.0\.1:54321\/rest\/v1\//.test(h) || // deliberate REST attacks and maybeSingle probes
     /^40[0-9] POST http:\/\/127\.0\.0\.1:54321\/rest\/v1\/soil_reports/.test(h);
   const unexpected = allHttp.filter((h) => !expected(h));
   check("console", "no unexpected HTTP errors in the network log (B's deliberate attacks excluded)", unexpected.length === 0, unexpected.slice(0, 6).join(" || "));
   const dupLive = events.requests.filter((r) => /\/twin\/live/.test(r)).length;
+  const recGets = sa.events.requests.filter((r) => /^GET .*\/api\/recommendations$/.test(r)).length;
+  check("console", "no request storm on /api/recommendations (effects must not re-run on every render)", recGets < 40, recGets);
+  const disGets = sa.events.requests.filter((r) => /\/api\/disease\//.test(r)).length;
+  check("console", "no request storm on /api/disease/*", disGets < 60, disGets);
   check("console", "no request storm (live twin polled < 12x during the run)", dupLive < 12, dupLive);
   await sa.browser.close();
   await sb.browser.close();

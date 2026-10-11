@@ -67,7 +67,8 @@ part of the repository.
 | Nutrient and fertilizer recommendation engine | Implemented in the backend for six crops (oil palm, rice, maize, sugarcane, banana, coconut). Reference values are engineering defaults |
 | Digital Twin | Implemented; shows stored/live values and "not available" where data is missing |
 | Analytics | Built only from the account's stored rows |
-| Disease Intelligence, Crop Suitability | **Interfaces only** — see [Phase 2](#5-phase-2-progress) |
+| Disease Intelligence (arecanut, coconut) | Backend rule engine + source-verified knowledge base + UI; **screening only, not a diagnosis; records not expert-reviewed** — see [`docs/DISEASE_INTELLIGENCE.md`](docs/DISEASE_INTELLIGENCE.md) |
+| Crop Suitability | **Interface only** — see [Phase 2](#5-phase-2-progress) |
 | English / Kannada interface | Implemented (Phase 2) |
 
 ## 4. Phase 1 architecture
@@ -97,7 +98,7 @@ Implemented:
   or an empty state when data is missing.
 * **Navigation** — seven groups and thirteen destinations (Home, My Farms, Farm Health, Crop Suitability, Recommendations,
   History, Profile), mobile drawer, keyboard-reachable.
-* **Disease Intelligence** (arecanut, coconut) — input form, risk states and result layout. **Interface only.**
+* **Disease Intelligence** (arecanut, coconut) — symptom form built from the backend vocabulary, risk result with cited ICAR-CPCRI sources, management by decision hierarchy, chemical-verification status, saved history. Backed by `POST /api/disease/assess` (see below).
 * **What Should I Grow? (Crop Suitability)** — shows the plot's real inputs and what is missing, plus a ranked-result layout.
   **Interface only.**
 * **Nutrient & Fertilizer** — backend results displayed as observed / derived / recommendation / predicted values;
@@ -111,16 +112,20 @@ Implemented:
 * **Responsive layouts** — checked in a browser at desktop, 820 px and 390 px widths.
 * Removed from the Digital Twin and app shell: hard-coded figures and sample notifications found during the Phase 2 review.
 
+**Disease Intelligence backend (implemented on this branch, [details](docs/DISEASE_INTELLIGENCE.md)):** a versioned knowledge base of six arecanut/coconut diseases
+built from two ICAR-CPCRI documents (42 quotes machine-verified against the downloaded files), a deterministic rule engine (no ML, no probabilities),
+a separate treatment engine, and saved assessments (migration `012`). **Limits:** records are source-verified but **not reviewed by a plant pathologist**;
+no pesticide label or registration has been checked, so **no chemical dose is ever shown** (institute recommendations appear as "reported, not label-verified" text);
+weather values are accepted but not used because the sources give no numeric thresholds.
+
 **Still required from the backend (not implemented):**
 
 ```text
-POST /api/disease/assess
 POST /api/crop-suitability/assess
 ```
 
-The frontend reads the backend's `/openapi.json` and enables these forms **only if the path is advertised**; until then
-the pages say the service is not available and send nothing. Response contracts (proposed) are in the Phase 2 status doc.
-The frontend never calculates a suitability score, a ranking or a fertilizer dose itself.
+The frontend reads the backend's `/openapi.json` and enables a module **only if its path is advertised**; until then the page says the service is not available and
+sends nothing. The frontend never calculates a suitability score, a ranking or a fertilizer dose itself.
 
 ## 6. Technology stack
 
@@ -253,8 +258,7 @@ Microsoft Edge with Playwright. Set `E2E_PYTHON` (interpreter with the backend d
 ## 16. Current limitations
 
 * **Not production-ready.** No managed-Supabase verification has been completed; the E2E suite uses an emulator.
-* **Disease Intelligence and Crop Suitability are interfaces only.** They need `POST /api/disease/assess` and
-  `POST /api/crop-suitability/assess`; no disease or suitability result has ever been produced by this project.
+* **Crop Suitability is an interface only** (needs `POST /api/crop-suitability/assess`). **Disease Intelligence** covers six diseases from two sources; results are screenings, records are not expert-reviewed, and no pesticide label has been verified.
 * **Nutrient advice:** arecanut is not in the backend crop table; crop reference values are engineering defaults, **not
   agronomist-validated**; the API does not return fertilizer quantity per palm, application method or timing (the UI lists these
   as not provided). No prices, dosages or treatments are invented by the frontend.
@@ -282,7 +286,7 @@ Microsoft Edge with Playwright. Set `E2E_PYTHON` (interpreter with the backend d
 |---|---|
 | Phase 1: auth, farms/plots, GPS survey, OCR, recommendations, twin, analytics, hardening | built; managed-Supabase verification pending |
 | Phase 2 frontend: Kannada, farmer-first UI, new screens | built (this branch) |
-| Backend disease assessment (arecanut, coconut) with evidence and sources | planned |
+| Backend disease assessment (arecanut, coconut) with evidence and sources | built (6 diseases, 2 sources); expert review, more sources and label verification pending |
 | Backend crop suitability with ranked, evidence-backed results | planned |
 | Arecanut nutrient rules; per-plant dose, method and timing; agronomist-validated reference values | planned |
 | Weather-based advisory rules | planned |

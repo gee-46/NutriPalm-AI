@@ -72,10 +72,11 @@ class DiseaseService:
         ctx = self.plots.get_plot_context(req.plot_id)
         if ctx.owner_id != owner_id:
             raise PlotNotFound(f"Plot '{req.plot_id}' was not found.")
-        if ctx.crop:
+        if ctx.crop and ctx.crop.strip():
+            # A plot recorded with a crop can only be assessed as that crop (an oil palm plot is not a coconut plot).
             plot_crop = normalize_crop(ctx.crop, vocab)
-            if plot_crop is not None and plot_crop is not crop:
-                raise ValidationFailed(f"This plot is recorded as {plot_crop.value}; it cannot be assessed as {crop.value}.")
+            if plot_crop is not crop:
+                raise ValidationFailed(f"This plot is recorded as '{ctx.crop.strip()}'; it cannot be assessed as {crop.value}.")
 
         sym = normalize_symptoms(req.symptom_codes, req.symptoms, vocab)
         if sym.unknown_codes:
