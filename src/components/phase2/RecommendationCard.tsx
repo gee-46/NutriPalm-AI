@@ -34,6 +34,8 @@ export interface RecommendationCardProps {
   missing?: string[];
   date?: string;
   actions?: Array<{ label: string; onClick: () => void }>;
+  /** Extra module-specific blocks (e.g. grouped management, chemical status) rendered inside the same card. */
+  children?: React.ReactNode;
 }
 
 const ICONS: Record<RecommendationKind, React.ElementType> = {
@@ -105,6 +107,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = (p) => {
       {has(p.when) && <Section heading={t("p2.rec.when")}><Bullets items={p.when!} /></Section>}
       {has(p.why) && <Section heading={t("p2.rec.why")}><Bullets items={p.why!} /></Section>}
 
+      {(p.evidence !== undefined || p.source !== undefined) && (
       <Section heading={t("p2.rec.evidence")}>
         {has(p.evidence) ? (
           <ul className="space-y-1.5 text-sm font-medium leading-relaxed text-gray-700">
@@ -123,6 +126,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = (p) => {
           </p>
         )}
       </Section>
+      )}
 
       {has(p.limitations) && (
         <Section heading={t("p2.common.limitations")}>
@@ -134,6 +138,8 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = (p) => {
           <Bullets items={p.missing!} />
         </Section>
       )}
+
+      {p.children}
 
       {has(p.actions) && (
         <footer className="flex flex-wrap gap-3 pt-1">

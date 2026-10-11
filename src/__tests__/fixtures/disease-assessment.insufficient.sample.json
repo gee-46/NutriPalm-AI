@@ -1,0 +1,44 @@
+{
+  "assessed_at": "2026-01-01T00:00:00+00:00",
+  "assessment_id": "00000000-0000-0000-0000-000000000001",
+  "candidates": [],
+  "crop": "coconut",
+  "disclaimer": "This is a screening result from a rule-based tool, not a diagnosis. A high risk level means your observations match what the cited sources describe; it does not prove the disease is present. Have the palm checked by a qualified agricultural officer or your local Krishi Vigyan Kendra (KVK) before taking action.",
+  "expert_review_status": "pending",
+  "follow_up_questions": [
+    "Which symptoms do you see on the leaves, crown, trunk, nuts or roots?"
+  ],
+  "inputs_not_used": [],
+  "inputs_used": [
+    "Crop: coconut",
+    "Plot state: Karnataka"
+  ],
+  "kb_version": "0.1.0",
+  "limitations": [
+    "Disease records are screened only against source-verified evidence; they have not been reviewed by a plant pathologist.",
+    "This is a screening result from a rule-based tool, not a diagnosis. A high risk level means your observations match what the cited sources describe; it does not prove the disease is present. Have the palm checked by a qualified agricultural officer or your local Krishi Vigyan Kendra (KVK) before taking action."
+  ],
+  "missing_inputs": [
+    "Crop stage.",
+    "At least one observed symptom."
+  ],
+  "next_steps": [
+    "Have the palm examined by a qualified agricultural officer or your local KVK to confirm or rule out the disease.",
+    "Add the missing observations above and assess again, or seek an expert opinion if the problem continues."
+  ],
+  "observed": {
+    "affected_parts": [],
+    "crop_stage": null,
+    "duration_days": null,
+    "field_conditions": {},
+    "kind": "farmer_reported",
+    "observation_date": null,
+    "plot_state": "Karnataka",
+    "severity": null,
+    "symptoms": []
+  },
+  "plot_id": "p1",
+  "risk_explanation": "No symptom was provided (or none could be matched to a known symptom), so there is nothing to assess.",
+  "risk_level": "insufficient_evidence",
+  "rule_version": "1.0.0"
+}

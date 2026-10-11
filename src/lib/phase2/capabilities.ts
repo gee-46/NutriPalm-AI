@@ -2,12 +2,16 @@ import { authenticatedFetch, getApiBaseUrl } from "../apiClient";
 import {
   CROP_SUITABILITY_PATH,
   DISEASE_ASSESS_PATH,
+  DISEASE_HISTORY_PATH,
+  DISEASE_VOCAB_PATH,
   type CropSuitabilityAssessment,
   type CropSuitabilityRequest,
   type DiseaseAssessment,
+  type DiseaseAssessmentRecord,
   type DiseaseAssessmentRequest,
+  type DiseaseVocabulary,
 } from "./contracts";
-import { parseCropSuitability, parseDiseaseAssessment } from "./validate";
+import { ContractError, parseCropSuitability, parseDiseaseAssessment, parseDiseaseAssessmentRecord, parseDiseaseVocabulary } from "./validate";
 
 export type ModuleAvailability = "checking" | "available" | "unavailable";
 
@@ -68,4 +72,33 @@ export async function assessDisease(req: DiseaseAssessmentRequest): Promise<Dise
 export async function assessCropSuitability(req: CropSuitabilityRequest): Promise<CropSuitabilityAssessment> {
   if ((await probeBackendCapabilities()).cropSuitability !== "available") throw new ModuleUnavailableError("crop suitability");
   return postJson(CROP_SUITABILITY_PATH, req, parseCropSuitability);
+}
+
+async function getJson<T>(path: string, parse: (raw: unknown) => T): Promise<T> {
+  const res = await authenticatedFetch(path, { method: "GET" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(typeof err?.detail === "string" ? err.detail : `Server error: ${res.status}`);
+  }
+  return parse(await res.json());
+}
+
+/** Symptoms, stages and field conditions the disease engine understands (so the form is data-driven). */
+export async function fetchDiseaseVocabulary(): Promise<DiseaseVocabulary> {
+  if ((await probeBackendCapabilities()).disease !== "available") throw new ModuleUnavailableError("disease assessment");
+  return getJson(DISEASE_VOCAB_PATH, parseDiseaseVocabulary);
+}
+
+export async function listDiseaseAssessments(plotId?: string): Promise<DiseaseAssessmentRecord[]> {
+  if ((await probeBackendCapabilities()).disease !== "available") throw new ModuleUnavailableError("disease assessment");
+  const q = plotId ? `?plot_id=${encodeURIComponent(plotId)}` : "";
+  return getJson(`${DISEASE_HISTORY_PATH}${q}`, (raw) => {
+    if (!Array.isArray(raw)) throw new ContractError("Invalid response: expected a list.");
+    return raw.map(parseDiseaseAssessmentRecord);
+  });
+}
+
+export async function getDiseaseAssessment(id: string): Promise<DiseaseAssessmentRecord> {
+  if ((await probeBackendCapabilities()).disease !== "available") throw new ModuleUnavailableError("disease assessment");
+  return getJson(`${DISEASE_HISTORY_PATH}/${encodeURIComponent(id)}`, parseDiseaseAssessmentRecord);
 }

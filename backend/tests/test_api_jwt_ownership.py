@@ -200,6 +200,10 @@ ROUTES = [
     ("GET", "/api/recommendations/anything"),
     ("POST", "/api/recommendations"),
     ("POST", "/api/soil-reports/upload"),
+    ("GET", "/api/disease/vocabulary"),
+    ("POST", "/api/disease/assess"),
+    ("GET", "/api/disease/assessments"),
+    ("GET", "/api/disease/assessments/anything"),
 ]
 
 
@@ -251,5 +255,6 @@ def test_every_api_route_is_covered_by_the_auth_matrix():
         template = re.sub(r"/api/plots/[0-9a-f-]{36}/", "/api/plots/{plot_id}/", path)
         template = re.sub(r"/(ndvi|bhunaksha)/[0-9a-f-]{36}$", lambda m: f"/{m.group(1)}/{{plot_id}}", template)
         template = template.replace("/api/recommendations/anything", "/api/recommendations/{recommendation_id}")
+        template = template.replace("/api/disease/assessments/anything", "/api/disease/assessments/{assessment_id}")
         covered.add((method, template))
     assert registered == covered, f"uncovered: {registered - covered}; stale: {covered - registered}"

@@ -253,7 +253,11 @@ export interface LiveTwinData {
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-export function useLiveTwin(plotId: string) {
+/**
+ * @param enabled false for a plot with no mapped boundary: the live endpoint needs the boundary centroid, so it can only
+ * answer 503 there; not calling it avoids a useless request and a console error on every visit.
+ */
+export function useLiveTwin(plotId: string, enabled = true) {
   const [liveData, setLiveData] = useState<LiveTwinData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -267,7 +271,8 @@ export function useLiveTwin(plotId: string) {
     let pollTimer: ReturnType<typeof setInterval>;
     let countdownTimer: ReturnType<typeof setInterval>;
 
-    if (!plotId || plotId.startsWith("plot-")) {
+    if (!enabled || !plotId || plotId.startsWith("plot-")) {
+      setLiveData(null);
       setIsLoading(false);
       return;
     }
@@ -322,7 +327,7 @@ export function useLiveTwin(plotId: string) {
       clearInterval(pollTimer);
       clearInterval(countdownTimer);
     };
-  }, [plotId]);
+  }, [plotId, enabled]);
 
   return { liveData, isLoading, lastUpdated, secondsUntilRefresh, error };
 }

@@ -7,6 +7,8 @@ Everything below was checked in a real browser against the **emulated** Supabase
 `docs/PHASE1_AUDIT.md` (not managed Supabase). The backend ships no disease or crop-suitability service, so those two
 screens are interfaces plus an honest "not available" state — they were **not** exercised against a real result.
 
+> **Update:** the Disease Intelligence backend and the connected Disease screen were added afterwards; see [`DISEASE_INTELLIGENCE.md`](DISEASE_INTELLIGENCE.md). Statements below that call the disease module "interface only" describe the state when this document was written.
+
 ## 1. Gap analysis and outcome
 
 | Area | Before | UI change | Backend dependency | Kannada | Tests | Status |

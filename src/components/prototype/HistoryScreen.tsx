@@ -4,13 +4,15 @@ import { useSavedPlots } from "../../hooks/useSavedPlots";
 import { useTranslation } from "../../translation/useTranslation";
 import { supabase } from "../../lib/supabaseClient";
 import { listRecommendations } from "../../lib/apiClient";
+import { listDiseaseAssessments } from "../../lib/phase2/capabilities";
+import { useBackendCapabilities } from "../../hooks/useBackendCapabilities";
 import { EmptyState, ErrorBanner, PageHeader, Spinner } from "../phase2/shared";
 
-type Filter = "all" | "soil" | "rec";
+type Filter = "all" | "soil" | "rec" | "disease";
 
 interface Entry {
   id: string;
-  kind: "soil" | "rec" | "plot";
+  kind: "soil" | "rec" | "plot" | "disease";
   at: string;
   plotId: string;
   plotName: string;
@@ -24,6 +26,7 @@ interface Props {
 
 export const HistoryScreen: React.FC<Props> = ({ onNavigate, onOpenRecommendation }) => {
   const { t, locale } = useTranslation();
+  const caps = useBackendCapabilities();
   const plots = useSavedPlots();
   const [filter, setFilter] = useState<Filter>("all");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -44,6 +47,18 @@ export const HistoryScreen: React.FC<Props> = ({ onNavigate, onOpenRecommendatio
       );
     } catch (e) {
       errors.push(e instanceof Error ? e.message : t("p2.common.error_generic"));
+    }
+
+    if (caps.disease === "available") {
+      try {
+        const checks = await listDiseaseAssessments();
+        const riskKey: Record<string, string> = { low: "p2.status.low", moderate: "p2.status.moderate", high: "p2.status.high", insufficient_evidence: "p2.status.insufficient" };
+        checks.forEach((c) =>
+          out.push({ id: `dis-${c.id}`, kind: "disease", at: c.created_at, plotId: c.plot_id, plotName: nameOf(c.plot_id), line: t("p2.dis.hist.line", { risk: t(riskKey[c.risk_level] ?? "p2.status.unknown") }) })
+        );
+      } catch (e) {
+        errors.push(e instanceof Error ? e.message : t("p2.common.error_generic"));
+      }
     }
 
     const ids = plots.map((p) => p.id);
@@ -76,14 +91,14 @@ export const HistoryScreen: React.FC<Props> = ({ onNavigate, onOpenRecommendatio
     setEntries(out);
     setError(errors.length ? errors.join("; ") : null);
     setLoading(false);
-  }, [plots, t]);
+  }, [plots, t, caps.disease]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const shown = useMemo(
-    () => entries.filter((e) => (filter === "all" ? true : filter === "soil" ? e.kind === "soil" : e.kind === "rec")),
+    () => entries.filter((e) => (filter === "all" ? true : filter === "soil" ? e.kind === "soil" : filter === "disease" ? e.kind === "disease" : e.kind === "rec")),
     [entries, filter]
   );
 
@@ -91,6 +106,7 @@ export const HistoryScreen: React.FC<Props> = ({ onNavigate, onOpenRecommendatio
     ["all", t("p2.hist.all")],
     ["soil", t("p2.hist.soil_only")],
     ["rec", t("p2.hist.rec_only")],
+    ...(caps.disease === "available" ? ([["disease", t("p2.dis.hist.filter")]] as Array<[Filter, string]>) : []),
   ];
 
   return (
@@ -129,12 +145,21 @@ export const HistoryScreen: React.FC<Props> = ({ onNavigate, onOpenRecommendatio
           <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-xs">
             <div>
               <p className="text-sm font-extrabold text-gray-900">
-                {t(`p2.hist.kind.${e.kind}`)}
+                {e.kind === "disease" ? t("p2.dis.hist.kind") : t(`p2.hist.kind.${e.kind}`)}
                 {e.plotName ? ` · ${e.plotName}` : ""}
               </p>
               {e.line && <p className="text-sm font-medium text-gray-700">{e.line}</p>}
               <p className="text-sm font-medium text-gray-500">{new Date(e.at).toLocaleString(locale)}</p>
             </div>
+            {e.kind === "disease" && onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate("Disease Intelligence")}
+                className="min-h-11 cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50"
+              >
+                {t("p2.hist.open")}
+              </button>
+            )}
             {e.kind === "rec" && onOpenRecommendation && (
               <button
                 type="button"
@@ -148,7 +173,7 @@ export const HistoryScreen: React.FC<Props> = ({ onNavigate, onOpenRecommendatio
         ))}
       </ol>
 
-      <p className="text-sm font-medium text-gray-500">{t("p2.hist.disease_note")}</p>
+      {caps.disease !== "available" && <p className="text-sm font-medium text-gray-500">{t("p2.hist.disease_note")}</p>}
     </div>
   );
 };

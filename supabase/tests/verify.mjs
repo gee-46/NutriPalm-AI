@@ -103,7 +103,7 @@ if (migrationsOk) {
 }
 
 if (process.env.WEAKEN === "1" && migrationsOk) {
-  console.log("!! WEAKEN=1: re-creating the pre-migration-011 policies (mutation test; failures are EXPECTED)");
+  console.log("!! WEAKEN=1: re-creating the pre-migration-011 policies and a weakened disease_assessments (012) (mutation test; failures are EXPECTED)");
   await db.exec(`
     drop policy "Users can update their own plot" on public.plots;
     create policy "Users can update their own plot" on public.plots for update using (auth.uid() = owner_id);
@@ -115,6 +115,9 @@ if (process.env.WEAKEN === "1" && migrationsOk) {
     create policy "Users can insert their own recommendations" on public.recommendations for insert with check (auth.uid() = owner_id);
     drop policy "Users can update their own recommendations" on public.recommendations;
     create policy "Users can update their own recommendations" on public.recommendations for update using (auth.uid() = owner_id);
+    drop policy "Users can insert their own disease assessments" on public.disease_assessments;
+    create policy "Users can insert their own disease assessments" on public.disease_assessments for insert with check (auth.uid() = owner_id);
+    create policy "weak update" on public.disease_assessments for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
   `);
 }
 
@@ -130,6 +133,7 @@ const expected = {
   ndvi_readings: ["id", "plot_id", "captured_date", "ndvi_mean", "ndvi_min", "ndvi_max", "cloud_cover_pct", "source", "is_synthetic"],
   weather_observations: ["id", "plot_id", "observed_date", "temperature_c", "humidity_pct", "rainfall_mm", "wind_kph", "solar_radiation", "source", "is_synthetic"],
   field_observations: ["id", "plot_id", "observed_at", "observation_type", "payload", "logged_by"],
+  disease_assessments: ["id", "owner_id", "plot_id", "crop", "risk_level", "top_disease_id", "request", "result", "kb_version", "rule_version", "created_at"],
 };
 if (migrationsOk) {
   for (const [table, cols] of Object.entries(expected)) {
@@ -176,6 +180,8 @@ if (migrationsOk) {
     u.ids.soil = r3.rows[0].id;
     const r4 = await asUser(u.id, () => db.query("insert into public.recommendations (owner_id, plot_id, soil_report_id, crop, deficiencies, fertilizer_plan, yield_prediction, roi, explanation) values ($1,$2,$3,'oil_palm','[]','[]','{}','{}','{}') returning id", [u.id, u.ids.plot, u.ids.soil]));
     u.ids.rec = r4.rows[0].id;
+    const r5 = await asUser(u.id, () => db.query("insert into public.disease_assessments (owner_id, plot_id, crop, risk_level, top_disease_id, request, result, kb_version, rule_version) values ($1,$2,'coconut','moderate','coconut_bud_rot','{}','{}','0.1.0','1.0.0') returning id", [u.id, u.ids.plot]));
+    u.ids.assess = r5.rows[0].id;
     // Backend-written tables: only service_role may write
     await asService(async () => {
       u.ids.twin = (await db.query("insert into public.digital_twins (plot_id, analysis_date, crop_health_score) values ($1, now(), 80) returning id", [u.ids.plot])).rows[0].id;
@@ -195,6 +201,7 @@ if (migrationsOk) {
     ["ndvi_readings", "id", "ndvi"],
     ["weather_observations", "id", "weather"],
     ["field_observations", "id", "field"],
+    ["disease_assessments", "id", "assess"],
   ];
 
   for (const [atk, vic] of [["A", "B"], ["B", "A"]]) {
@@ -235,6 +242,14 @@ if (migrationsOk) {
     for (const [t, , k] of readTables.slice(0, 4)) {
       await expectUntouched(g, `${atk} cannot delete ${vic}'s ${t}`, a.id, `delete from public.${t} where id=$1 returning id`, [v.ids[k]]);
     }
+    // disease assessments: immutable history (no UPDATE policy), owner-only delete, inserts must reference an own plot
+    await expectUntouched(g, `${atk} cannot delete ${vic}'s disease_assessments`, a.id, "delete from public.disease_assessments where id=$1 returning id", [v.ids.assess]);
+    await expectUntouched(g, `${atk} cannot update ${vic}'s disease assessment`, a.id, "update public.disease_assessments set risk_level='high' where id=$1 returning id", [v.ids.assess]);
+    await expectUntouched(`own-access ${atk}`, `${atk} cannot edit own saved assessment either (history is immutable)`, a.id, "update public.disease_assessments set risk_level='high' where id=$1 returning id", [a.ids.assess]);
+    await expectRejected(g, `${atk} cannot save an assessment for ${vic}'s plot (own owner_id)`, a.id, "insert into public.disease_assessments (owner_id, plot_id, crop, risk_level, request, result, kb_version, rule_version) values ($1,$2,'coconut','low','{}','{}','x','y')", [a.id, v.ids.plot]);
+    await expectRejected(g, `${atk} cannot save an assessment owned by ${vic}`, a.id, "insert into public.disease_assessments (owner_id, plot_id, crop, risk_level, request, result, kb_version, rule_version) values ($1,$2,'coconut','low','{}','{}','x','y')", [v.id, a.ids.plot]);
+    await expectRejected(g, `${atk} cannot store an unsupported crop or risk level`, a.id, "insert into public.disease_assessments (owner_id, plot_id, crop, risk_level, request, result, kb_version, rule_version) values ($1,$2,'oil_palm','severe','{}','{}','x','y')", [a.id, a.ids.plot]);
+    await expectAllowed(`own-access ${atk}`, `${atk} can save and delete an own assessment`, a.id, "with i as (insert into public.disease_assessments (owner_id, plot_id, crop, risk_level, request, result, kb_version, rule_version) values ($1,$2,'arecanut','low','{}','{}','x','y') returning id) delete from public.disease_assessments d using i where d.id=i.id returning d.id", [a.id, a.ids.plot]);
     // The victim's rows must still be intact (checked as the victim)
     for (const [t, col, k] of readTables) {
       const r = await attempt("authenticated", v.id, `select ${col} from public.${t} where ${col}=$1`, [v.ids[k]]);
