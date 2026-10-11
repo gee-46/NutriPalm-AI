@@ -1,0 +1,352 @@
+{
+ "version": "1.0.0",
+ "parts": [
+  {
+   "code": "leaves",
+   "label_en": "Leaves",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "trunk",
+   "label_en": "Trunk",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "nuts",
+   "label_en": "Nuts / bunches",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "crown",
+   "label_en": "Crown (top of the palm)",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "roots",
+   "label_en": "Roots",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "inflorescence",
+   "label_en": "Flower bunches",
+   "part": null,
+   "synonyms": []
+  }
+ ],
+ "symptoms": [
+  {
+   "code": "spear_leaf_withering",
+   "label_en": "Spear (spindle) leaf withering or drying",
+   "part": "crown",
+   "synonyms": [
+    "spindle withering",
+    "spear leaf drying",
+    "spindle leaf dries"
+   ]
+  },
+  {
+   "code": "spindle_pulls_out",
+   "label_en": "Spindle comes out easily when pulled",
+   "part": "crown",
+   "synonyms": [
+    "spindle can be pulled"
+   ]
+  },
+  {
+   "code": "spindle_base_rot_foul_smell",
+   "label_en": "Rotten base of the spindle with a foul smell",
+   "part": "crown",
+   "synonyms": [
+    "foul smell",
+    "bad smell from crown"
+   ]
+  },
+  {
+   "code": "young_leaves_falling",
+   "label_en": "Young leaves next to the spindle falling away",
+   "part": "leaves",
+   "synonyms": []
+  },
+  {
+   "code": "growing_bud_death",
+   "label_en": "Death of the growing bud",
+   "part": "crown",
+   "synonyms": [
+    "bud death"
+   ]
+  },
+  {
+   "code": "nut_water_soaked_lesions",
+   "label_en": "Water-soaked lesions on nuts",
+   "part": "nuts",
+   "synonyms": [
+    "water soaked spots on nuts"
+   ]
+  },
+  {
+   "code": "nut_shedding",
+   "label_en": "Nuts shedding",
+   "part": "nuts",
+   "synonyms": [
+    "nut fall",
+    "nuts falling"
+   ]
+  },
+  {
+   "code": "nut_rotting",
+   "label_en": "Rotting of nuts",
+   "part": "nuts",
+   "synonyms": [
+    "rotten nuts"
+   ]
+  },
+  {
+   "code": "nuts_lose_lustre",
+   "label_en": "Nuts losing their lustre",
+   "part": "nuts",
+   "synonyms": [
+    "dull nuts"
+   ]
+  },
+  {
+   "code": "white_mycelium_on_nuts",
+   "label_en": "White fungal growth on fallen nuts",
+   "part": "nuts",
+   "synonyms": [
+    "white mould on nuts",
+    "white fungus on fallen nuts"
+   ]
+  },
+  {
+   "code": "crown_yellowing",
+   "label_en": "Yellowing of the crown region",
+   "part": "crown",
+   "synonyms": []
+  },
+  {
+   "code": "crown_rot_dried_leaves",
+   "label_en": "Crown rot with rotten and dried leaves (bud still intact)",
+   "part": "crown",
+   "synonyms": []
+  },
+  {
+   "code": "trunk_base_bleeding",
+   "label_en": "Reddish-brown sticky fluid oozing from the base of the trunk",
+   "part": "trunk",
+   "synonyms": [
+    "stem bleeding",
+    "trunk bleeding",
+    "reddish brown exudate"
+   ]
+  },
+  {
+   "code": "bark_peeling_base",
+   "label_en": "Bark peeling off at the base of the trunk",
+   "part": "trunk",
+   "synonyms": []
+  },
+  {
+   "code": "fruiting_bodies_at_base",
+   "label_en": "Fungal fruiting bodies (brackets) at the base of the trunk",
+   "part": "trunk",
+   "synonyms": [
+    "mushroom at base",
+    "bracket fungus"
+   ]
+  },
+  {
+   "code": "outer_leaves_yellowing",
+   "label_en": "Yellowing of the outer (older) leaves",
+   "part": "leaves",
+   "synonyms": [
+    "yellowing leaves",
+    "leaves turning yellow"
+   ]
+  },
+  {
+   "code": "leaves_drying_drooping",
+   "label_en": "Leaves drying and drooping",
+   "part": "leaves",
+   "synonyms": [
+    "drooping leaves",
+    "dry hanging leaves"
+   ]
+  },
+  {
+   "code": "spindle_young_leaves_erect",
+   "label_en": "Spindle and 2-3 young leaves still erect and healthy while outer leaves droop",
+   "part": "crown",
+   "synonyms": []
+  },
+  {
+   "code": "button_shedding",
+   "label_en": "Heavy shedding of buttons (very young nuts)",
+   "part": "nuts",
+   "synonyms": []
+  },
+  {
+   "code": "barren_nuts",
+   "label_en": "Barren nuts (nuts without kernel)",
+   "part": "nuts",
+   "synonyms": [
+    "empty nuts"
+   ]
+  },
+  {
+   "code": "root_rot_discolouration",
+   "label_en": "Rotting and discolouration of roots",
+   "part": "roots",
+   "synonyms": [
+    "root rot"
+   ]
+  },
+  {
+   "code": "abnormal_nut_fall",
+   "label_en": "Abnormal shedding of nuts",
+   "part": "nuts",
+   "synonyms": [
+    "sudden nut fall"
+   ]
+  },
+  {
+   "code": "inflorescence_necrosis",
+   "label_en": "Drying or death of flower bunches",
+   "part": "inflorescence",
+   "synonyms": [
+    "inflorescence dying",
+    "flower bunch drying"
+   ]
+  },
+  {
+   "code": "crown_collapse",
+   "label_en": "Collapse of the crown leaving a bare trunk",
+   "part": "crown",
+   "synonyms": [
+    "bare trunk"
+   ]
+  }
+ ],
+ "stages": [
+  {
+   "code": "seedling",
+   "label_en": "Seedling (nursery / very young)",
+   "part": null,
+   "synonyms": [
+    "seedling",
+    "nursery",
+    "nursery seedling"
+   ]
+  },
+  {
+   "code": "young_palm",
+   "label_en": "Young palm (not yet bearing)",
+   "part": null,
+   "synonyms": [
+    "young",
+    "young palm",
+    "juvenile",
+    "pre-bearing",
+    "non-bearing"
+   ]
+  },
+  {
+   "code": "adult_palm",
+   "label_en": "Adult palm (bearing)",
+   "part": null,
+   "synonyms": [
+    "adult",
+    "adult palm",
+    "bearing",
+    "mature",
+    "fruiting"
+   ]
+  }
+ ],
+ "conditions": [
+  {
+   "code": "monsoon_period",
+   "label_en": "It is the south-west monsoon (rainy) season",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "cool_humid_alternating_rain",
+   "label_en": "Cool, very humid weather with alternating sunshine and heavy rain",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "high_rainfall_area",
+   "label_en": "The area gets very high annual rainfall (above 2000 mm)",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "rhinoceros_beetle_damage",
+   "label_en": "Rhinoceros beetle damage has been seen on the palms",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "moisture_stress",
+   "label_en": "Palms are under soil-moisture stress or drought",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "waterlogging_rainy_season",
+   "label_en": "Water stands in the garden in the rainy season",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "sandy_soil",
+   "label_en": "The soil is sandy or sandy loam",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "old_infected_stumps",
+   "label_en": "Old infected stumps are present in the garden",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "neglected_plantation",
+   "label_en": "The plantation is neglected",
+   "part": null,
+   "synonyms": []
+  },
+  {
+   "code": "rainfed",
+   "label_en": "The palms are rainfed (not irrigated)",
+   "part": null,
+   "synonyms": []
+  }
+ ],
+ "crops": {
+  "arecanut": [
+   "arecanut",
+   "areca nut",
+   "areca",
+   "arecanut palm",
+   "betel nut",
+   "areca catechu",
+   "adike",
+   "ಅಡಿಕೆ"
+  ],
+  "coconut": [
+   "coconut",
+   "coconut palm",
+   "cocos nucifera",
+   "tengu",
+   "tenginakayi",
+   "ತೆಂಗು"
+  ]
+ }
+}

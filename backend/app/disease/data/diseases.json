@@ -1,0 +1,1404 @@
+{
+ "kb_version": "0.1.0",
+ "diseases": [
+  {
+   "id": "coconut_bud_rot",
+   "name": "Bud rot of coconut",
+   "local_names": [],
+   "scientific_names": [
+    {
+     "name": "Phytophthora palmivora",
+     "evidence_ids": [
+      "e_bud_cause"
+     ]
+    }
+   ],
+   "crops": [
+    "coconut"
+   ],
+   "category": "oomycete (Phytophthora) disease",
+   "affected_parts": [
+    "crown",
+    "leaves"
+   ],
+   "symptoms": [
+    {
+     "code": "spear_leaf_withering",
+     "specificity": "first_or_characteristic",
+     "evidence_ids": [
+      "e_bud_initial"
+     ]
+    },
+    {
+     "code": "spindle_pulls_out",
+     "specificity": "first_or_characteristic",
+     "evidence_ids": [
+      "e_bud_initial"
+     ]
+    },
+    {
+     "code": "spindle_base_rot_foul_smell",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_bud_initial"
+     ]
+    },
+    {
+     "code": "young_leaves_falling",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_bud_progress"
+     ]
+    },
+    {
+     "code": "growing_bud_death",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_bud_progress"
+     ]
+    }
+   ],
+   "risk_conditions": [
+    {
+     "code": "high_rainfall_area",
+     "evidence_ids": [
+      "e_high_rain"
+     ]
+    },
+    {
+     "code": "rhinoceros_beetle_damage",
+     "evidence_ids": [
+      "e_rhino"
+     ]
+    }
+   ],
+   "crop_stages": [],
+   "any_stage_evidence_ids": [
+    "e_bud_lethal"
+   ],
+   "severity_notes": [
+    "The source calls bud rot a lethal disease that kills palms of any age."
+   ],
+   "management": [
+    {
+     "id": "monitor",
+     "category": "monitoring_and_confirmation",
+     "text": "Inspect palms regularly so that spear-leaf and crown symptoms are noticed early, and have suspected palms confirmed by an agricultural officer or KVK.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_monitor"
+     ]
+    },
+    {
+     "id": "sanitation",
+     "category": "field_sanitation",
+     "text": "Destroy the rotten portion of the crown and affected nuts; field sanitation reduces the build-up of the pathogen in the plantation.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_sanitation",
+      "e_inoculum"
+     ]
+    },
+    {
+     "id": "drainage",
+     "category": "irrigation_drainage_field",
+     "text": "Improve drainage and use wider spacing to reduce humidity in the plantation.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_drainage"
+     ]
+    },
+    {
+     "id": "trichoderma_cake",
+     "category": "biological_management",
+     "text": "ICAR-CPCRI describes Trichoderma harzianum cakes as well proven for managing bud rot.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_trichoderma"
+     ]
+    }
+   ],
+   "chemical_product_ids": [
+    "bordeaux_mixture"
+   ],
+   "evidence": [
+    {
+     "id": "e_bud_cause",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Phytophthora diseases",
+     "quote": "In coconut, hundreds of trees succumb to bud rot disease caused by Phytophthora palmivora every year.",
+     "paraphrase": "Bud rot of coconut is caused by Phytophthora palmivora.",
+     "verified": true
+    },
+    {
+     "id": "e_bud_lethal",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Phytophthora diseases",
+     "quote": "Bud rot is a lethal disease killing palms of any age.",
+     "paraphrase": "Bud rot is lethal and affects palms of any age.",
+     "verified": true
+    },
+    {
+     "id": "e_bud_initial",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Phytophthora diseases",
+     "quote": "The initial symptoms appear as withering and drying of spear leaf which comes out by pulling the spindle. The basal portion of the spindle is completely rotten emitting a foul smell.",
+     "paraphrase": "First symptoms: the spear leaf withers and dries and can be pulled out; the base of the spindle is rotten with a foul smell.",
+     "verified": true
+    },
+    {
+     "id": "e_bud_progress",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Phytophthora diseases",
+     "quote": "Subsequently, younger leaves next to the spindle also fall away one after the other, leaving only the outer whorl of mature leaves in the crown. Ultimately, the palm succumbs to the disease with the death of the growing bud",
+     "paraphrase": "Later the young leaves next to the spindle fall away one by one and the palm dies with death of the growing bud.",
+     "verified": true
+    },
+    {
+     "id": "e_high_rain",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Integrated management of Phytophthora disease",
+     "quote": "Managing the phytophthora diseases in crops like coconut and arecanut in endemic areas with high rainfall (>2000 mm) is a challenging task.",
+     "paraphrase": "Phytophthora diseases of coconut and arecanut are hard to manage in endemic areas with high rainfall (above 2000 mm).",
+     "verified": true
+    },
+    {
+     "id": "e_rhino",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 6,
+     "locator": "Integrated management strategies",
+     "quote": "the wound caused by the beetle could be considered as one of the major predisposing factors for the higher incidence of bud rot and leaf rot diseases.",
+     "paraphrase": "Wounds caused by the rhinoceros beetle are described as a major predisposing factor for bud rot.",
+     "verified": true
+    },
+    {
+     "id": "e_monitor",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Introduction",
+     "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+     "paraphrase": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+     "verified": true
+    },
+    {
+     "id": "e_sanitation",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "The rotten portion of the crown, fall, affected nuts, cocoa pods, etc. should be destroyed.",
+     "paraphrase": "The rotten portion of the crown and affected nuts should be destroyed (field sanitation).",
+     "verified": true
+    },
+    {
+     "id": "e_inoculum",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "Field sanitation would reduce the inoculum build-up in the plantations and check the spread of the disease.",
+     "paraphrase": "Field sanitation reduces inoculum build-up and checks spread.",
+     "verified": true
+    },
+    {
+     "id": "e_drainage",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "Improved drainage and wider spacing will help in reducing the relative humidity.",
+     "paraphrase": "Improved drainage and wider spacing help reduce relative humidity.",
+     "verified": true
+    },
+    {
+     "id": "e_trichoderma",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 6,
+     "locator": "Biological control",
+     "quote": "Use of Trichoderma harzianum for the bio-suppression of basal stem rot and stem bleeding diseases and T. harzianum cakes for the management of bud rot disease is well proven.",
+     "paraphrase": "T. harzianum cakes are described as well proven for managing bud rot.",
+     "verified": true
+    }
+   ],
+   "record_version": "0.1.0",
+   "status": "source_verified",
+   "last_verified": "2026-10-11"
+  },
+  {
+   "id": "areca_fruit_rot",
+   "name": "Fruit rot of arecanut (Koleroga / Mahali)",
+   "local_names": [
+    "Koleroga",
+    "Mahali"
+   ],
+   "scientific_names": [
+    {
+     "name": "Phytophthora meadii",
+     "evidence_ids": [
+      "e_fr_cause"
+     ]
+    }
+   ],
+   "crops": [
+    "arecanut"
+   ],
+   "category": "oomycete (Phytophthora) disease",
+   "affected_parts": [
+    "nuts"
+   ],
+   "symptoms": [
+    {
+     "code": "nut_water_soaked_lesions",
+     "specificity": "first_or_characteristic",
+     "evidence_ids": [
+      "e_k_first"
+     ]
+    },
+    {
+     "code": "nuts_lose_lustre",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_k_first"
+     ]
+    },
+    {
+     "code": "nut_rotting",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_fr_cause"
+     ]
+    },
+    {
+     "code": "nut_shedding",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_fr_cause"
+     ]
+    },
+    {
+     "code": "white_mycelium_on_nuts",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_k_mycelium"
+     ]
+    }
+   ],
+   "risk_conditions": [
+    {
+     "code": "monsoon_period",
+     "evidence_ids": [
+      "e_k_season"
+     ]
+    },
+    {
+     "code": "cool_humid_alternating_rain",
+     "evidence_ids": [
+      "e_k_weather"
+     ]
+    },
+    {
+     "code": "high_rainfall_area",
+     "evidence_ids": [
+      "e_high_rain"
+     ]
+    }
+   ],
+   "crop_stages": [],
+   "any_stage_evidence_ids": [],
+   "geographic_applicability": {
+    "regions": [
+     "Kerala",
+     "Karnataka",
+     "Maharashtra"
+    ],
+    "note": "The 1989 CPCRI folder names these states; the disease may occur elsewhere.",
+    "evidence_ids": [
+     "e_k_season"
+    ]
+   },
+   "severity_notes": [
+    "The CPCRI folder reports annual losses of 10-75% in different gardens."
+   ],
+   "management": [
+    {
+     "id": "monitor",
+     "category": "monitoring_and_confirmation",
+     "text": "Inspect nuts regularly during the rainy season and have suspected disease confirmed by an agricultural officer or KVK.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_monitor"
+     ]
+    },
+    {
+     "id": "collect_destroy",
+     "category": "field_sanitation",
+     "text": "Collect infected and fallen fruits regularly and destroy them to reduce the source of infection and further spread.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_k_sanit"
+     ]
+    },
+    {
+     "id": "sanitation",
+     "category": "field_sanitation",
+     "text": "Field sanitation reduces build-up of the pathogen in the plantation; affected nuts should be destroyed.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_sanitation",
+      "e_inoculum"
+     ]
+    },
+    {
+     "id": "drainage",
+     "category": "irrigation_drainage_field",
+     "text": "Improve drainage and use wider spacing to reduce humidity in the plantation.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_drainage"
+     ]
+    }
+   ],
+   "chemical_product_ids": [
+    "bordeaux_mixture",
+    "mandipropamid_23_4_sc"
+   ],
+   "evidence": [
+    {
+     "id": "e_fr_cause",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Phytophthora diseases",
+     "quote": "arecanut fruit rot is caused by Phytophthora meadii and leads to severe shedding and rotting of immature nuts causing huge loss. The same oomycete species can also cause crown rot and bud rot, thereby killing the arecanut palms",
+     "paraphrase": "Arecanut fruit rot, caused by Phytophthora meadii, leads to severe shedding and rotting of immature nuts.",
+     "verified": true
+    },
+    {
+     "id": "e_k_first",
+     "source_id": "cpcri_extension_folder_17_1989",
+     "page": 2,
+     "locator": "Symptoms",
+     "quote": "The first visible symptom is the appearance of water soaked lesions on the surface of fruits near the calyx. The infected nuts lose their lustre.",
+     "paraphrase": "First symptom: water-soaked lesions on the fruit surface near the calyx; infected nuts lose their lustre.",
+     "verified": true
+    },
+    {
+     "id": "e_k_mycelium",
+     "source_id": "cpcri_extension_folder_17_1989",
+     "page": 2,
+     "locator": "Symptoms",
+     "quote": "A felt of white mycelium develops on the fallen nuts.",
+     "paraphrase": "A felt of white fungal growth develops on fallen nuts.",
+     "verified": true
+    },
+    {
+     "id": "e_k_season",
+     "source_id": "cpcri_extension_folder_17_1989",
+     "page": 2,
+     "locator": "Occurrence",
+     "quote": "The disease is seasonal and occurs during the South-West monsoon period in Kerala, Karnataka and Maharashtra.",
+     "paraphrase": "The disease is seasonal, during the South-West monsoon, and is reported from Kerala, Karnataka and Maharashtra.",
+     "verified": true
+    },
+    {
+     "id": "e_k_weather",
+     "source_id": "cpcri_extension_folder_17_1989",
+     "page": 2,
+     "locator": "Occurrence",
+     "quote": "Low temperature, high humidity and alternate sunshine and heavy rain fall favour the disease development.",
+     "paraphrase": "Low temperature, high humidity and alternating sunshine and heavy rain favour disease development.",
+     "verified": true
+    },
+    {
+     "id": "e_k_sanit",
+     "source_id": "cpcri_extension_folder_17_1989",
+     "page": 2,
+     "locator": "Control",
+     "quote": "Infected and fallen fruits must be collected periodically and destroyed to reduce the inoculam and further spread of the disease.",
+     "paraphrase": "Infected and fallen fruits must be collected periodically and destroyed.",
+     "verified": true
+    },
+    {
+     "id": "e_high_rain",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Integrated management of Phytophthora disease",
+     "quote": "Managing the phytophthora diseases in crops like coconut and arecanut in endemic areas with high rainfall (>2000 mm) is a challenging task.",
+     "paraphrase": "Phytophthora diseases of coconut and arecanut are hard to manage in endemic areas with high rainfall (above 2000 mm).",
+     "verified": true
+    },
+    {
+     "id": "e_monitor",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Introduction",
+     "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+     "paraphrase": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+     "verified": true
+    },
+    {
+     "id": "e_sanitation",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "The rotten portion of the crown, fall, affected nuts, cocoa pods, etc. should be destroyed.",
+     "paraphrase": "The rotten portion of the crown and affected nuts should be destroyed (field sanitation).",
+     "verified": true
+    },
+    {
+     "id": "e_inoculum",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "Field sanitation would reduce the inoculum build-up in the plantations and check the spread of the disease.",
+     "paraphrase": "Field sanitation reduces inoculum build-up and checks spread.",
+     "verified": true
+    },
+    {
+     "id": "e_drainage",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "Improved drainage and wider spacing will help in reducing the relative humidity.",
+     "paraphrase": "Improved drainage and wider spacing help reduce relative humidity.",
+     "verified": true
+    }
+   ],
+   "record_version": "0.1.0",
+   "status": "source_verified",
+   "last_verified": "2026-10-11"
+  },
+  {
+   "id": "areca_bud_crown_rot",
+   "name": "Bud rot and crown rot of arecanut",
+   "local_names": [],
+   "scientific_names": [
+    {
+     "name": "Phytophthora meadii",
+     "evidence_ids": [
+      "e_fr_cause"
+     ]
+    }
+   ],
+   "crops": [
+    "arecanut"
+   ],
+   "category": "oomycete (Phytophthora) disease",
+   "affected_parts": [
+    "crown",
+    "leaves"
+   ],
+   "symptoms": [
+    {
+     "code": "spear_leaf_withering",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_fig2"
+     ]
+    },
+    {
+     "code": "spindle_pulls_out",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_fig2"
+     ]
+    },
+    {
+     "code": "crown_yellowing",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_fig2"
+     ]
+    },
+    {
+     "code": "crown_rot_dried_leaves",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_fig2_d"
+     ]
+    }
+   ],
+   "risk_conditions": [
+    {
+     "code": "high_rainfall_area",
+     "evidence_ids": [
+      "e_high_rain"
+     ]
+    }
+   ],
+   "crop_stages": [
+    {
+     "stage": "seedling",
+     "evidence_ids": [
+      "e_fig2"
+     ]
+    },
+    {
+     "stage": "adult_palm",
+     "evidence_ids": [
+      "e_fig2"
+     ]
+    }
+   ],
+   "any_stage_evidence_ids": [],
+   "severity_notes": [
+    "The source says the same Phytophthora species can kill arecanut palms through crown rot and bud rot."
+   ],
+   "management": [
+    {
+     "id": "monitor",
+     "category": "monitoring_and_confirmation",
+     "text": "Inspect palms regularly and have suspected crown or bud symptoms confirmed by an agricultural officer or KVK.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_monitor"
+     ]
+    },
+    {
+     "id": "sanitation",
+     "category": "field_sanitation",
+     "text": "Destroy the rotten portion of the crown and affected nuts; field sanitation reduces build-up of the pathogen.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_sanitation",
+      "e_inoculum"
+     ]
+    },
+    {
+     "id": "drainage",
+     "category": "irrigation_drainage_field",
+     "text": "Improve drainage and use wider spacing to reduce humidity in the plantation.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_drainage"
+     ]
+    }
+   ],
+   "chemical_product_ids": [
+    "bordeaux_mixture"
+   ],
+   "evidence": [
+    {
+     "id": "e_fr_cause",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Phytophthora diseases",
+     "quote": "arecanut fruit rot is caused by Phytophthora meadii and leads to severe shedding and rotting of immature nuts causing huge loss. The same oomycete species can also cause crown rot and bud rot, thereby killing the arecanut palms",
+     "paraphrase": "The Phytophthora meadii species that causes arecanut fruit rot can also cause crown rot and bud rot that kill arecanut palms.",
+     "verified": true
+    },
+    {
+     "id": "e_fig2",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Fig. 2 caption",
+     "quote": "Bud rot and crown rots of arecanut caused by Phytophthora meadii: A) Seedling with withering spindle, B) Rotten portion of spindle could be pulled, C) Yellowing of crown region of the adult palm",
+     "paraphrase": "Figure caption: seedling with a withering spindle; rotten spindle portion that can be pulled; yellowing of the crown region of an adult palm.",
+     "verified": true
+    },
+    {
+     "id": "e_fig2_d",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Fig. 2 caption",
+     "quote": "Crown rot affected palm showing intact bud but rotten and dried leaves",
+     "paraphrase": "Figure caption: crown-rot-affected palm with an intact bud but rotten and dried leaves.",
+     "verified": true
+    },
+    {
+     "id": "e_high_rain",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Integrated management of Phytophthora disease",
+     "quote": "Managing the phytophthora diseases in crops like coconut and arecanut in endemic areas with high rainfall (>2000 mm) is a challenging task.",
+     "paraphrase": "Phytophthora diseases of coconut and arecanut are hard to manage in endemic areas with high rainfall (above 2000 mm).",
+     "verified": true
+    },
+    {
+     "id": "e_monitor",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Introduction",
+     "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+     "paraphrase": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+     "verified": true
+    },
+    {
+     "id": "e_sanitation",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "The rotten portion of the crown, fall, affected nuts, cocoa pods, etc. should be destroyed.",
+     "paraphrase": "The rotten portion of the crown and affected nuts should be destroyed (field sanitation).",
+     "verified": true
+    },
+    {
+     "id": "e_inoculum",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "Field sanitation would reduce the inoculum build-up in the plantations and check the spread of the disease.",
+     "paraphrase": "Field sanitation reduces inoculum build-up and checks spread.",
+     "verified": true
+    },
+    {
+     "id": "e_drainage",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 2,
+     "locator": "Phytosanitation and good agricultural practices",
+     "quote": "Improved drainage and wider spacing will help in reducing the relative humidity.",
+     "paraphrase": "Improved drainage and wider spacing help reduce relative humidity.",
+     "verified": true
+    }
+   ],
+   "record_version": "0.1.0",
+   "status": "source_verified",
+   "last_verified": "2026-10-11"
+  },
+  {
+   "id": "coconut_ganoderma_wilt",
+   "name": "Ganoderma wilt (basal stem rot, Thanjavur wilt) of coconut",
+   "local_names": [
+    "Basal stem rot",
+    "Thanjavur wilt"
+   ],
+   "scientific_names": [
+    {
+     "name": "Ganoderma lucidum",
+     "evidence_ids": [
+      "e_g_species"
+     ]
+    },
+    {
+     "name": "Ganoderma applanatum",
+     "evidence_ids": [
+      "e_g_species"
+     ]
+    }
+   ],
+   "crops": [
+    "coconut"
+   ],
+   "category": "fungal (basidiomycete) disease",
+   "affected_parts": [
+    "roots",
+    "trunk",
+    "leaves",
+    "nuts"
+   ],
+   "symptoms": [
+    {
+     "code": "root_rot_discolouration",
+     "specificity": "first_or_characteristic",
+     "evidence_ids": [
+      "e_g_roots"
+     ]
+    },
+    {
+     "code": "trunk_base_bleeding",
+     "specificity": "first_or_characteristic",
+     "evidence_ids": [
+      "e_g_bleed"
+     ]
+    },
+    {
+     "code": "bark_peeling_base",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_bark"
+     ]
+    },
+    {
+     "code": "fruiting_bodies_at_base",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_bark"
+     ]
+    },
+    {
+     "code": "outer_leaves_yellowing",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_crown"
+     ]
+    },
+    {
+     "code": "leaves_drying_drooping",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_crown"
+     ]
+    },
+    {
+     "code": "spindle_young_leaves_erect",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_crown"
+     ]
+    },
+    {
+     "code": "button_shedding",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_button"
+     ]
+    },
+    {
+     "code": "barren_nuts",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_button"
+     ]
+    }
+   ],
+   "risk_conditions": [
+    {
+     "code": "moisture_stress",
+     "evidence_ids": [
+      "e_g_cond",
+      "e_g_moisture"
+     ]
+    },
+    {
+     "code": "sandy_soil",
+     "evidence_ids": [
+      "e_g_cond"
+     ]
+    },
+    {
+     "code": "rainfed",
+     "evidence_ids": [
+      "e_g_cond"
+     ]
+    },
+    {
+     "code": "neglected_plantation",
+     "evidence_ids": [
+      "e_g_cond"
+     ]
+    },
+    {
+     "code": "waterlogging_rainy_season",
+     "evidence_ids": [
+      "e_g_cond"
+     ]
+    },
+    {
+     "code": "old_infected_stumps",
+     "evidence_ids": [
+      "e_g_cond"
+     ]
+    }
+   ],
+   "crop_stages": [],
+   "any_stage_evidence_ids": [],
+   "severity_notes": [
+    "The source describes Ganoderma wilt as a slow-decline disease."
+   ],
+   "management": [
+    {
+     "id": "monitor",
+     "category": "monitoring_and_confirmation",
+     "text": "Inspect trunk bases and crowns regularly and have suspected palms confirmed by an agricultural officer or KVK; the source stresses managing the disease early.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_monitor",
+      "e_g_early"
+     ]
+    },
+    {
+     "id": "good_practices",
+     "category": "cultural_management",
+     "text": "Follow good agricultural practices and integrated disease management from the early stage of symptoms.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_g_early"
+     ]
+    },
+    {
+     "id": "neem_trichoderma",
+     "category": "biological_management",
+     "text": "In disease-endemic areas the source recommends yearly application of neem cake enriched with Trichoderma harzianum around each palm (it gives 5 kg of neem cake per coconut palm, mixed at 1 kg Trichoderma to 100 kg neem cake).",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_g_neem"
+     ]
+    },
+    {
+     "id": "trichoderma",
+     "category": "biological_management",
+     "text": "ICAR-CPCRI describes Trichoderma harzianum as well proven for bio-suppression of basal stem rot.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_g_trichoderma"
+     ]
+    }
+   ],
+   "chemical_product_ids": [
+    "hexaconazole_5ec"
+   ],
+   "evidence": [
+    {
+     "id": "e_monitor",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Introduction",
+     "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+     "paraphrase": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+     "verified": true
+    },
+    {
+     "id": "e_g_who",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "The basidiomycete fungus Ganoderma causes basal stem rot or Ganoderma wilt disease in arecanut, coconut, oil palm and many other ornamental palms and trees.",
+     "paraphrase": "Ganoderma causes basal stem rot (Ganoderma wilt) in arecanut, coconut, oil palm and other palms.",
+     "verified": true
+    },
+    {
+     "id": "e_g_species",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Ganoderma lucidum and G. applanatum are major species associated with the basal stem rot disease of coconut and arecanut.",
+     "paraphrase": "Ganoderma lucidum and G. applanatum are major species associated with basal stem rot of coconut and arecanut.",
+     "verified": true
+    },
+    {
+     "id": "e_g_roots",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "The initial symptom of the disease is decay and death of the fine roots. The characteristic symptom of the disease is extensive rotting and discolouration of the root system.",
+     "paraphrase": "Initial symptom: decay and death of fine roots; characteristic symptom: extensive rotting and discolouration of the root system.",
+     "verified": true
+    },
+    {
+     "id": "e_g_bleed",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "The first above-ground symptom of the disease is the exudation of reddish brown viscous fluid from the basal portions of the trunk.",
+     "paraphrase": "First above-ground symptom: reddish-brown sticky fluid oozing from the base of the trunk.",
+     "verified": true
+    },
+    {
+     "id": "e_g_bark",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "In some palms, the bark from the base of the stem peels off. Fruiting bodies of Ganoderma lucidum appear at the base of the trunk in some palms just above the soil level before wilting or after the death of the palm.",
+     "paraphrase": "In some palms the bark at the base peels off and Ganoderma fruiting bodies appear at the base of the trunk.",
+     "verified": true
+    },
+    {
+     "id": "e_g_crown",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Crown symptoms include wilting of leaflets and yellowing, followed by drying and drooping of leaves in the outer whorls of leaves. The spindle leaf and surrounding two or three young leaves will remain erect and healthy.",
+     "paraphrase": "Crown symptoms: wilting and yellowing, then drying and drooping of outer leaves, while the spindle and 2-3 young leaves stay erect and healthy.",
+     "verified": true
+    },
+    {
+     "id": "e_g_button",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "heavy button shedding is also witnessed. The affected palms produce barren nuts.",
+     "paraphrase": "Heavy button shedding is seen and affected palms produce barren nuts.",
+     "verified": true
+    },
+    {
+     "id": "e_g_cond",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "The disease is generally observed in sandy or sandy loam soils in coastal areas on the east coast where coconut is grown under rainfed conditions and also in neglected plantations. Soil moisture stress during summer months, water stagnation during rainy seasons, presence of old infected stumps in the garden also aggravates the disease.",
+     "paraphrase": "Seen in sandy or sandy loam coastal soils under rainfed coconut and in neglected plantations; aggravated by summer moisture stress, rainy-season water stagnation and old infected stumps.",
+     "verified": true
+    },
+    {
+     "id": "e_g_moisture",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Unlike Phytophthora diseases, the diseases caused by Ganoderma are more severe in the moisture-stress areas and gets aggravated due to continuous drought and negligence in farming.",
+     "paraphrase": "Ganoderma diseases are more severe in moisture-stress areas and are aggravated by continuous drought and neglect.",
+     "verified": true
+    },
+    {
+     "id": "e_g_early",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Ganoderma wilt is a slow decline disease and can be managed by following good agricultural practices and integrated disease management approaches in the early stage of symptom expression itself.",
+     "paraphrase": "Ganoderma wilt is a slow-decline disease that can be managed with good agricultural practices and integrated disease management at the early stage of symptoms.",
+     "verified": true
+    },
+    {
+     "id": "e_g_neem",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "regular application of 2 kg neem cake (5 kg in coconut) enriched with Trichoderma harzianum (1 kg Trichoderma + 100 kg neem cake) per palm per year is recommended.",
+     "paraphrase": "In disease-endemic areas, yearly application per palm of neem cake enriched with Trichoderma harzianum is recommended (the text gives 2 kg neem cake, 5 kg in coconut).",
+     "verified": true
+    },
+    {
+     "id": "e_g_trichoderma",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 6,
+     "locator": "Biological control",
+     "quote": "Use of Trichoderma harzianum for the bio-suppression of basal stem rot and stem bleeding diseases and T. harzianum cakes for the management of bud rot disease is well proven.",
+     "paraphrase": "Trichoderma harzianum is described as well proven for bio-suppression of basal stem rot and stem bleeding.",
+     "verified": true
+    }
+   ],
+   "record_version": "0.1.0",
+   "status": "source_verified",
+   "last_verified": "2026-10-11"
+  },
+  {
+   "id": "areca_ganoderma_basal_stem_rot",
+   "name": "Basal stem rot (Ganoderma) of arecanut",
+   "local_names": [
+    "Basal stem rot"
+   ],
+   "scientific_names": [
+    {
+     "name": "Ganoderma lucidum",
+     "evidence_ids": [
+      "e_g_species"
+     ]
+    },
+    {
+     "name": "Ganoderma applanatum",
+     "evidence_ids": [
+      "e_g_species"
+     ]
+    }
+   ],
+   "crops": [
+    "arecanut"
+   ],
+   "category": "fungal (basidiomycete) disease",
+   "affected_parts": [
+    "roots",
+    "trunk",
+    "leaves"
+   ],
+   "symptoms": [
+    {
+     "code": "root_rot_discolouration",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_roots",
+      "e_g_areca"
+     ]
+    },
+    {
+     "code": "trunk_base_bleeding",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_bleed",
+      "e_g_areca"
+     ]
+    },
+    {
+     "code": "bark_peeling_base",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_bark",
+      "e_g_areca"
+     ]
+    },
+    {
+     "code": "fruiting_bodies_at_base",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_bark",
+      "e_g_areca"
+     ]
+    },
+    {
+     "code": "outer_leaves_yellowing",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_crown",
+      "e_g_areca"
+     ]
+    },
+    {
+     "code": "leaves_drying_drooping",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_g_crown",
+      "e_g_areca"
+     ]
+    }
+   ],
+   "risk_conditions": [
+    {
+     "code": "moisture_stress",
+     "evidence_ids": [
+      "e_g_moisture"
+     ]
+    },
+    {
+     "code": "neglected_plantation",
+     "evidence_ids": [
+      "e_g_moisture"
+     ]
+    }
+   ],
+   "crop_stages": [],
+   "any_stage_evidence_ids": [],
+   "severity_notes": [
+    "The source describes the arecanut symptoms only as 'similar' to those in coconut, so every symptom here is treated as 'reported', never as characteristic."
+   ],
+   "management": [
+    {
+     "id": "monitor",
+     "category": "monitoring_and_confirmation",
+     "text": "Inspect trunk bases and crowns regularly and have suspected palms confirmed by an agricultural officer or KVK.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_monitor"
+     ]
+    },
+    {
+     "id": "good_practices",
+     "category": "cultural_management",
+     "text": "Follow good agricultural practices and integrated disease management from the early stage of symptoms.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_g_early"
+     ]
+    },
+    {
+     "id": "trichoderma",
+     "category": "biological_management",
+     "text": "ICAR-CPCRI describes Trichoderma harzianum as well proven for bio-suppression of basal stem rot.",
+     "crops": [
+      "arecanut"
+     ],
+     "evidence_ids": [
+      "e_g_trichoderma"
+     ]
+    }
+   ],
+   "chemical_product_ids": [
+    "hexaconazole_5ec"
+   ],
+   "evidence": [
+    {
+     "id": "e_monitor",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Introduction",
+     "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+     "paraphrase": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+     "verified": true
+    },
+    {
+     "id": "e_g_species",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Ganoderma lucidum and G. applanatum are major species associated with the basal stem rot disease of coconut and arecanut.",
+     "paraphrase": "Ganoderma lucidum and G. applanatum are major species associated with basal stem rot of coconut and arecanut.",
+     "verified": true
+    },
+    {
+     "id": "e_g_areca",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Similar types of symptoms are also noticed in basal stem rot affected arecanut.",
+     "paraphrase": "Basal-stem-rot-affected arecanut shows similar types of symptoms.",
+     "verified": true
+    },
+    {
+     "id": "e_g_roots",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "The initial symptom of the disease is decay and death of the fine roots. The characteristic symptom of the disease is extensive rotting and discolouration of the root system.",
+     "paraphrase": "Initial symptom: decay and death of fine roots; characteristic symptom: extensive rotting and discolouration of the root system.",
+     "verified": true
+    },
+    {
+     "id": "e_g_bleed",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "The first above-ground symptom of the disease is the exudation of reddish brown viscous fluid from the basal portions of the trunk.",
+     "paraphrase": "First above-ground symptom: reddish-brown sticky fluid oozing from the base of the trunk.",
+     "verified": true
+    },
+    {
+     "id": "e_g_bark",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "In some palms, the bark from the base of the stem peels off. Fruiting bodies of Ganoderma lucidum appear at the base of the trunk in some palms just above the soil level before wilting or after the death of the palm.",
+     "paraphrase": "In some palms the bark at the base peels off and Ganoderma fruiting bodies appear at the base of the trunk.",
+     "verified": true
+    },
+    {
+     "id": "e_g_crown",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Crown symptoms include wilting of leaflets and yellowing, followed by drying and drooping of leaves in the outer whorls of leaves. The spindle leaf and surrounding two or three young leaves will remain erect and healthy.",
+     "paraphrase": "Crown symptoms: wilting and yellowing, then drying and drooping of outer leaves, while the spindle and 2-3 young leaves stay erect and healthy.",
+     "verified": true
+    },
+    {
+     "id": "e_g_moisture",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Unlike Phytophthora diseases, the diseases caused by Ganoderma are more severe in the moisture-stress areas and gets aggravated due to continuous drought and negligence in farming.",
+     "paraphrase": "Ganoderma diseases are more severe in moisture-stress areas and are aggravated by continuous drought and neglect.",
+     "verified": true
+    },
+    {
+     "id": "e_g_early",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Ganoderma wilt is a slow decline disease and can be managed by following good agricultural practices and integrated disease management approaches in the early stage of symptom expression itself.",
+     "paraphrase": "Ganoderma wilt is a slow-decline disease that can be managed with good agricultural practices and integrated disease management at the early stage of symptoms.",
+     "verified": true
+    },
+    {
+     "id": "e_g_drench",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 3,
+     "locator": "Ganoderma diseases",
+     "quote": "Soil drenching with 1% Bordeaux mixture (40 L/palm) or 0.2% hexaconazole 5EC about 40 L/palm thrice a year for one year or root feeding of hexaconazole 5EC (5 mL per 100 mL of water) at quarterly intervals till complete recovery of the palm.",
+     "paraphrase": "The article lists soil drenching with 1% Bordeaux mixture or 0.2% hexaconazole 5EC and root feeding of hexaconazole; it does not say which crop each treatment is for.",
+     "verified": true
+    },
+    {
+     "id": "e_g_trichoderma",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 6,
+     "locator": "Biological control",
+     "quote": "Use of Trichoderma harzianum for the bio-suppression of basal stem rot and stem bleeding diseases and T. harzianum cakes for the management of bud rot disease is well proven.",
+     "paraphrase": "Trichoderma harzianum is described as well proven for bio-suppression of basal stem rot and stem bleeding.",
+     "verified": true
+    }
+   ],
+   "record_version": "0.1.0",
+   "status": "source_verified",
+   "last_verified": "2026-10-11"
+  },
+  {
+   "id": "coconut_lethal_wilt",
+   "name": "Lethal wilt of coconut (phytoplasma)",
+   "local_names": [],
+   "scientific_names": [
+    {
+     "name": "'Candidatus Phytoplasma asteris'-related strain (16SrI-B)",
+     "evidence_ids": [
+      "e_lw_agent"
+     ]
+    }
+   ],
+   "crops": [
+    "coconut"
+   ],
+   "category": "phytoplasma disease",
+   "affected_parts": [
+    "nuts",
+    "inflorescence",
+    "leaves",
+    "crown"
+   ],
+   "symptoms": [
+    {
+     "code": "abnormal_nut_fall",
+     "specificity": "first_or_characteristic",
+     "evidence_ids": [
+      "e_lw_symptoms"
+     ]
+    },
+    {
+     "code": "inflorescence_necrosis",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_lw_symptoms"
+     ]
+    },
+    {
+     "code": "outer_leaves_yellowing",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_lw_symptoms"
+     ]
+    },
+    {
+     "code": "leaves_drying_drooping",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_lw_leaves"
+     ]
+    },
+    {
+     "code": "crown_collapse",
+     "specificity": "reported",
+     "evidence_ids": [
+      "e_lw_collapse"
+     ]
+    }
+   ],
+   "risk_conditions": [],
+   "crop_stages": [],
+   "any_stage_evidence_ids": [],
+   "geographic_applicability": {
+    "regions": [
+     "Tamil Nadu"
+    ],
+    "note": "Reported in small pockets of Thanjavur, Thiruvarur and Puthukotai districts (spelling as in the source).",
+    "evidence_ids": [
+     "e_lw_geo"
+    ]
+   },
+   "severity_notes": [
+    "The source says diseased palms die within 3-5 months."
+   ],
+   "management": [
+    {
+     "id": "surveillance_eradication",
+     "category": "field_sanitation",
+     "text": "Because the disease is limited in distribution, the source gives periodic surveillance and eradication of diseased palms as the primary management strategy; report suspected palms to the agriculture department or KVK.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_lw_mgmt"
+     ]
+    },
+    {
+     "id": "monitor",
+     "category": "monitoring_and_confirmation",
+     "text": "Inspect palms regularly and have suspected palms confirmed by an agricultural officer or KVK.",
+     "crops": [
+      "coconut"
+     ],
+     "evidence_ids": [
+      "e_monitor"
+     ]
+    }
+   ],
+   "chemical_product_ids": [],
+   "evidence": [
+    {
+     "id": "e_monitor",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 1,
+     "locator": "Introduction",
+     "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+     "paraphrase": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+     "verified": true
+    },
+    {
+     "id": "e_lw_geo",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 4,
+     "locator": "Phytoplasma diseases",
+     "quote": "lethal wilt disease (LWD) of coconut, is a new and recently reported phytoplasma disease of major concern that killed several coconut palms in small pockets of Thanjavur, Thiruvarur and Puthukotai districts in Tamil Nadu.",
+     "paraphrase": "Lethal wilt is a recently reported phytoplasma disease that killed coconut palms in small pockets of Thanjavur, Thiruvarur and Puthukotai districts, Tamil Nadu.",
+     "verified": true
+    },
+    {
+     "id": "e_lw_symptoms",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 4,
+     "locator": "Phytoplasma diseases",
+     "quote": "Abnormal shedding of nuts is the initial symptom which is followed by inflorescence necrosis and yellowing of outer whorls of leaves",
+     "paraphrase": "Initial symptom: abnormal nut shedding, followed by death of flower bunches and yellowing of the outer leaves.",
+     "verified": true
+    },
+    {
+     "id": "e_lw_leaves",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 4,
+     "locator": "Phytoplasma diseases",
+     "quote": "Subsequently, the chlorotic leaves dry and droop down resulting in the skirting of leaves around the trunk.",
+     "paraphrase": "The yellow leaves then dry and droop down around the trunk.",
+     "verified": true
+    },
+    {
+     "id": "e_lw_collapse",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 4,
+     "locator": "Phytoplasma diseases",
+     "quote": "This results in crown collapse and the diseased palms die within 3-5 months leaving a bare trunk.",
+     "paraphrase": "Crown collapse follows and diseased palms die within 3-5 months, leaving a bare trunk.",
+     "verified": true
+    },
+    {
+     "id": "e_lw_agent",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 4,
+     "locator": "Phytoplasma diseases",
+     "quote": "Candidatus Phytoplasma asteris",
+     "paraphrase": "The source associates the disease with a 'Candidatus Phytoplasma asteris'-related strain.",
+     "verified": true
+    },
+    {
+     "id": "e_lw_mgmt",
+     "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+     "page": 4,
+     "locator": "Phytoplasma diseases",
+     "quote": "periodic surveillance and eradication of diseased palms form the primary management strategy.",
+     "paraphrase": "Periodic surveillance and eradication of diseased palms are the primary management strategy.",
+     "verified": true
+    }
+   ],
+   "record_version": "0.1.0",
+   "status": "source_verified",
+   "last_verified": "2026-10-11"
+  }
+ ]
+}
