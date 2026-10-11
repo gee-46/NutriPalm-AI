@@ -5,6 +5,8 @@ import type { Plot } from "../../data/plots";
 import { useBackendCapabilities } from "../../hooks/useBackendCapabilities";
 import { useLatestSoilReport } from "../../hooks/useLatestSoilReport";
 import { listRecommendations, type RecommendationRecord } from "../../lib/apiClient";
+import { listDiseaseAssessments } from "../../lib/phase2/capabilities";
+import type { DiseaseAssessmentRecord } from "../../lib/phase2/contracts";
 import { DashboardWeatherCard } from "./DashboardWeatherCard";
 import { EmptyState, ErrorBanner, PlotSelect } from "../phase2/shared";
 
@@ -73,6 +75,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const { report, loading: reportLoading } = useLatestSoilReport(plotId || undefined);
 
+  const [diseaseChecks, setDiseaseChecks] = useState<DiseaseAssessmentRecord[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!currentUser || caps.disease !== "available" || !plotId) {
+      setDiseaseChecks([]);
+      return;
+    }
+    listDiseaseAssessments(plotId)
+      .then((r) => !cancelled && setDiseaseChecks(r))
+      .catch(() => !cancelled && setDiseaseChecks([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, caps.disease, plotId]);
+  const latestCheck = diseaseChecks[0];
   const [recs, setRecs] = useState<RecommendationRecord[]>([]);
   const [recError, setRecError] = useState<string | null>(null);
   useEffect(() => {
@@ -180,7 +197,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
               <Card title={t("p2.dash.disease")} icon={<Bug className="h-5 w-5" />}>
                 <p className="text-sm font-medium text-gray-700">
-                  {caps.disease === "checking" ? t("p2.dash.disease_checking") : caps.disease === "available" ? t("p2.dash.disease_none") : t("p2.dash.disease_unavailable")}
+                  {caps.disease === "checking"
+                    ? t("p2.dash.disease_checking")
+                    : caps.disease === "available"
+                      ? latestCheck
+                        ? t("p2.dis.dash_latest", { risk: t(({ low: "p2.status.low", moderate: "p2.status.moderate", high: "p2.status.high", insufficient_evidence: "p2.status.insufficient" } as Record<string, string>)[latestCheck.risk_level] ?? "p2.status.unknown"), date: new Date(latestCheck.created_at).toLocaleDateString(locale) })
+                        : t("p2.dis.dash_none")
+                      : t("p2.dash.disease_unavailable")}
                 </p>
                 <LinkButton onClick={() => onNavigate("Disease Intelligence")}>{t("p2.dash.q_disease")}</LinkButton>
               </Card>

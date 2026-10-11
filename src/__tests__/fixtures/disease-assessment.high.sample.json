@@ -1,0 +1,217 @@
+{
+  "assessed_at": "2026-01-01T00:00:00+00:00",
+  "assessment_id": "00000000-0000-0000-0000-000000000001",
+  "candidates": [
+    {
+      "contradicting_observations": [],
+      "contributing_factors": [
+        "Reported symptom: Spear (spindle) leaf withering or drying — the source describes it as a first or characteristic symptom.",
+        "Reported symptom: Spindle comes out easily when pulled — the source describes it as a first or characteristic symptom.",
+        "Supportive condition you confirmed: The area gets very high annual rainfall (above 2000 mm)."
+      ],
+      "disease_id": "coconut_bud_rot",
+      "disease_name": "Bud rot of coconut",
+      "evidence": [
+        {
+          "description": "First symptoms: the spear leaf withers and dries and can be pulled out; the base of the spindle is rotten with a foul smell.",
+          "evidence_id": "e_bud_initial",
+          "page": 1,
+          "quote": "The initial symptoms appear as withering and drying of spear leaf which comes out by pulling the spindle. The basal portion of the spindle is completely rotten emitting a foul smell.",
+          "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 1",
+          "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+          "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+        },
+        {
+          "description": "Phytophthora diseases of coconut and arecanut are hard to manage in endemic areas with high rainfall (above 2000 mm).",
+          "evidence_id": "e_high_rain",
+          "page": 2,
+          "quote": "Managing the phytophthora diseases in crops like coconut and arecanut in endemic areas with high rainfall (>2000 mm) is a challenging task.",
+          "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 2",
+          "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+          "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+        }
+      ],
+      "first_or_characteristic_matches": 2,
+      "is_confirmed_diagnosis": false,
+      "management": [
+        "Destroy the rotten portion of the crown and affected nuts; field sanitation reduces the build-up of the pathogen in the plantation.",
+        "Improve drainage and use wider spacing to reduce humidity in the plantation.",
+        "ICAR-CPCRI describes Trichoderma harzianum cakes as well proven for managing bud rot."
+      ],
+      "matched_symptoms": [
+        "spear_leaf_withering",
+        "spindle_pulls_out"
+      ],
+      "precautions": [
+        "Inspect palms regularly so that spear-leaf and crown symptoms are noticed early, and have suspected palms confirmed by an agricultural officer or KVK.",
+        "Confirm the disease and any chemical use with a qualified agricultural officer or your local Krishi Vigyan Kendra (KVK). Follow the product label and local regulations; NutriPalm does not set pesticide doses."
+      ],
+      "rank": 1,
+      "region_note": null,
+      "risk_level": "high",
+      "scientific_names": [
+        "Phytophthora palmivora"
+      ],
+      "supportive_conditions": [
+        "high_rainfall_area"
+      ],
+      "treatment": {
+        "chemical_management": [
+          {
+            "actionable": false,
+            "active_ingredient": "copper sulphate and lime (Bordeaux mixture)",
+            "evidence": [
+              {
+                "description": "ICAR-CPCRI: before monsoon onset in endemic areas, spray 1% Bordeaux mixture, once more after 45 days, and again if the rains are prolonged.",
+                "evidence_id": "e_ih_bordeaux",
+                "page": 2,
+                "quote": "It is important to adopt prophylactic treatment in disease endemic areas before the onset of monsoon by spraying 1% Bordeaux mixture and one more spray after 45 days. If the rainy period is extended, one more spray is also required.",
+                "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 2",
+                "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+                "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+              }
+            ],
+            "label_summary": null,
+            "message": "Recommended by the cited institute but NOT label-verified by NutriPalm. Treat this as information to discuss with an agricultural officer, not as a dose.",
+            "product_id": "bordeaux_mixture",
+            "product_name": "Bordeaux mixture",
+            "reported_recommendation": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI) reports: concentration 1%; spraying; prophylactic, before the onset of monsoon; one more spray after 45 days; one more if the rainy period is extended; for Phytophthora diseases in endemic areas.",
+            "status": "institutional_recommendation"
+          }
+        ],
+        "chemical_status": "institutional_recommendation_only",
+        "disease_id": "coconut_bud_rot",
+        "referral": "Confirm the disease and any chemical use with a qualified agricultural officer or your local Krishi Vigyan Kendra (KVK). Follow the product label and local regulations; NutriPalm does not set pesticide doses.",
+        "rule_version": "1.0.0",
+        "steps": [
+          {
+            "category": "monitoring_and_confirmation",
+            "evidence": [
+              {
+                "description": "ICAR-CPCRI states that regular monitoring for early diagnosis of pests and diseases is indispensable.",
+                "evidence_id": "e_monitor",
+                "page": 1,
+                "quote": "Regular monitoring for early diagnosis of pests and diseases and integrated pest and disease management strategies are indispensable.",
+                "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 1",
+                "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+                "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+              }
+            ],
+            "id": "monitor",
+            "text": "Inspect palms regularly so that spear-leaf and crown symptoms are noticed early, and have suspected palms confirmed by an agricultural officer or KVK."
+          },
+          {
+            "category": "field_sanitation",
+            "evidence": [
+              {
+                "description": "The rotten portion of the crown and affected nuts should be destroyed (field sanitation).",
+                "evidence_id": "e_sanitation",
+                "page": 2,
+                "quote": "The rotten portion of the crown, fall, affected nuts, cocoa pods, etc. should be destroyed.",
+                "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 2",
+                "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+                "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+              },
+              {
+                "description": "Field sanitation reduces inoculum build-up and checks spread.",
+                "evidence_id": "e_inoculum",
+                "page": 2,
+                "quote": "Field sanitation would reduce the inoculum build-up in the plantations and check the spread of the disease.",
+                "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 2",
+                "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+                "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+              }
+            ],
+            "id": "sanitation",
+            "text": "Destroy the rotten portion of the crown and affected nuts; field sanitation reduces the build-up of the pathogen in the plantation."
+          },
+          {
+            "category": "irrigation_drainage_field",
+            "evidence": [
+              {
+                "description": "Improved drainage and wider spacing help reduce relative humidity.",
+                "evidence_id": "e_drainage",
+                "page": 2,
+                "quote": "Improved drainage and wider spacing will help in reducing the relative humidity.",
+                "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 2",
+                "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+                "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+              }
+            ],
+            "id": "drainage",
+            "text": "Improve drainage and use wider spacing to reduce humidity in the plantation."
+          },
+          {
+            "category": "biological_management",
+            "evidence": [
+              {
+                "description": "T. harzianum cakes are described as well proven for managing bud rot.",
+                "evidence_id": "e_trichoderma",
+                "page": 6,
+                "quote": "Use of Trichoderma harzianum for the bio-suppression of basal stem rot and stem bleeding diseases and T. harzianum cakes for the management of bud rot disease is well proven.",
+                "source": "ICAR-Central Plantation Crops Research Institute (ICAR-CPCRI), Kasaragod — Crop protection: integrated management of pests and diseases for the successful cultivation of coconut, arecanut and cocoa (2022-11/12), p. 6",
+                "source_id": "hegde_josephrajkumar_2022_indian_horticulture",
+                "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129751/48484/472822"
+              }
+            ],
+            "id": "trichoderma_cake",
+            "text": "ICAR-CPCRI describes Trichoderma harzianum cakes as well proven for managing bud rot."
+          }
+        ]
+      }
+    }
+  ],
+  "crop": "coconut",
+  "disclaimer": "This is a screening result from a rule-based tool, not a diagnosis. A high risk level means your observations match what the cited sources describe; it does not prove the disease is present. Have the palm checked by a qualified agricultural officer or your local Krishi Vigyan Kendra (KVK) before taking action.",
+  "expert_review_status": "pending",
+  "follow_up_questions": [
+    "Is this true: Rhinoceros beetle damage has been seen on the palms? (the source links it to Bud rot of coconut)"
+  ],
+  "inputs_not_used": [],
+  "inputs_used": [
+    "Crop: coconut",
+    "Crop stage: adult_palm",
+    "Symptoms: Spear (spindle) leaf withering or drying, Spindle comes out easily when pulled",
+    "Field conditions answered: The area gets very high annual rainfall (above 2000 mm) = yes",
+    "Plot state: Karnataka"
+  ],
+  "kb_version": "0.1.0",
+  "limitations": [
+    "Disease records are screened only against source-verified evidence; they have not been reviewed by a plant pathologist.",
+    "This is a screening result from a rule-based tool, not a diagnosis. A high risk level means your observations match what the cited sources describe; it does not prove the disease is present. Have the palm checked by a qualified agricultural officer or your local Krishi Vigyan Kendra (KVK) before taking action."
+  ],
+  "missing_inputs": [
+    "Field condition: Rhinoceros beetle damage has been seen on the palms."
+  ],
+  "next_steps": [
+    "Have the palm examined by a qualified agricultural officer or your local KVK to confirm or rule out the disease.",
+    "Arrange this confirmation soon; do not wait for the next assessment.",
+    "Do not apply any pesticide on the basis of this result alone."
+  ],
+  "observed": {
+    "affected_parts": [],
+    "crop_stage": "adult_palm",
+    "duration_days": null,
+    "field_conditions": {
+      "high_rainfall_area": "yes"
+    },
+    "kind": "farmer_reported",
+    "observation_date": null,
+    "plot_state": "Karnataka",
+    "severity": null,
+    "symptoms": [
+      {
+        "code": "spear_leaf_withering",
+        "label": "Spear (spindle) leaf withering or drying"
+      },
+      {
+        "code": "spindle_pulls_out",
+        "label": "Spindle comes out easily when pulled"
+      }
+    ]
+  },
+  "plot_id": "p1",
+  "risk_explanation": "Risk is high. The best-matching disease is 'Bud rot of coconut': you reported 2 symptom(s) that the cited sources associate with it (2 described as first or characteristic) and confirmed 1 supportive condition(s). This is a screening result, not a diagnosis.",
+  "risk_level": "high",
+  "rule_version": "1.0.0"
+}

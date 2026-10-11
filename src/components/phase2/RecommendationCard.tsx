@@ -34,6 +34,8 @@ export interface RecommendationCardProps {
   missing?: string[];
   date?: string;
   actions?: Array<{ label: string; onClick: () => void }>;
+  /** Extra module-specific blocks (e.g. grouped management, chemical status) rendered inside the same card. */
+  children?: React.ReactNode;
 }
 
 const ICONS: Record<RecommendationKind, React.ElementType> = {
@@ -134,6 +136,8 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = (p) => {
           <Bullets items={p.missing!} />
         </Section>
       )}
+
+      {p.children}
 
       {has(p.actions) && (
         <footer className="flex flex-wrap gap-3 pt-1">
