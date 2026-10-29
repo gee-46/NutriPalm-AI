@@ -10,7 +10,6 @@ An agricultural intelligence platform by **Samruddhi Organics**
 
 Soil-report intelligence, evidence-gated fertilizer recommendations, and farm-level digital twins — with a roadmap toward retrieval-grounded AI and professional agronomic review.
 
-[![Status](https://img.shields.io/badge/status-not%20production--ready-orange?style=flat-square)](#-honest-status)
 [![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript-149ECA?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
@@ -19,14 +18,11 @@ Soil-report intelligence, evidence-gated fertilizer recommendations, and farm-le
 
 </div>
 
-> **Status: not production-ready.** The code is tested locally (see [Tests](#-tests)), but nothing has been verified on a managed Supabase project or a hosted
-> deployment, and **no fertilizer quantity is produced until an agronomist approves a cited rule** (see [Honest status](#-honest-status)).
-
 ---
 
 ## 📑 Contents
 
-[Vision](#-the-vision) · [Product](#-the-product) · [Honest status](#-honest-status) · [Architecture](#-system-architecture) · [How a recommendation is made](#-how-a-recommendation-is-made) · [Digital Twin](#-the-digital-twin) · [Planned: RAG](#-planned-rag-powered-agricultural-intelligence) · [Planned: agronomist review](#-planned-the-agronomist-review-network) · [Security](#-security-model) · [Tech](#-technology-foundation) · [Roadmap](#-development-roadmap) · [Getting started](#-getting-started) · [Tests](#-tests)
+[Vision](#-the-vision) · [Product](#-the-product) · [Honest status](#-honest-status) · [Architecture](#-system-architecture) · [How a recommendation is made](#-how-a-recommendation-is-made) · [Digital Twin](#-the-digital-twin) · [Planned: RAG](#-planned-rag-powered-agricultural-intelligence) · [Planned: agronomist review](#-planned-the-agronomist-review-network) · [Security](#-security-model) · [Tech](#-technology-foundation) · [Roadmap](#-development-roadmap) · [Getting started](#-getting-started)
 
 ---
 
@@ -412,28 +408,6 @@ curl http://localhost:8000/health/ready      # 200 only if config, Tesseract and
 
 Point a deployment at its own pack with `RULE_PACK_PATH`. Start from a candidate record, resolve its open questions with an agronomist, add the reviewer and date, and validate with the `check` command above. Do not edit a record to "pass" validation without the underlying approval.
 
----
-
-## 🧪 Tests
-
-All test results are **local, PGlite or emulator** results; none proves anything about a managed Supabase project or a hosted deployment.
-
-| Command | What it covers | Last result |
-|---|---|---|
-| `npm run build` · `npm run lint` · `npm test` | type-check + bundle · oxlint · Vitest | pass · 0 errors · 68/68 |
-| `cd backend && python -m pytest` | OCR parsing/validation, review workflow, rule gate and validation, schedule engine, unit conversions, token attacks, API auth/ownership | 513 passed |
-| `cd backend && python -m eval.ocr_eval --include-synthetic` | per-field OCR metrics incl. review routing, with sample-size caveats | 1 real document only |
-| `cd supabase/tests && npm run verify` | migrations on clean PostgreSQL 17 (PGlite) + two-user RLS attack matrix | 304/304 |
-| `WEAKEN=1 npm run verify` | mutation check: weakened policies must make the tests fail | 45 expected failures |
-| `npm run verify:upgrade` | migration 013 on a populated 001–012 database is additive | 21/21 |
-| `npm run smoke:selftest` | the staging workflow script against the local emulator (`smoke:staging` for a real deployment) | 25/25 |
-| `E2E_PYTHON=… npm run e2e` (in `supabase/tests`) | real browser, real backend, **emulated** Supabase | 131/131 |
-| `python scripts/check_sentinel.py` (in `backend/`) | safe Sentinel Hub connectivity diagnosis | auth rejected |
-| `npm run verify:remote` | the RLS matrix against a disposable managed project | **never run** (requires disposable Supabase project) |
-
-Real recommendations were exercised only with clearly labelled **test-fixture** rules (accepted only when `ENVIRONMENT=development`). No approved real rule has ever been run.
-
----
 
 
 ## 🤝 Contributors and license
