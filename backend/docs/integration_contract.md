@@ -1,3 +1,8 @@
+> **Updated by migration 013 (see `docs/OCR_AND_FERTILIZER_PIPELINE.md`).** `soil_reports` rows now carry `extraction_id`,
+> `verification_status` and `verified_at`; the recommendation endpoint refuses a soil report whose `verification_status` is NULL and answers
+> `insufficient_data` when no cited rule exists for the crop; `crop_price_per_ton_inr` is no longer needed; `recommendations` rows carry
+> `engine_version`, `generated_at` and `provenance`. The sections below describe the original hand-off and are kept for reference.
+
 # NutriPalm AI - Integration Contract
 
 This document defines the **data contract** the AI/ML Recommendation Engine
