@@ -116,8 +116,6 @@ def _parse_numeric_value(val: float | str | None) -> float | None:
 
 
 def validate(fields: dict[str, ExtractedField]) -> dict[str, ExtractedField]:
-    import re  # Ensure re is imported for helper
-
     for key, extracted_field in fields.items():
         if extracted_field.value is None:
             extracted_field.validation = "missing"
@@ -150,6 +148,33 @@ def validate(fields: dict[str, ExtractedField]) -> dict[str, ExtractedField]:
                 f"Value {extracted_field.value} is outside the physically "
                 f"plausible range [{range_.hard_min}, {range_.hard_max}] "
                 "for this parameter. Likely OCR misread."
+            )
+            continue
+
+        # Anything the extractor had to repair or infer is a guess, not a
+        # reading: hold it for a human no matter how plausible it looks.
+        if extracted_field.normalizations:
+            extracted_field.validation = "review"
+            extracted_field.warnings.extend(extracted_field.normalizations)
+            continue
+
+        # ">5" / "<0.1" are censored readings, not measurements.
+        if isinstance(extracted_field.value, str):
+            extracted_field.validation = "review"
+            extracted_field.warnings.append(
+                f"Reported as '{extracted_field.value}' (a bound, not an exact "
+                "measurement). Enter the value you want to use."
+            )
+            continue
+
+        # Do not assume units: when the report does not state one next to the
+        # value, the conventional unit is shown but never trusted.
+        if extracted_field.unit_source == "assumed_default":
+            extracted_field.validation = "review"
+            extracted_field.warnings.append(
+                f"No unit was found next to this value; '{extracted_field.unit}' is "
+                "the usual unit for this parameter but was not read from the report. "
+                "Confirm the unit."
             )
             continue
 

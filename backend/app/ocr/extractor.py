@@ -44,13 +44,17 @@ _NUMBER_RE = r"(?:[<>]=?|=)?\s*[+-]?\d[\d,]*(?:\.\d+)?"
 _OCR_DIGIT_FIXES = {"O": "0", "o": "0", "I": "1", "l": "1", "S": "5"}
 
 
-def parse_number(raw: str) -> float | str | None:
-    """Parse a numeric token, tolerating thousands commas and common OCR
-    digit confusions. Returns None if it still can't be parsed.
-    Preserves inequalities like > or < as normalized strings."""
+def parse_number_ex(raw: str) -> tuple[float | str | None, bool]:
+    """Parse a numeric token. Returns (value, repaired).
+
+    ``repaired`` is True when the token only parsed after applying the
+    OCR letter/digit substitutions (O->0, I->1, ...). Such values are
+    guesses and the caller must route them to human review.
+    Tolerates thousands commas. Preserves inequalities (>, <, =) as
+    normalized strings so a censored reading is never mistaken for an exact one.
+    """
     candidate = raw.strip()
 
-    # Extract inequality prefix
     ineq_match = re.match(r"^([<>]=?|=)?\s*(.*)$", candidate)
     prefix = ""
     num_part = candidate
@@ -59,26 +63,27 @@ def parse_number(raw: str) -> float | str | None:
         num_part = ineq_match.group(2)
 
     cleaned = num_part.replace(",", "")
-    try:
-        val = float(cleaned)
+
+    def _format(val: float) -> float | str:
         if prefix:
-            if val.is_integer():
-                return f"{prefix}{int(val)}"
-            return f"{prefix}{val}"
+            return f"{prefix}{int(val)}" if val.is_integer() else f"{prefix}{val}"
         return val
+
+    try:
+        return _format(float(cleaned)), False
     except ValueError:
         pass
 
     fixed = "".join(_OCR_DIGIT_FIXES.get(ch, ch) for ch in cleaned)
     try:
-        val = float(fixed)
-        if prefix:
-            if val.is_integer():
-                return f"{prefix}{int(val)}"
-            return f"{prefix}{val}"
-        return val
+        return _format(float(fixed)), True
     except ValueError:
-        return None
+        return None, False
+
+
+def parse_number(raw: str) -> float | str | None:
+    """Backward-compatible wrapper around :func:`parse_number_ex`."""
+    return parse_number_ex(raw)[0]
 
 
 # ---------------------------------------------------------------------------
@@ -265,15 +270,25 @@ _SEPARATOR = r"[\s:\-=\|/\(\)\[\]]{0,30}"
 
 def _find_value_after_label(line: str, label_match: re.Match) -> tuple[str, str | None] | None:
     """Given a label match on a line, find the number (and optional unit)
-    that immediately follows it, tolerating typical separators/table gaps."""
+    that immediately follows it, tolerating typical separators/table gaps.
+
+    A '-' is a separator in "Nitrogen - 245" and "Nitrogen-245", but a minus sign in
+    "Nitrogen: -245" / "Nitrogen (N) -245" (hyphen glued to the digits and preceded by
+    whitespace, ':' or '='). Swallowing a real minus would turn a negative reading into a
+    plausible positive one, so the sign is kept and the validator rejects the value."""
     tail = line[label_match.end():]
 
-    m = re.match(rf"{_SEPARATOR}({_NUMBER_RE})\s*", tail)
+    m = re.match(rf"({_SEPARATOR})({_NUMBER_RE})\s*", tail)
     if not m:
         return None
 
-    number_raw = m.group(1)
+    sep, number_raw = m.group(1), m.group(2)
     rest = tail[m.end():]
+
+    if sep.endswith("-") and not number_raw.lstrip().startswith(("-", "+")):
+        before = sep[-2] if len(sep) >= 2 else line[label_match.end() - 1 : label_match.end()]
+        if before.isspace() or before in ":=":
+            number_raw = "-" + number_raw.lstrip()
 
     unit_match = _UNIT_PATTERN.match(rest.strip())
     unit_raw = unit_match.group(1) if unit_match else None
@@ -290,63 +305,164 @@ def _line_quality_penalty(line: str) -> float:
     return min(0.15, 0.05 * noisy_chars)
 
 
+# Longest source excerpt stored per field. Enough to see the label and value
+# next to each other; not enough to reproduce a document.
+_SOURCE_TEXT_MAX = 200
+
+# Repairs for two common OCR/text-layer defects. They change characters, so every
+# line they touch is recorded and any value read from it is held for review.
+_SLASH_BETWEEN_DIGITS = re.compile(r"(\d)/(\d)")
+_DOT_SLASH_DIGIT = re.compile(r"\.\/(\d)")
+
+
+def _repair_line(line: str) -> tuple[str, list[str]]:
+    notes: list[str] = []
+    repaired = line
+    if _SLASH_BETWEEN_DIGITS.search(repaired):
+        repaired = _SLASH_BETWEEN_DIGITS.sub(r"\1\2", repaired)
+        notes.append(
+            "A '/' between digits was removed from this line (possible OCR misread of a digit)."
+        )
+    if _DOT_SLASH_DIGIT.search(repaired):
+        repaired = _DOT_SLASH_DIGIT.sub(r".7\1", repaired)
+        notes.append("'./' was read as '.7' on this line (possible OCR misread).")
+    return repaired, notes
+
+
+@dataclass
+class _Line:
+    page: int | None
+    text: str  # after repair
+    original: str
+    repairs: list[str]
+
+
+def _build_lines(pages: list[tuple[int | None, str]]) -> list[_Line]:
+    lines: list[_Line] = []
+    for page_no, text in pages:
+        for raw in text.replace("\u2212", "-").splitlines():
+            if not raw.strip():
+                continue
+            repaired, notes = _repair_line(raw)
+            lines.append(_Line(page=page_no, text=repaired, original=raw, repairs=notes))
+    return lines
+
+
+# A second reading of the same parameter this close in confidence to the chosen
+# one, but with a different number, means the report is ambiguous. Only values read
+# from the label's own line are compared: numbers picked up from neighbouring lines
+# are already held for review and would make this check fire on unrelated figures.
+_CONFLICT_CONFIDENCE_WINDOW = 0.25
+
+
+def _flag_conflicting_candidates(best: ExtractedField, candidates: list[ExtractedField]) -> None:
+    others = {
+        str(c.extracted_text)
+        for c in candidates
+        if c is not best
+        and c.value != best.value
+        and c.confidence >= best.confidence - _CONFLICT_CONFIDENCE_WINDOW
+    }
+    if others:
+        best.normalizations.append(
+            "The report also contains a different value for this parameter ("
+            + ", ".join(sorted(others))
+            + "). Check which one applies."
+        )
+
+
 def extract(raw_text: str) -> dict[str, ExtractedField]:
+    """Extract from a single block of text (page number unknown)."""
+    return extract_pages([(None, raw_text)])
+
+
+def extract_pages(pages: list[tuple[int | None, str]]) -> dict[str, ExtractedField]:
     """
-    Extract every recognized parameter from raw OCR/text-layer output.
+    Extract every recognized parameter from per-page text.
 
     Returns a dict keyed by parameter name (CANONICAL_PARAMETERS +
-    EXTRA_PARAMETERS), each value an ExtractedField. Parameters not found
-    are returned with value=None, validation="missing".
+    EXTRA_PARAMETERS + MICRONUTRIENT_PARAMETERS), each an ExtractedField that
+    carries its provenance (source line, page, unit source, any automatic
+    repair). Parameters not found are returned with value=None,
+    validation="missing" -- never zero.
     """
-    # Normalize common OCR errors (e.g. "0.7/1" -> "0.71", "0./1" -> "0.71")
-    raw_text = re.sub(r"(\d)\/(\d)", r"\1\2", raw_text)
-    raw_text = re.sub(r"\.\/(\d)", r".7\1", raw_text)
-
-    lines = [ln for ln in raw_text.splitlines() if ln.strip()]
-
+    lines = _build_lines(pages)
     results: dict[str, ExtractedField] = {}
 
     for key in (*CANONICAL_PARAMETERS, *EXTRA_PARAMETERS, *MICRONUTRIENT_PARAMETERS):
         spec = PARAMETER_SPECS[key]
         best: ExtractedField | None = None
+        same_line_candidates: list[ExtractedField] = []
 
-        for line_idx, line in enumerate(lines):
+        for line_idx, line_obj in enumerate(lines):
+            line = line_obj.text
             for pattern in spec.patterns:
                 for label_match in pattern.regex.finditer(line):
                     found = _find_value_after_label(line, label_match)
+                    value_line = line_obj
+                    from_neighbour = False
                     if not found:
                         for offset in range(1, 4):
-                            if line_idx + offset < len(lines):
-                                next_line = lines[line_idx + offset]
-                                number_tokens = list(re.finditer(rf"([<>]=?|=)?\s*(?:[+-]?\d[\d,]*(?:\.\d+)?)", next_line))
-                                if number_tokens:
-                                    label_start_pos = label_match.start()
-                                    line_len = len(line)
-                                    if label_start_pos < line_len / 2:
-                                        matched_token = number_tokens[0]
-                                    else:
-                                        matched_token = number_tokens[-1]
-                                    
-                                    number_raw = matched_token.group(0)
-                                    tail = next_line[matched_token.end():]
-                                    unit_match = _UNIT_PATTERN.match(tail.strip())
-                                    unit_raw = unit_match.group(1) if unit_match else None
-                                    
-                                    found = (number_raw, unit_raw)
-                                    break
+                            if line_idx + offset >= len(lines):
+                                break
+                            next_obj = lines[line_idx + offset]
+                            next_line = next_obj.text
+                            number_tokens = list(
+                                re.finditer(
+                                    r"([<>]=?|=)?\s*(?:[+-]?\d[\d,]*(?:\.\d+)?)", next_line
+                                )
+                            )
+                            if number_tokens:
+                                if label_match.start() < len(line) / 2:
+                                    matched_token = number_tokens[0]
+                                else:
+                                    matched_token = number_tokens[-1]
+                                tail = next_line[matched_token.end():]
+                                unit_match = _UNIT_PATTERN.match(tail.strip())
+                                unit_raw = unit_match.group(1) if unit_match else None
+                                found = (matched_token.group(0), unit_raw)
+                                value_line = next_obj
+                                from_neighbour = True
+                                break
 
                     if not found:
                         continue
 
                     number_raw, unit_raw = found
-                    value = parse_number(number_raw)
+                    value, digit_repaired = parse_number_ex(number_raw)
                     if value is None:
                         continue
 
-                    unit = _normalize_unit(unit_raw) or pattern.default_unit
+                    stated_unit = _normalize_unit(unit_raw)
+                    unit = stated_unit or pattern.default_unit
+                    if pattern.default_unit is None and stated_unit is None:
+                        unit_source = "not_applicable"
+                    elif stated_unit:
+                        unit_source = "stated"
+                    else:
+                        unit_source = "assumed_default"
+
+                    notes: list[str] = list(line_obj.repairs)
+                    if value_line is not line_obj:
+                        notes.extend(n for n in value_line.repairs if n not in notes)
+                    if digit_repaired:
+                        notes.append(
+                            f"'{number_raw.strip()}' only parsed after replacing look-alike "
+                            "letters with digits (possible OCR misread)."
+                        )
+                    if from_neighbour:
+                        notes.append(
+                            "The number was taken from a line below the label, not from the "
+                            "label's own line. Confirm it belongs to this parameter."
+                        )
+
                     confidence = max(
                         0.0, pattern.base_confidence - _line_quality_penalty(line)
                     )
+
+                    source = line_obj.original.strip()
+                    if from_neighbour:
+                        source = f"{source} | {value_line.original.strip()}"
 
                     candidate = ExtractedField(
                         parameter=key,
@@ -356,10 +472,20 @@ def extract(raw_text: str) -> dict[str, ExtractedField]:
                         confidence=round(confidence, 4),
                         validation="review",  # validator.py finalizes this
                         warnings=[],
+                        extracted_text=number_raw.strip(),
+                        source_text=source[:_SOURCE_TEXT_MAX],
+                        page=value_line.page,
+                        unit_source=unit_source,
+                        normalizations=notes,
                     )
 
+                    if not from_neighbour:
+                        same_line_candidates.append(candidate)
                     if best is None or candidate.confidence > best.confidence:
                         best = candidate
+
+        if best is not None:
+            _flag_conflicting_candidates(best, same_line_candidates)
 
         results[key] = best or ExtractedField(
             parameter=key,
