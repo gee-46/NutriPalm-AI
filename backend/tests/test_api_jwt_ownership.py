@@ -12,22 +12,26 @@ from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
-from jose import jwt
+import jwt
 
 from app.config import Settings, get_settings
 from app.main import app
 from app.repositories.plot_geometry_repository import get_plot_geometry_repository
 from app.repositories.plot_repository import get_plot_repository
 from app.repositories.recommendation_repository import get_recommendation_repository
+from app.repositories.soil_extraction_repository import get_extraction_repository
 from app.repositories.soil_report_repository import (
     get_soil_report_repository,
     get_soil_report_writer,
 )
+from app.services.rule_provenance import get_rule_pack
 from app.services import sentinel_service
 from app.services.live_twin_service import get_live_twin_service_dependency
 from app.services.twin_prediction_service import get_twin_prediction_service
 from app.schemas.inputs import PlotInput, SoilTestInput
 from tests.conftest import (
+    FakeExtractionRepository,
+    make_test_rule_pack,
     FakePlotRepository,
     FakeRecommendationRepository,
     FakeSoilReportRepository,
@@ -68,6 +72,7 @@ class _Soil(FakeSoilReportRepository):
         mk = lambda sid, pid, oid: SoilTestInput(
             soil_report_id=sid, plot_id=pid, owner_id=oid, nitrogen_kg_ha=140, phosphorus_kg_ha=20,
             potassium_kg_ha=300, organic_carbon_percent=0.9, ph=5.5,
+            verification_status="user_confirmed",
         )
         self.reports = {"soil-a": mk("soil-a", "plot-a", A_ID), "soil-b": mk("soil-b", "plot-b", B_ID)}
 
@@ -86,6 +91,9 @@ def api(monkeypatch):
     app.dependency_overrides[get_plot_repository] = lambda: _Plots()
     app.dependency_overrides[get_soil_report_repository] = lambda: _Soil()
     app.dependency_overrides[get_soil_report_writer] = lambda: writer
+    extractions = FakeExtractionRepository()
+    app.dependency_overrides[get_extraction_repository] = lambda: extractions
+    app.dependency_overrides[get_rule_pack] = lambda: make_test_rule_pack()
     app.dependency_overrides[get_recommendation_repository] = lambda: rec_repo
     app.dependency_overrides[get_twin_prediction_service] = lambda: FakeTwinPredictionService()
     app.dependency_overrides[get_live_twin_service_dependency] = lambda: _LiveService()
@@ -94,6 +102,7 @@ def api(monkeypatch):
         client = TestClient(app)
         recs = rec_repo
         soil_writer = writer
+        extraction_repo = extractions
 
     # a recommendation owned by B (the target) and one owned by A
     from app.services import recommendation_service
@@ -200,10 +209,9 @@ ROUTES = [
     ("GET", "/api/recommendations/anything"),
     ("POST", "/api/recommendations"),
     ("POST", "/api/soil-reports/upload"),
-    ("GET", "/api/disease/vocabulary"),
-    ("POST", "/api/disease/assess"),
-    ("GET", "/api/disease/assessments"),
-    ("GET", "/api/disease/assessments/anything"),
+    ("GET", "/api/soil-reports/extractions"),
+    ("GET", "/api/soil-reports/extractions/anything"),
+    ("POST", "/api/soil-reports/extractions/anything/confirm"),
 ]
 
 
@@ -255,6 +263,7 @@ def test_every_api_route_is_covered_by_the_auth_matrix():
         template = re.sub(r"/api/plots/[0-9a-f-]{36}/", "/api/plots/{plot_id}/", path)
         template = re.sub(r"/(ndvi|bhunaksha)/[0-9a-f-]{36}$", lambda m: f"/{m.group(1)}/{{plot_id}}", template)
         template = template.replace("/api/recommendations/anything", "/api/recommendations/{recommendation_id}")
-        template = template.replace("/api/disease/assessments/anything", "/api/disease/assessments/{assessment_id}")
+        template = template.replace("/api/soil-reports/extractions/anything", "/api/soil-reports/extractions/{extraction_id}")
+        template = template.replace("/api/soil-reports/extractions/anything/confirm", "/api/soil-reports/extractions/{extraction_id}/confirm")
         covered.add((method, template))
     assert registered == covered, f"uncovered: {registered - covered}; stale: {covered - registered}"

@@ -11,7 +11,7 @@ import time
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from jose import jwt
+import jwt
 
 from app.config import Settings
 from app.dependencies import AuthenticatedUser, get_current_user
@@ -19,7 +19,9 @@ from app.main import app
 from app.repositories.plot_repository import get_plot_repository
 from app.repositories.recommendation_repository import get_recommendation_repository
 from app.repositories.soil_report_repository import get_soil_report_repository
+from app.services.rule_provenance import get_rule_pack
 from tests.conftest import (
+    make_test_rule_pack,
     FakePlotRepository,
     FakeRecommendationRepository,
     FakeSoilReportRepository,
@@ -57,6 +59,7 @@ def as_user():
         app.dependency_overrides[get_plot_repository] = lambda: _TwoUserPlots()
         app.dependency_overrides[get_soil_report_repository] = lambda: _TwoUserSoil()
         app.dependency_overrides[get_recommendation_repository] = lambda: repo
+        app.dependency_overrides[get_rule_pack] = lambda: make_test_rule_pack()
         return TestClient(app)
 
     yield _login
