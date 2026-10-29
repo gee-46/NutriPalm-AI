@@ -64,8 +64,8 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}` || proc
         "src/components/PrototypeAuth.tsx",
         ...[
           "DashboardScreen", "DashboardWeatherCard", "FarmerScreen", "FarmPlotScreen", "SoilReportScreen", "RecommendationScreen",
-          "DigitalTwinScreen", "AnalyticsScreen", "SettingsScreen", "NotFoundScreen", "DiseaseScreen", "CropSuitabilityScreen",
-          "WeatherAdvisoryScreen", "HistoryScreen", "GoogleMapBoundarySurveyor", "FarmPlotOverviewMap", "LeafletMapPicker", "LoadingSkeletons",
+          "DigitalTwinScreen", "TwinManagementPanel", "ExtractionReview", "SettingsScreen", "NotFoundScreen",
+          "HistoryScreen", "GoogleMapBoundarySurveyor", "FarmPlotOverviewMap", "LeafletMapPicker", "LoadingSkeletons",
         ].map((n) => `src/components/prototype/${n}.tsx`),
         "src/components/phase2/shared.tsx",
         "src/components/phase2/RecommendationCard.tsx",
