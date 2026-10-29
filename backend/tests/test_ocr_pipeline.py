@@ -104,8 +104,17 @@ def test_pipeline_hegde_report():
     result = run_pipeline("P_P_Hegde_Rayee.pdf", content)
     
     assert result.success is True
-    assert result.ready_for_persistence is True
-    
+    # This card interleaves its columns in the text layer, so N and K are read
+    # from a line below their labels and P / OC have no unit beside the value.
+    # The values are right, but they are ambiguous -> a human must confirm.
+    assert result.status == "needs_review"
+    assert result.ready_for_persistence is False
+    assert result.soil_parameters.nitrogen.validation == "review"
+    assert result.soil_parameters.phosphorus.unit_source == "assumed_default"
+    assert result.soil_parameters.ph.validation == "valid"
+    assert result.soil_parameters.nitrogen.page == 1
+    assert result.document_sha256 and len(result.document_sha256) == 64
+
     # Assert exact target values:
     assert result.soil_parameters.nitrogen.value == 211.0
     assert result.soil_parameters.phosphorus.value == 23.46

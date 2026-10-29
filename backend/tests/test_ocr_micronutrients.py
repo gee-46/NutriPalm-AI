@@ -43,7 +43,13 @@ def test_real_ocr_still_extracts_macronutrients_alongside_micronutrients():
     for key, expected in MICRONUTRIENT_MACRO_VALUES.items():
         field = getattr(result.soil_parameters, key)
         assert field.value == expected
-        assert field.validation == "valid"
+        if key == "organic_carbon":
+            # Tesseract really reads "0.71" as "0.7/1". The extractor repairs it
+            # to 0.71 but must not trust its own repair: held for review.
+            assert field.validation == "review"
+            assert any("'/'" in w for w in field.warnings)
+        else:
+            assert field.validation == "valid"
 
 
 def test_report_with_no_micronutrient_section_returns_null_not_fabricated():
