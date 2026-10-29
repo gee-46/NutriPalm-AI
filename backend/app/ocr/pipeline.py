@@ -1,22 +1,34 @@
 """
 app/ocr/pipeline.py
 
-Orchestrates the full OCR + extraction + validation pipeline for one
-uploaded soil report file, producing an OcrExtractionResult.
+The single entry point that turns one uploaded soil-report file into a
+structured, validated OcrExtractionResult:
 
-This is the single function the API router should call.
+    bytes -> load pages -> (text layer | OCR) per page -> parse -> validate -> status
+
+Outcome (`OcrExtractionResult.status`):
+
+    failed        nothing usable was read; the caller must persist nothing
+    needs_review  text was read but a human has to confirm/correct values
+    completed     every required value is valid, stated with its unit, unrepaired
+
+The pipeline never persists anything and never invents a value. Persistence,
+review and the hand-off to the recommendation engine live in
+app/services/soil_extraction_service.py.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
+import time
 
+from app.config import get_settings
 from app.ocr import extractor, validator
-from app.ocr.engine import OcrEngine, OcrEngineUnavailable
-from app.ocr.preprocess import LoadedPage, clean_for_ocr, load_document
+from app.ocr.engine import OcrEngine, OcrEngineUnavailable, OcrTimeout
+from app.ocr.preprocess import DocumentRejected, LoadedPage, clean_for_ocr, load_document
 from app.ocr.schemas import (
-    CANONICAL_PARAMETERS,
-    ExtractedField,
     MICRONUTRIENT_PARAMETERS,
+    ExtractedField,
     OcrExtractionResult,
     PageResult,
     SoilParametersOut,
@@ -33,41 +45,48 @@ REQUIRED_FOR_PERSISTENCE = (
 )
 
 
+def sha256_hex(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
+
+
 def run_pipeline(
     filename: str,
     content: bytes,
     engine: OcrEngine | None = None,
 ) -> OcrExtractionResult:
+    settings = get_settings()
     engine = engine or OcrEngine()
+    digest = sha256_hex(content)
     errors: list[str] = []
+    started = time.monotonic()
 
     try:
-        pages: list[LoadedPage] = load_document(filename, content)
-    except Exception as exc:  # malformed upload, unsupported format, etc.
-        logger.exception("Failed to load uploaded document")
-        empty = _empty_parameters()
-        return OcrExtractionResult(
-            success=False,
-            raw_text="",
-            pages=[],
-            soil_parameters=empty,
-            ready_for_persistence=False,
-            errors=[f"Could not read the uploaded file: {exc}"],
+        pages: list[LoadedPage] = load_document(
+            filename, content, max_pages=settings.ocr_max_pages
         )
+    except DocumentRejected as exc:
+        return _failed(digest, [str(exc)])
 
     page_results: list[PageResult] = []
-    full_text_parts: list[str] = []
 
     for page in pages:
+        if time.monotonic() - started > settings.ocr_total_timeout_seconds:
+            # A partial read of a multi-page report could silently drop the page
+            # that holds a value, so a timeout fails the whole document.
+            return _failed(
+                digest,
+                [
+                    f"Processing exceeded the {settings.ocr_total_timeout_seconds}s limit "
+                    f"before page {page.page_number}. Try a smaller or clearer file."
+                ],
+                pages=page_results,
+                page_count=len(pages),
+            )
+
         if page.text_layer is not None:
             page_results.append(
-                PageResult(
-                    page_number=page.page_number,
-                    route="text_layer",
-                    text=page.text_layer,
-                )
+                PageResult(page_number=page.page_number, route="text_layer", text=page.text_layer)
             )
-            full_text_parts.append(page.text_layer)
             continue
 
         if page.image is None:
@@ -79,10 +98,14 @@ def run_pipeline(
 
         try:
             cleaned = clean_for_ocr(page.image)
-            text, mean_conf = engine.run(cleaned)
+            text, mean_conf = engine.run(
+                cleaned, timeout_seconds=settings.ocr_page_timeout_seconds
+            )
         except OcrEngineUnavailable as exc:
             errors.append(str(exc))
             continue
+        except OcrTimeout as exc:
+            return _failed(digest, [f"Page {page.page_number}: {exc}"], pages=page_results, page_count=len(pages))
         except Exception:
             logger.exception("OCR failed on page %s", page.page_number)
             errors.append(f"OCR failed on page {page.page_number}.")
@@ -96,38 +119,30 @@ def run_pipeline(
                 ocr_mean_confidence=mean_conf,
             )
         )
-        full_text_parts.append(text)
 
-    raw_text = "\n".join(full_text_parts)
+    raw_text = "\n".join(p.text for p in page_results)
 
+    # A page we could not read means values on it may be missing from the
+    # result; surface that rather than presenting a partial read as complete.
     if not raw_text.strip():
-        empty = _empty_parameters()
-        return OcrExtractionResult(
-            success=False,
-            raw_text="",
+        return _failed(
+            digest,
+            errors or ["No text could be extracted from the document."],
             pages=page_results,
-            soil_parameters=empty,
-            ready_for_persistence=False,
-            errors=errors or ["No text could be extracted from the document."],
+            page_count=len(pages),
         )
 
-    extracted = extractor.extract(raw_text)
+    extracted = extractor.extract_pages([(p.page_number, p.text) for p in page_results])
 
-    # Fold in the OCR page confidence: if a parameter's best match came
-    # from a low-confidence OCR page, discount it accordingly rather than
-    # trusting the label-match confidence alone.
-    page_conf_by_route_present = any(
-        p.route == "ocr_image" and p.ocr_mean_confidence is not None
-        for p in page_results
-    )
-    if page_conf_by_route_present:
-        avg_ocr_conf = _average_ocr_confidence(page_results)
-        if avg_ocr_conf is not None:
-            for field_obj in extracted.values():
-                if field_obj.value is not None:
-                    field_obj.confidence = round(
-                        field_obj.confidence * (0.5 + 0.5 * avg_ocr_conf), 4
-                    )
+    # Fold in the OCR page confidence: a value read from a low-confidence OCR
+    # page is discounted rather than trusting the label-match confidence alone.
+    avg_ocr_conf = _average_ocr_confidence(page_results)
+    if avg_ocr_conf is not None:
+        for field_obj in extracted.values():
+            if field_obj.value is not None:
+                field_obj.confidence = round(
+                    field_obj.confidence * (0.5 + 0.5 * avg_ocr_conf), 4
+                )
 
     validated = validator.validate(extracted)
 
@@ -148,9 +163,22 @@ def run_pipeline(
 
     ready = all(
         getattr(soil_parameters, key).validation == "valid"
-        and getattr(soil_parameters, key).unit
-        in (validator.TARGET_UNIT[key], None)
+        and getattr(soil_parameters, key).unit in (validator.TARGET_UNIT[key], None)
         for key in REQUIRED_FOR_PERSISTENCE
+    )
+    # An unreadable page means the read may be incomplete: always a human decision.
+    if errors:
+        ready = False
+
+    logger.info(
+        "ocr.pipeline.done",
+        extra={
+            "sha256": digest[:12],
+            "pages": len(pages),
+            "routes": ",".join(sorted({p.route for p in page_results})),
+            "ready": ready,
+            "elapsed_s": round(time.monotonic() - started, 2),
+        },
     )
 
     return OcrExtractionResult(
@@ -158,7 +186,30 @@ def run_pipeline(
         raw_text=raw_text,
         pages=page_results,
         soil_parameters=soil_parameters,
+        status="completed" if ready else "needs_review",
+        document_sha256=digest,
+        page_count=len(pages),
         ready_for_persistence=ready,
+        errors=errors,
+    )
+
+
+def _failed(
+    digest: str,
+    errors: list[str],
+    *,
+    pages: list[PageResult] | None = None,
+    page_count: int = 0,
+) -> OcrExtractionResult:
+    return OcrExtractionResult(
+        success=False,
+        raw_text="",
+        pages=pages or [],
+        soil_parameters=_empty_parameters(),
+        status="failed",
+        document_sha256=digest,
+        page_count=page_count,
+        ready_for_persistence=False,
         errors=errors,
     )
 

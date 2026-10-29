@@ -41,6 +41,18 @@ MIN_OCR_WIDTH_PX = 1800
 
 PDF_RENDER_DPI = 300
 
+# Refuse images that would decompress to an unreasonable number of pixels
+# (decompression bombs). A 300-dpi A4 page is ~8.7 Mpx; allow ~6x that.
+MAX_IMAGE_PIXELS = 50_000_000
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
+
+
+class DocumentRejected(ValueError):
+    """The document is unreadable, malformed, or exceeds a resource limit.
+
+    The message is safe to show to the user (it never contains file content).
+    """
+
 
 @dataclass
 class LoadedPage:
@@ -55,17 +67,31 @@ def is_pdf(filename: str, content: bytes) -> bool:
     return content[:5] == b"%PDF-"
 
 
-def load_document(filename: str, content: bytes) -> list[LoadedPage]:
+def load_document(
+    filename: str, content: bytes, max_pages: int = 15
+) -> list[LoadedPage]:
     """
     Load an uploaded soil report (PDF or image) into per-page LoadedPage
     entries, deciding the text-layer-vs-OCR route for each page.
+
+    Raises DocumentRejected for corrupt files and for documents above
+    ``max_pages``.
     """
-    if is_pdf(filename, content):
-        return _load_pdf(content)
-    return _load_image(content)
+    try:
+        if is_pdf(filename, content):
+            return _load_pdf(content, max_pages)
+        return _load_image(content)
+    except DocumentRejected:
+        raise
+    except Exception as exc:
+        # Do not echo parser internals (they can contain document fragments).
+        logger.warning("Document could not be parsed: %s", type(exc).__name__)
+        raise DocumentRejected(
+            "The file could not be read. It may be corrupt, password-protected or not a valid PDF/image."
+        ) from exc
 
 
-def _load_pdf(content: bytes) -> list[LoadedPage]:
+def _load_pdf(content: bytes, max_pages: int = 15) -> list[LoadedPage]:
     import pdfplumber
 
     pages: list[LoadedPage] = []
@@ -74,6 +100,13 @@ def _load_pdf(content: bytes) -> list[LoadedPage]:
 
     with pdfplumber.open(io.BytesIO(content)) as pdf:
         page_count = len(pdf.pages)
+        if page_count == 0:
+            raise DocumentRejected("The PDF has no pages.")
+        if page_count > max_pages:
+            raise DocumentRejected(
+                f"The PDF has {page_count} pages; the limit is {max_pages}. "
+                "Upload only the pages that contain the soil-test results."
+            )
         for i, page in enumerate(pdf.pages, start=1):
             text = page.extract_text() or ""
             text_layers[i] = text
@@ -122,6 +155,13 @@ def _find_poppler_path() -> str | None:
     import shutil
 
     env_path = os.environ.get("POPPLER_PATH")
+    if not env_path:
+        try:
+            from app.config import get_settings
+
+            env_path = get_settings().poppler_path
+        except Exception:
+            pass
     if env_path and os.path.exists(env_path):
         return env_path
 

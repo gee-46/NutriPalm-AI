@@ -79,18 +79,29 @@ class OcrEngineUnavailable(RuntimeError):
     """Raised when the Tesseract binary / pytesseract cannot run at all."""
 
 
+class OcrTimeout(RuntimeError):
+    """Raised when OCR of a page exceeds its time limit."""
+
+
 def _find_tesseract_cmd() -> str | None:
     """
     Resolve the tesseract executable path across platforms:
     1. TESSERACT_PATH or TESSERACT_CMD environment variable
     2. PATH / system binaries
-    3. Common Windows installation locations (Desktop, Program Files, LocalAppData)
+    3. Common Windows installation locations (Program Files, LocalAppData)
     """
     import glob
     import os
     import shutil
 
     env_cmd = os.environ.get("TESSERACT_PATH") or os.environ.get("TESSERACT_CMD")
+    if not env_cmd:
+        try:
+            from app.config import get_settings
+
+            env_cmd = get_settings().tesseract_cmd
+        except Exception:
+            pass
     if env_cmd and os.path.exists(env_cmd):
         return env_cmd
 
@@ -98,7 +109,6 @@ def _find_tesseract_cmd() -> str | None:
         return "tesseract"
 
     candidates = [
-        r"C:\Users\Dell\Desktop\Resumes\tesseract.exe",
         r"C:\Program Files\Tesseract-OCR\tesseract.exe",
         r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
         *glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\Programs\Tesseract-OCR\tesseract.exe")),
@@ -129,13 +139,16 @@ class OcrEngine:
             if os.path.exists(tessdata_dir) and not os.environ.get("TESSDATA_PREFIX"):
                 os.environ["TESSDATA_PREFIX"] = tessdata_dir
 
-    def run(self, image: Image.Image) -> tuple[str, float | None]:
+    def run(
+        self, image: Image.Image, timeout_seconds: float | None = None
+    ) -> tuple[str, float | None]:
         """
-        Run OCR on a single page image.
+        Run OCR on a single page image with ONE Tesseract pass.
 
-        Returns (text, mean_confidence) where mean_confidence is the average
-        Tesseract word-level confidence (0-1), or None if it could not be
-        computed.
+        Returns (text, mean_confidence): the page text rebuilt line by line
+        from word boxes, and the average word confidence (0-1) or None.
+        Raises OcrEngineUnavailable if Tesseract cannot run and OcrTimeout if
+        it exceeds ``timeout_seconds``.
         """
         try:
             import pytesseract
@@ -148,38 +161,48 @@ class OcrEngine:
         self._ensure_tesseract_configured()
 
         try:
-            text = pytesseract.image_to_string(
-                image, lang=self.lang, config=TESSERACT_CONFIG
+            data = pytesseract.image_to_data(
+                image,
+                lang=self.lang,
+                config=TESSERACT_CONFIG,
+                output_type=pytesseract.Output.DICT,
+                timeout=timeout_seconds or 0,
             )
         except pytesseract.TesseractNotFoundError as exc:
             raise OcrEngineUnavailable(
                 "The tesseract binary was not found on PATH. Install the "
                 "tesseract-ocr system package or configure TESSERACT_CMD."
             ) from exc
+        except RuntimeError as exc:
+            # pytesseract raises RuntimeError("Tesseract process timeout") on timeout.
+            if "timeout" in str(exc).lower():
+                raise OcrTimeout(
+                    f"OCR of one page exceeded the {timeout_seconds:g}s limit."
+                ) from exc
+            raise
 
-        mean_conf = self._mean_confidence(image)
-        return text, mean_conf
+        return _text_from_data(data), _mean_confidence(data)
 
 
-    def _mean_confidence(self, image: Image.Image) -> float | None:
-        try:
-            import pytesseract
+def _text_from_data(data: dict) -> str:
+    """Rebuild page text (one line per Tesseract line) from image_to_data output."""
+    lines: dict[tuple[int, int, int], list[str]] = {}
+    order: list[tuple[int, int, int]] = []
+    for i, word in enumerate(data.get("text", [])):
+        if not str(word).strip():
+            continue
+        key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        if key not in lines:
+            lines[key] = []
+            order.append(key)
+        lines[key].append(str(word).strip())
+    return "\n".join(" ".join(lines[k]) for k in order)
 
-            data = pytesseract.image_to_data(
-                image,
-                lang=self.lang,
-                config=TESSERACT_CONFIG,
-                output_type=pytesseract.Output.DICT,
-            )
-        except Exception:
-            logger.warning(
-                "Could not compute Tesseract word confidences", exc_info=True
-            )
-            return None
 
-        confidences = [
-            int(c) for c in data.get("conf", []) if str(c).strip() not in ("", "-1")
-        ]
-        if not confidences:
-            return None
-        return round(sum(confidences) / len(confidences) / 100.0, 4)
+def _mean_confidence(data: dict) -> float | None:
+    confidences = [
+        int(float(c)) for c in data.get("conf", []) if str(c).strip() not in ("", "-1")
+    ]
+    if not confidences:
+        return None
+    return round(sum(confidences) / len(confidences) / 100.0, 4)
