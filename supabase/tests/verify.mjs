@@ -115,6 +115,16 @@ if (process.env.WEAKEN === "1" && migrationsOk) {
     create policy "Users can insert their own recommendations" on public.recommendations for insert with check (auth.uid() = owner_id);
     drop policy "Users can update their own recommendations" on public.recommendations;
     create policy "Users can update their own recommendations" on public.recommendations for update using (auth.uid() = owner_id);
+    -- 013 mutations: browser writes may claim verification / engine provenance; applications skip the plot check
+    drop policy "Users can insert their own soil reports" on public.soil_reports;
+    create policy "Users can insert their own soil reports" on public.soil_reports for insert with check (auth.uid() = owner_id);
+    drop policy "Users can update their own soil reports" on public.soil_reports;
+    create policy "Users can update their own soil reports" on public.soil_reports for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+    drop policy "Users can insert their own recommendations" on public.recommendations;
+    create policy "Users can insert their own recommendations" on public.recommendations for insert with check (auth.uid() = owner_id);
+    drop policy "Users can insert their own fertilizer applications" on public.fertilizer_applications;
+    create policy "Users can insert their own fertilizer applications" on public.fertilizer_applications for insert with check (auth.uid() = owner_id);
+    create policy "weak extraction insert" on public.soil_report_extractions for insert with check (auth.uid() = owner_id);
     drop policy "Users can insert their own disease assessments" on public.disease_assessments;
     create policy "Users can insert their own disease assessments" on public.disease_assessments for insert with check (auth.uid() = owner_id);
     create policy "weak update" on public.disease_assessments for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
@@ -127,8 +137,10 @@ const expected = {
   profiles: ["id", "email", "full_name", "phone_number", "user_role", "district", "state", "village", "preferred_language", "organization_name", "updated_at"],
   farmers: ["id", "owner_id", "name", "village", "district", "contact", "email", "crop", "area", "status", "created_at"],
   plots: ["id", "owner_id", "farmer_id", "name", "crop", "area", "area_unit", "boundary", "latitude", "longitude", "village", "taluk", "district", "state", "country", "planting_date", "plantation_age", "plant_count", "irrigation_type", "elevation", "soil", "stage", "status", "boundary_mapped", "soil_report_attached", "created_at"],
-  soil_reports: ["id", "plot_id", "owner_id", "nitrogen_kg_ha", "phosphorus_kg_ha", "potassium_kg_ha", "organic_carbon_percent", "ph", "electrical_conductivity", "micronutrients", "validation_summary", "status", "created_at"],
-  recommendations: ["id", "owner_id", "plot_id", "soil_report_id", "crop", "deficiencies", "fertilizer_plan", "yield_prediction", "roi", "explanation", "status", "created_at", "updated_at"],
+  soil_reports: ["id", "plot_id", "owner_id", "nitrogen_kg_ha", "phosphorus_kg_ha", "potassium_kg_ha", "organic_carbon_percent", "ph", "electrical_conductivity", "micronutrients", "validation_summary", "status", "created_at", "extraction_id", "verification_status", "verified_at"],
+  recommendations: ["id", "owner_id", "plot_id", "soil_report_id", "crop", "deficiencies", "fertilizer_plan", "yield_prediction", "roi", "explanation", "status", "created_at", "updated_at", "engine_version", "generated_at", "provenance"],
+  soil_report_extractions: ["id", "owner_id", "plot_id", "status", "source_filename", "source_content_type", "source_size_bytes", "source_sha256", "pipeline_version", "page_count", "fields", "warnings", "corrections", "soil_report_id", "verification_status", "created_at", "updated_at", "confirmed_at"],
+  fertilizer_applications: ["id", "owner_id", "plot_id", "recommendation_id", "applied_on", "product_name", "quantity", "quantity_unit", "method", "notes", "created_at"],
   digital_twins: ["id", "plot_id", "analysis_date", "crop_health_score", "water_stress_score", "nutrient_health_score", "growth_stage", "yield_prediction", "risk_level", "model_version", "confidence_score", "ndvi", "disease_name", "disease_probability", "disease_explanation", "recommended_action", "advisory_reason", "temperature_c", "humidity_pct", "rainfall_mm", "soil_health_index", "foliar_health_score", "data_completeness", "is_synthetic"],
   ndvi_readings: ["id", "plot_id", "captured_date", "ndvi_mean", "ndvi_min", "ndvi_max", "cloud_cover_pct", "source", "is_synthetic"],
   weather_observations: ["id", "plot_id", "observed_date", "temperature_c", "humidity_pct", "rainfall_mm", "wind_kph", "solar_radiation", "source", "is_synthetic"],
@@ -304,6 +316,82 @@ if (migrationsOk) {
   }
   const r0 = await attempt("anon", null, "select * from public.profiles");
   record("anon", "anon sees no profiles", (r0.ok && r0.rows.length === 0) || !r0.ok);
+
+  // --- 013: verified soil extraction workflow, engine provenance, fertilizer applications
+  {
+    const A = users.A, B = users.B;
+    const FIELDS = JSON.stringify({ nitrogen: { value: 200, unit: "kg/ha", validation: "valid" } });
+    const hash = (n) => String(n).repeat(64).slice(0, 64);
+    const extIns = "insert into public.soil_report_extractions (owner_id, plot_id, status, source_sha256, pipeline_version, fields) values ($1,$2,'needs_review',$3,'ocr-2.0',$4::jsonb) returning id";
+
+    // The backend (service role) is the only writer of extractions and of verified/engine rows.
+    for (const [k, u] of [["A", A], ["B", B]]) {
+      await asService(async () => {
+        u.ids.ext = (await db.query(extIns, [u.id, u.ids.plot, hash(k === "A" ? 1 : 2), FIELDS])).rows[0].id;
+        u.ids.vsoil = (await db.query("insert into public.soil_reports (plot_id, owner_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph, extraction_id, verification_status, verified_at) values ($1,$2,200,20,250,0.7,6.1,$3,'user_confirmed',now()) returning id", [u.ids.plot, u.id, u.ids.ext])).rows[0].id;
+        u.ids.vrec = (await db.query("insert into public.recommendations (owner_id, plot_id, soil_report_id, crop, deficiencies, fertilizer_plan, yield_prediction, roi, explanation, engine_version, generated_at, provenance) values ($1,$2,$3,'oil_palm','[]','[]','{}','{}','{}','rec-2.0',now(),'{}'::jsonb) returning id", [u.id, u.ids.plot, u.ids.vsoil])).rows[0].id;
+      });
+    }
+    record("013", "service role can write extraction + verified soil report + engine-stamped recommendation", !!(A.ids.ext && A.ids.vsoil && A.ids.vrec));
+
+    const colsOf = "plot_id, owner_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph";
+    for (const [atk, vic] of [["A", "B"], ["B", "A"]]) {
+      const a = users[atk], v = users[vic], g = `013 ${atk}->${vic}`;
+      await expectRejected(g, `${atk} cannot insert an extraction (backend-only table)`, a.id, extIns, [a.id, a.ids.plot, hash(9), FIELDS]);
+      await expectUntouched(g, `${atk} cannot update own extraction (no UPDATE policy)`, a.id, "update public.soil_report_extractions set status='completed' where id=$1 returning id", [a.ids.ext]);
+      await expectUntouched(g, `${atk} cannot update ${vic}'s extraction`, a.id, "update public.soil_report_extractions set corrections='[]' where id=$1 returning id", [v.ids.ext]);
+      await expectNoRows(g, `${atk} cannot read ${vic}'s extractions`, a.id, "select * from public.soil_report_extractions where id=$1", [v.ids.ext]);
+      await expectUntouched(g, `${atk} cannot delete ${vic}'s extraction`, a.id, "delete from public.soil_report_extractions where id=$1 returning id", [v.ids.ext]);
+      await expectAllowed(`013 own ${atk}`, `${atk} reads own extraction`, a.id, "select id from public.soil_report_extractions where id=$1", [a.ids.ext]);
+
+      // verification cannot be claimed from the browser
+      await expectRejected(g, `${atk} cannot INSERT a soil report claiming verification_status`, a.id, `insert into public.soil_reports (${colsOf}, verification_status) values ($1,$2,1,1,1,1,7,'user_confirmed')`, [a.ids.plot, a.id]);
+      await expectRejected(g, `${atk} cannot INSERT a soil report pointing at an extraction`, a.id, `insert into public.soil_reports (${colsOf}, extraction_id) values ($1,$2,1,1,1,1,7,$3)`, [a.ids.plot, a.id, a.ids.ext]);
+      await expectRejected(g, `${atk} cannot mark an unverified soil report verified`, a.id, "update public.soil_reports set verification_status='auto_validated' where id=$1 returning id", [a.ids.soil]);
+      await expectRejected(g, `${atk} cannot edit values of a verified soil report in place`, a.id, "update public.soil_reports set nitrogen_kg_ha=999 where id=$1 returning id", [a.ids.vsoil]);
+      await expectUntouched(g, `${atk} cannot touch ${vic}'s verified soil report`, a.id, "update public.soil_reports set verification_status=null where id=$1 returning id", [v.ids.vsoil]);
+      // engine provenance cannot be forged
+      await expectRejected(g, `${atk} cannot INSERT a recommendation stamped with engine_version`, a.id, "insert into public.recommendations (owner_id, plot_id, soil_report_id, crop, deficiencies, fertilizer_plan, yield_prediction, roi, explanation, engine_version) values ($1,$2,$3,'oil_palm','[]','[]','{}','{}','{}','rec-2.0')", [a.id, a.ids.plot, a.ids.soil]);
+      await expectRejected(g, `${atk} cannot forge provenance on an existing recommendation`, a.id, "update public.recommendations set provenance='{}'::jsonb where id=$1 returning id", [a.ids.rec]);
+      await expectRejected(g, `${atk} cannot rewrite an engine-generated recommendation's doses`, a.id, "update public.recommendations set fertilizer_plan='[{\"x\":1}]'::jsonb where id=$1 returning id", [a.ids.vrec]);
+      const own = await attempt("authenticated", a.id, "select id from public.recommendations where id=$1", [a.ids.vrec]);
+      record(`013 own ${atk}`, `${atk} can still read own engine-generated recommendation`, own.ok && own.rows.length === 1);
+
+      // fertilizer applications
+      const appIns = "insert into public.fertilizer_applications (owner_id, plot_id, recommendation_id, applied_on, product_name, quantity, quantity_unit) values ($1,$2,$3,current_date,'Urea',50,'kg') returning id";
+      const mine = await expectAllowed(`013 own ${atk}`, `${atk} records an application on own plot, linked to own recommendation`, a.id, appIns, [a.id, a.ids.plot, a.ids.vrec]);
+      a.ids.app = mine.ok ? mine.rows[0].id : null;
+      await expectAllowed(`013 own ${atk}`, `${atk} records an application with no recommendation`, a.id, appIns, [a.id, a.ids.plot, null]);
+      await expectRejected(g, `${atk} cannot record an application on ${vic}'s plot`, a.id, appIns, [a.id, v.ids.plot, null]);
+      await expectRejected(g, `${atk} cannot record an application claiming ${vic} as owner`, a.id, appIns, [v.id, a.ids.plot, null]);
+      await expectRejected(g, `${atk} cannot link an application to ${vic}'s recommendation`, a.id, appIns, [a.id, a.ids.plot, v.ids.vrec]);
+      await expectRejected(g, `${atk} cannot link own-plot application to a recommendation of another plot`, a.id, appIns, [a.id, a.ids.plot, v.ids.rec]);
+      await expectRejected(g, `${atk} cannot record zero/negative quantity`, a.id, "insert into public.fertilizer_applications (owner_id, plot_id, applied_on, product_name, quantity, quantity_unit) values ($1,$2,current_date,'Urea',0,'kg')", [a.id, a.ids.plot]);
+      await expectRejected(g, `${atk} cannot record an unknown unit`, a.id, "insert into public.fertilizer_applications (owner_id, plot_id, applied_on, product_name, quantity, quantity_unit) values ($1,$2,current_date,'Urea',5,'tons')", [a.id, a.ids.plot]);
+    }
+    for (const [atk, vic] of [["A", "B"], ["B", "A"]]) {
+      const a = users[atk], v = users[vic], g = `013 ${atk}->${vic}`;
+      await expectNoRows(g, `${atk} cannot read ${vic}'s fertilizer applications`, a.id, "select * from public.fertilizer_applications where plot_id=$1", [v.ids.plot]);
+      await expectUntouched(g, `${atk} cannot update ${vic}'s fertilizer application`, a.id, "update public.fertilizer_applications set quantity=1 where id=$1 returning id", [v.ids.app]);
+      await expectUntouched(g, `${atk} cannot delete ${vic}'s fertilizer application`, a.id, "delete from public.fertilizer_applications where id=$1 returning id", [v.ids.app]);
+      await expectRejected(g, `${atk} cannot hand own application to ${vic}`, a.id, "update public.fertilizer_applications set owner_id=$2 where id=$1 returning id", [a.ids.app, v.id]);
+      await expectRejected(g, `${atk} cannot re-point own application at ${vic}'s plot`, a.id, "update public.fertilizer_applications set plot_id=$2 where id=$1 returning id", [a.ids.app, v.ids.plot]);
+    }
+    const anonApp = await attempt("anon", null, "select * from public.fertilizer_applications");
+    record("013 anon", "anon sees no fertilizer applications", (anonApp.ok && anonApp.rows.length === 0) || !anonApp.ok);
+    const anonExt = await attempt("anon", null, "select * from public.soil_report_extractions");
+    record("013 anon", "anon sees no extractions", (anonExt.ok && anonExt.rows.length === 0) || !anonExt.ok);
+
+    // Same document for the same plot is one row (idempotent re-upload), different plot/user is not blocked.
+    const dup = await attempt("service_role", null, extIns, [A.id, A.ids.plot, hash(1), FIELDS]);
+    record("013 integrity", "same document twice for one plot is rejected by the unique index", !dup.ok && /unique|duplicate/i.test(dup.error), dup.ok ? "second insert SUCCEEDED" : dup.error);
+    const badHash = await attempt("service_role", null, extIns, [A.id, A.ids.plot, "abc", FIELDS]);
+    record("013 integrity", "extraction requires a 64-char SHA-256", !badHash.ok);
+    const badStatus = await attempt("service_role", null, "insert into public.soil_report_extractions (owner_id, plot_id, status, source_sha256, pipeline_version, fields) values ($1,$2,'failed',$3,'x','{}')", [A.id, A.ids.plot, hash(5)]);
+    record("013 integrity", "a failed extraction can never be stored as an extraction row", !badStatus.ok);
+    const badVerif = await attempt("service_role", null, "update public.soil_reports set verification_status='guessed' where id=$1", [A.ids.vsoil]);
+    record("013 integrity", "verification_status only accepts the three defined values", !badVerif.ok);
+  }
 
   // --- triggers and cascades
   {

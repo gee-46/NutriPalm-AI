@@ -2,7 +2,11 @@
 // through the same PostgREST path the app uses. NOT RUN by the audit (no scratch
 // project was available) -- see docs/SCRATCH_SUPABASE_VERIFICATION.md.
 //
-// Prerequisite: migrations 001..011 already applied to the scratch project.
+// Prerequisite: migrations 001..013 already applied to the scratch project (013 adds the verified-extraction workflow).
+//
+// THIS SCRIPT WRITES TO THE PROJECT. It creates two throwaway auth users (@nutripalm-scratch.invalid), inserts farmers, plots,
+// soil reports, recommendations, extractions, applications and a digital-twin row for them, attempts forbidden updates/deletes,
+// and finally deletes both users (rows cascade). It refuses to start if any checked table already has rows or any other auth user exists.
 //
 // Required environment (set in YOUR shell; never paste keys into chat or commit them):
 //   SCRATCH_SUPABASE_URL                 https://<scratch-ref>.supabase.co
@@ -39,9 +43,9 @@ const record = (group, name, pass, detail = "") => {
 };
 
 // ---- safety: nothing but our own throwaway data may exist
-for (const t of ["plots", "farmers", "soil_reports", "recommendations", "digital_twins"]) {
+for (const t of ["plots", "farmers", "soil_reports", "recommendations", "digital_twins", "disease_assessments", "soil_report_extractions", "fertilizer_applications"]) {
   const { count, error } = await admin.from(t).select("*", { count: "exact", head: true });
-  if (error) { console.error(`Cannot read ${t}: ${error.message}. Are migrations 001..011 applied?`); process.exit(2); }
+  if (error) { console.error(`Cannot read ${t}: ${error.message}. Are migrations 001..013 applied?`); process.exit(2); }
   if (count > 0) { console.error(`Refusing: ${t} already has ${count} rows. This script only runs on an empty scratch project.`); process.exit(2); }
 }
 const { data: existingUsers } = await admin.auth.admin.listUsers({ page: 1, perPage: 50 });
@@ -111,6 +115,50 @@ try {
     const own = await c.from("plots").select("id");
     record(`own ${atk}`, `${atk} sees exactly their own plot`, own.data?.length === 1 && own.data[0].id === a.ids.plot);
     record(`own ${atk}`, `${atk} can update own plot`, !(await c.from("plots").update({ name: `Renamed ${atk}` }).eq("id", a.ids.plot).select()).error);
+  }
+
+
+  // ---- 013: verified soil extraction workflow, engine provenance, fertilizer applications (same checks as verify.mjs, over PostgREST)
+  const FIELDS = { nitrogen: { value: 200, unit: "kg/ha", validation: "valid" } };
+  const sha = (n) => String(n).repeat(64).slice(0, 64);
+  for (const [k, u] of Object.entries(users)) {
+    let r = await admin.from("soil_report_extractions").insert({ owner_id: u.id, plot_id: u.ids.plot, status: "needs_review", source_sha256: sha(k === "A" ? 1 : 2), pipeline_version: "ocr-2.0", fields: FIELDS }).select().single();
+    record("013 seed", `service role writes ${k}'s extraction`, !r.error, r.error?.message); u.ids.ext = r.data?.id;
+    r = await admin.from("soil_reports").insert({ owner_id: u.id, plot_id: u.ids.plot, nitrogen_kg_ha: 200, phosphorus_kg_ha: 20, potassium_kg_ha: 250, organic_carbon_percent: 0.7, ph: 6.1, extraction_id: u.ids.ext, verification_status: "user_confirmed", verified_at: new Date().toISOString() }).select().single();
+    record("013 seed", `service role writes ${k}'s verified soil report`, !r.error, r.error?.message); u.ids.vsoil = r.data?.id;
+    r = await admin.from("recommendations").insert({ owner_id: u.id, plot_id: u.ids.plot, soil_report_id: u.ids.vsoil, crop: "oil_palm", deficiencies: [], fertilizer_plan: [], yield_prediction: {}, roi: {}, explanation: {}, engine_version: "rec-2.2", generated_at: new Date().toISOString(), provenance: {} }).select().single();
+    record("013 seed", `service role writes ${k}'s engine-stamped recommendation`, !r.error, r.error?.message); u.ids.vrec = r.data?.id;
+  }
+  const soilRow = (a, plot, extra = {}) => ({ owner_id: a.id, plot_id: plot, nitrogen_kg_ha: 1, phosphorus_kg_ha: 1, potassium_kg_ha: 1, organic_carbon_percent: 1, ph: 7, ...extra });
+  for (const [atk, vic] of [["A", "B"], ["B", "A"]]) {
+    const a = users[atk], v = users[vic], c = a.client, g = `013 ${atk}->${vic}`;
+    record(g, `${atk} cannot insert an extraction (backend-only table)`, !!(await c.from("soil_report_extractions").insert({ owner_id: a.id, plot_id: a.ids.plot, status: "needs_review", source_sha256: sha(9), pipeline_version: "x", fields: {} })).error);
+    record(g, `${atk} cannot update own extraction`, denied(await c.from("soil_report_extractions").update({ status: "completed" }).eq("id", a.ids.ext).select()));
+    record(g, `${atk} cannot read ${vic}'s extraction`, denied(await c.from("soil_report_extractions").select("*").eq("id", v.ids.ext)));
+    record(g, `${atk} cannot delete ${vic}'s extraction`, denied(await c.from("soil_report_extractions").delete().eq("id", v.ids.ext).select()));
+    record(`013 own ${atk}`, `${atk} can read own extraction`, (await c.from("soil_report_extractions").select("id").eq("id", a.ids.ext)).data?.length === 1);
+    record(g, `${atk} cannot INSERT a soil report claiming verification_status`, !!(await c.from("soil_reports").insert(soilRow(a, a.ids.plot, { verification_status: "user_confirmed" }))).error);
+    record(g, `${atk} cannot INSERT a soil report pointing at an extraction`, !!(await c.from("soil_reports").insert(soilRow(a, a.ids.plot, { extraction_id: a.ids.ext }))).error);
+    record(g, `${atk} cannot edit the values of a verified soil report in place`, !!(await c.from("soil_reports").update({ nitrogen_kg_ha: 999 }).eq("id", a.ids.vsoil).select()).error);
+    record(g, `${atk} cannot INSERT a recommendation stamped with engine_version`, !!(await c.from("recommendations").insert({ owner_id: a.id, plot_id: a.ids.plot, soil_report_id: a.ids.vsoil, crop: "x", deficiencies: [], fertilizer_plan: [], yield_prediction: {}, roi: {}, explanation: {}, engine_version: "rec-2.2" })).error);
+    record(g, `${atk} cannot rewrite an engine-generated recommendation`, !!(await c.from("recommendations").update({ fertilizer_plan: [{ x: 1 }] }).eq("id", a.ids.vrec).select()).error);
+    const app = { owner_id: a.id, plot_id: a.ids.plot, applied_on: "2026-01-01", product_name: "Urea", quantity: 50, quantity_unit: "kg" };
+    const mine = await c.from("fertilizer_applications").insert({ ...app, recommendation_id: a.ids.vrec }).select().single();
+    record(`013 own ${atk}`, `${atk} records an application on own plot linked to own recommendation`, !mine.error, mine.error?.message); a.ids.app = mine.data?.id;
+    record(g, `${atk} cannot record an application on ${vic}'s plot`, !!(await c.from("fertilizer_applications").insert({ ...app, plot_id: v.ids.plot })).error);
+    record(g, `${atk} cannot record an application claiming ${vic} as owner`, !!(await c.from("fertilizer_applications").insert({ ...app, owner_id: v.id })).error);
+    record(g, `${atk} cannot link an application to ${vic}'s recommendation`, !!(await c.from("fertilizer_applications").insert({ ...app, recommendation_id: v.ids.vrec })).error);
+    record(g, `${atk} cannot record a zero quantity or an unknown unit`, !!(await c.from("fertilizer_applications").insert({ ...app, quantity: 0 })).error && !!(await c.from("fertilizer_applications").insert({ ...app, quantity_unit: "tons" })).error);
+  }
+  for (const [atk, vic] of [["A", "B"], ["B", "A"]]) {
+    const a = users[atk], v = users[vic], c = a.client, g = `013 ${atk}->${vic}`;
+    record(g, `${atk} cannot read ${vic}'s fertilizer applications`, denied(await c.from("fertilizer_applications").select("*").eq("plot_id", v.ids.plot)));
+    record(g, `${atk} cannot update ${vic}'s fertilizer application`, denied(await c.from("fertilizer_applications").update({ quantity: 1 }).eq("id", v.ids.app).select()));
+    record(g, `${atk} cannot delete ${vic}'s fertilizer application`, denied(await c.from("fertilizer_applications").delete().eq("id", v.ids.app).select()));
+    record(g, `${atk} cannot hand own application to ${vic}`, !!(await c.from("fertilizer_applications").update({ owner_id: v.id }).eq("id", a.ids.app).select()).error);
+  }
+  for (const t of ["soil_report_extractions", "fertilizer_applications", "disease_assessments"]) {
+    record("013 anon", `anon sees no rows in ${t}`, denied(await createClient(url, anon, { auth: { persistSession: false } }).from(t).select("*")));
   }
 
   // anon (no session)
