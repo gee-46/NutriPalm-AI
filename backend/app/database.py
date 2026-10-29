@@ -39,3 +39,13 @@ def get_supabase_client():
 
     client: Client = create_client(settings.supabase_url, settings.supabase_service_role_key)
     return client
+
+
+# PostgREST reports a table it cannot see in two ways: the raw PostgreSQL SQLSTATE 42P01
+# ("undefined table") and, in current PostgREST, PGRST205 ("could not find the table ... in the
+# schema cache"). Both mean "this deployment has not applied the migration yet".
+MISSING_TABLE_CODES = frozenset({"42P01", "PGRST205"})
+
+
+def is_missing_table(exc: Exception) -> bool:
+    return getattr(exc, "code", None) in MISSING_TABLE_CODES

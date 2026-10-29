@@ -1,3 +1,6 @@
+> **Historical report (Phase 1).** It describes an earlier scope that included features since removed (Disease Intelligence, Crop Suitability, Analytics, standalone Weather)
+> and test counts that no longer apply. Current status: [`PRODUCTION_READINESS_AUDIT.md`](PRODUCTION_READINESS_AUDIT.md).
+
 # NutriPalm AI -- Phase 1 audit (final state of branch `audit/phase1-hardening`)
 
 ## Readiness: NOT READY FOR PRODUCTION-LIKE TESTING

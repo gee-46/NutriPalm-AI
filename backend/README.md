@@ -1,13 +1,15 @@
-# NutriPalm AI - Recommendation Engine Backend
+# NutriPalm AI - backend
 
-AI/ML backend: soil nutrient analysis, severity scoring, fertilizer dosage,
-yield prediction, ROI, and farmer-friendly explanations - exposed as a
-FastAPI service and persisted to Supabase/PostgreSQL.
+FastAPI service for the two product areas:
 
-This backend owns **only** the AI/recommendation module. It does not own
-authentication, plot creation, soil OCR, or analytics - see
-`backend/docs/integration_contract.md` for what it expects from those
-modules.
+* **Soil-report OCR and verification**: upload -> read (text layer / Tesseract) -> validate -> review -> verified soil report.
+* **Recommendations**: nutrient analysis and fertilizer plan from a *verified* soil report, released only when a cited,
+  expert-reviewed rule exists for the crop (otherwise `insufficient_data`).
+* Digital Twin data services (live scores, NDVI trend, Sentinel NDVI).
+
+Start with [`../docs/OCR_AND_FERTILIZER_PIPELINE.md`](../docs/OCR_AND_FERTILIZER_PIPELINE.md) and
+[`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md). `docs/integration_contract.md` is the original (pre-013) contract with the plot and
+soil-report modules; where it disagrees with those two documents, they win.
 
 ## 1. Setup
 
@@ -15,7 +17,7 @@ modules.
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt     # runtime + test deps (production: requirements.txt)
 cp .env.example .env
 # edit .env with real Supabase project values
 ```
@@ -26,7 +28,7 @@ cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-- Health check: http://localhost:8000/health
+- Liveness: http://localhost:8000/health - readiness (config + OCR binaries): http://localhost:8000/health/ready
 - Swagger UI (interactive API docs): **http://localhost:8000/docs**
 - ReDoc: http://localhost:8000/redoc
 
@@ -51,9 +53,10 @@ data - this is expected, not a bug.
 ```bash
 cd backend
 python3 -m pytest -v
+python3 -m eval.ocr_eval --include-synthetic     # OCR accuracy vs ground truth (needs Tesseract/Poppler)
 ```
 
-All 47 tests run with **no Supabase connection required** - pure business
+The suite runs with **no Supabase connection required** - pure business
 logic is tested directly, and API tests use FastAPI `dependency_overrides`
 with in-memory fake repositories (see `tests/conftest.py`). Nothing in
 `app/` imports from `tests/fixtures/` - fixture/demo data never reaches

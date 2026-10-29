@@ -1,312 +1,469 @@
+# 🌴 NutriPalm AI
+
 <div align="center">
 
-# 🌱 NutriPalm AI
+### INTELLIGENCE BENEATH THE SURFACE.
 
-### Precision-agriculture platform for farm plots, soil reports and evidence-backed advice
+**Turning soil data into informed agricultural decisions.**
 
-**Built by Samruddhi Organics**
+An agricultural intelligence platform by **Samruddhi Organics**
 
-![Status](https://img.shields.io/badge/status-prototype%20%E2%80%94%20not%20production--ready-orange?style=for-the-badge)
-![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-lightgrey?style=for-the-badge)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+Soil-report intelligence, evidence-gated fertilizer recommendations, and farm-level digital twins — with a roadmap toward retrieval-grounded AI and professional agronomic review.
+
+[![Status](https://img.shields.io/badge/status-not%20production--ready-orange?style=flat-square)](docs/PRODUCTION_READINESS_AUDIT.md)
+[![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript-149ECA?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Supabase](https://img.shields.io/badge/Database-Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Python](https://img.shields.io/badge/Services-Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-lightgrey?style=flat-square)](#-contributors-and-license)
 
 </div>
 
-> **Status: working prototype, not production-ready.** The code, database policies and browser flows have been tested
-> (see [Running tests](#15-running-tests)), but the browser end-to-end tests ran against an **emulated** Supabase stack and
-> verification against a real managed Supabase project is **still outstanding**. Several features depend on credentials or
-> system programs you must configure yourself ([Current limitations](#16-current-limitations)).
-
-## Contents
-
-1. [Project overview](#1-project-overview) · 2. [Problem statement](#2-problem-statement) · 3. [Key features](#3-key-features) ·
-4. [Phase 1 architecture](#4-phase-1-architecture) · 5. [Phase 2 progress](#5-phase-2-progress) · 6. [Technology stack](#6-technology-stack) ·
-7. [System architecture](#7-system-architecture) · 8. [Repository structure](#8-repository-structure) · 9. [Prerequisites](#9-prerequisites) ·
-10. [Local installation](#10-local-installation) · 11. [Environment configuration](#11-environment-configuration) · 12. [Frontend setup](#12-frontend-setup) ·
-13. [Backend setup](#13-backend-setup) · 14. [Database and Supabase setup](#14-database-and-supabase-setup) · 15. [Running tests](#15-running-tests) ·
-16. [Current limitations](#16-current-limitations) · 17. [Security and data integrity](#17-security-and-data-integrity) ·
-18. [Development roadmap](#18-development-roadmap) · 19. [Contributors](#19-contributors--team-roles) · 20. [License](#20-license)
+> **Status: not production-ready.** The code is tested locally (see [Tests](#-tests)), but nothing has been verified on a managed Supabase project or a hosted
+> deployment, and **no fertilizer quantity is produced until an agronomist approves a cited rule** (see [Honest status](#-honest-status)).
+> The complete picture, with evidence, is in [`docs/PRODUCTION_READINESS_AUDIT.md`](docs/PRODUCTION_READINESS_AUDIT.md).
 
 ---
 
-## 1. Project overview
+## 📑 Contents
 
-NutriPalm AI helps a farmer keep farm plots, soil-test reports, weather and satellite information in one place and,
-over time, turn that data into advice that can be traced back to evidence. Each signed-in user gets an isolated workspace:
-farmers, plots, soil reports and recommendations belong to the account that created them.
+[Vision](#-the-vision) · [Product](#-the-product) · [Honest status](#-honest-status) · [Architecture](#-system-architecture) · [How a recommendation is made](#-how-a-recommendation-is-made) · [Digital Twin](#-the-digital-twin) · [Planned: RAG](#-planned-rag-powered-agricultural-intelligence) · [Planned: agronomist review](#-planned-the-agronomist-review-network) · [Security](#-security-model) · [Tech](#-technology-foundation) · [Roadmap](#-development-roadmap) · [Getting started](#-getting-started) · [Tests](#-tests) · [Docs](#-documentation)
 
-```text
-Account → Farmer → Plot (GPS boundary) → Soil report (PDF/image → OCR) → Recommendation (backend engine) → History / Analytics
-                         └→ Weather · Sentinel-2 NDVI (if configured) · Digital Twin
-```
+---
 
-## 2. Problem statement
+## 🌱 The vision
 
-Farmers and agronomy teams hold fragmented information: lab reports on paper or PDF, plot boundaries that were never
-mapped, fertilizer decisions made without the soil numbers in front of them, and no record of what was advised before.
-When these pieces are disconnected it is hard to get from "what does my soil report say" to "what should I do next, and why".
-NutriPalm AI connects those pieces and is built to **show missing data as missing** instead of filling it in.
+Agricultural decisions depend on understanding the soil, the crop, and the conditions in which they grow. Yet soil reports are hard to interpret, farm information is fragmented, and exceptional cases need expertise that a generic automated system cannot replace.
 
-## 3. Key features
+**NutriPalm AI brings these pieces together.** It turns soil-test reports into structured, verified data, checks whether that data and an applicable, approved rule support a recommendation, and gives every farm plot a digital identity.
 
-What exists in the code today. "Configuration-dependent" means it needs a credential or a system program that is not
-part of the repository.
+Its long-term direction is a source-grounded agricultural assistant and a professional agronomist review network — built on a rule base that is traceable to published sources, never on invented numbers.
 
-| Capability | State |
+## ✨ The product
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🌿 Soil Intelligence
+
+**From laboratory report to meaningful insight.**
+
+- OCR extraction (text layer, or Tesseract for scans and photos) — local, no cloud OCR
+- Per-value validation: range, unit, confidence, provenance
+- Review and correction step; the original reading is kept in an audit trail
+- A verified soil report is created only from values that were read clearly or confirmed by the farmer
+- Evidence-gated fertilizer recommendations with rule citation, calculation inputs and engine version
+- Historical soil tests and advice per plot
+
+</td>
+<td width="50%" valign="top">
+
+### 🗺️ Farm Digital Twins
+
+**Every plot. A digital identity.**
+
+- GPS boundary survey, area and centroid
+- Farmer-to-plot association and plot records (planting date, palm count, state, irrigation)
+- Live weather, satellite NDVI when configured, and modelled indicators clearly labelled as estimates
+- Verified soil tests, **advice**, and **fertilizer actually applied** shown as three separate lists
+- English and Kannada interface
+
+</td>
+</tr>
+</table>
+
+### Built around responsible recommendations
+
+NutriPalm AI does not treat a soil report as a plain calculator input. It asks whether the data **and** an approved, applicable rule support a recommendation. When the evidence is missing, it answers `insufficient_data`, names exactly what is missing, and saves nothing — it never invents a fertilizer quantity.
+
+A recommendation is **advice**, never a record that something happened.
+
+**Removed from the product** (UI, routes, API, tests): Disease Intelligence, Crop Suitability, the standalone Weather advisory page, the Analytics dashboard. The repository contains no RAG/chat module yet. Database migrations and stored rows (including `disease_assessments`) are untouched.
+
+---
+
+## 🔎 Honest status
+
+| Area | State |
 |---|---|
-| Email/password sign-up and sign-in (Supabase Auth); Google sign-in button | Implemented. Google sign-in needs the Google provider enabled in your Supabase project (not verified here). No offline/mock login exists. |
-| Farmers and farm plots, ownership per account | Implemented (migration `011` adds `farmers`) |
-| GPS boundary survey, GeoJSON polygon, area, centroid | Implemented; satellite basemap uses Google Maps if a key is set, otherwise an Esri/Leaflet fallback |
-| Weather at the plot centroid | Implemented via Open-Meteo (no key) |
-| Sentinel-2 NDVI | Implemented in the backend; **configuration-dependent** (Sentinel Hub client id/secret). Reported as unavailable otherwise |
-| Soil-report upload and OCR | Implemented; **system-dependent** (Tesseract and Poppler for scanned PDFs/images). Extracted values are validated; incomplete reads are **not saved** |
-| Nutrient and fertilizer recommendation engine | Implemented in the backend for six crops (oil palm, rice, maize, sugarcane, banana, coconut). Reference values are engineering defaults |
-| Digital Twin | Implemented; shows stored/live values and "not available" where data is missing |
-| Analytics | Built only from the account's stored rows |
-| Disease Intelligence (arecanut, coconut) | Backend rule engine + source-verified knowledge base + UI; **screening only, not a diagnosis; records not expert-reviewed** — see [`docs/DISEASE_INTELLIGENCE.md`](docs/DISEASE_INTELLIGENCE.md) |
-| Crop Suitability | **Interface only** — see [Phase 2](#5-phase-2-progress) |
-| English / Kannada interface | Implemented (Phase 2) |
+| Soil-report OCR → review → verified report | **Works** and is tested (real Tesseract/Poppler, in a container too). **Accuracy is not established**: the only real document is one soil-health card (anecdote, not a figure); the harness prints `INSUFFICIENT SAMPLE` below 30 documents per report type |
+| Fertilizer engine | **Complete and tested**, two rule kinds (below). **No rule is approved**, so every request returns `insufficient_data` |
+| Digital Twin | Works on real plot data; synthetic and invented values are filtered out or shown as "Not available" |
+| Managed Supabase / hosted deployment | **Not verified.** Local, PGlite and emulator results only |
+| Sentinel Hub NDVI | Code wired; the configured OAuth client is rejected (HTTP 401), so NDVI shows as unavailable |
+| RAG assistant, agronomist review network | **Planned**, not built |
 
-## 4. Phase 1 architecture
+### Crop-by-crop
 
-Phase 1 is the working core: React + TypeScript frontend, FastAPI backend, Supabase (Auth + PostgreSQL).
+| Crop | Source-backed candidate rule | Engine | Active rule |
+|---|---|---|---|
+| Oil palm | ICAR *Indian Farming* 2019, Table 1 (g N / P₂O₅ / K₂O per palm per year, by palm age) | ready | **no — awaiting agronomist** |
+| Coconut | ICAR-CPCRI authors, *Indian Horticulture* 2022, Table 1 | ready | **no — awaiting agronomist** |
+| Arecanut | Same 2022 article, Table 2 (+ a CPCRI KVK leaflet) | not an engine crop yet | no |
+| Rice, maize, sugarcane, banana | none found | no sourced model | no |
 
-* The browser talks to **Supabase** directly for auth and for row-level-secured reads/writes of the user's own rows
-  (profiles, farmers, plots, soil reports, recommendation history).
-* The browser talks to the **FastAPI backend** with the user's Supabase bearer token for soil-report OCR,
-  recommendation generation, Digital Twin prediction/live data and geospatial (NDVI, cadastral) calls.
-* The backend verifies the JWT (HS256 shared secret, or JWKS for RS256/ES256), then **checks that the plot belongs to the
-  caller** before reading or writing. It uses a service-role database key, which bypasses row-level security, so those
-  application checks are the barrier on the backend path.
-* Row-level security policies (migrations `001`–`011`) protect the direct browser path, including cross-reference checks
-  (a recommendation may only point at a plot *and* soil report the caller owns).
+Candidate records live in [`backend/app/services/data/candidate_rules/`](backend/app/services/data/candidate_rules/). They are **never loaded**; the shipped rule pack [`verified_rules.json`](backend/app/services/data/verified_rules.json) is empty, and a test pins that. Sources, how each was read, and what is unresolved: [`docs/FERTILIZER_SOURCES.md`](docs/FERTILIZER_SOURCES.md). What an agronomist must decide: [`docs/AGRONOMIST_REVIEW_CHECKLIST.md`](docs/AGRONOMIST_REVIEW_CHECKLIST.md).
 
-Phase 1 hardening work and its evidence are in [`docs/PHASE1_AUDIT.md`](docs/PHASE1_AUDIT.md).
+### Known limitations
 
-## 5. Phase 2 progress
+* Nothing implies endorsement by, or data from, ICAR or any cited institution. Reuse permission for the cited tables is not established.
+* Published schedules are applied as printed. **Soil-test values are stored with the advice but do not change the dose**, because no sourced adjustment rule is installed.
+* Crop variety, organic manure already applied, losses, and leaf analysis are not modelled. IoT soil-moisture sensors are not connected.
+* Product grades for urea, DAP, MOP and SSP were read from a consolidated copy of the Fertiliser (Control) Order 1985 and must be re-confirmed against the current Schedule I.
+* Kannada strings added recently are a first draft awaiting native-speaker review.
 
-Phase 2 (branch `phase2/farmer-first-frontend`) is a **frontend** upgrade. Full detail, coverage numbers and API contracts:
-[`docs/PHASE2_FRONTEND_STATUS.md`](docs/PHASE2_FRONTEND_STATUS.md).
+---
 
-Implemented:
+## 🏗️ System architecture
 
-* **Farmer-first dashboard** — real counts, latest soil report, weather, saved advice and quick actions; "Not available"
-  or an empty state when data is missing.
-* **Navigation** — seven groups and thirteen destinations (Home, My Farms, Farm Health, Crop Suitability, Recommendations,
-  History, Profile), mobile drawer, keyboard-reachable.
-* **Disease Intelligence** (arecanut, coconut) — symptom form built from the backend vocabulary, risk result with cited ICAR-CPCRI sources, management by decision hierarchy, chemical-verification status, saved history. Backed by `POST /api/disease/assess` (see below).
-* **What Should I Grow? (Crop Suitability)** — shows the plot's real inputs and what is missing, plus a ranked-result layout.
-  **Interface only.**
-* **Nutrient & Fertilizer** — backend results displayed as observed / derived / recommendation / predicted values;
-  anything the API does not return is listed as not provided.
-* **Weather Advisory** — current weather and forecast for the plot. **No spray/fertilizer timing advice.**
-* **History** — saved soil reports, saved advice and plots.
-* **Shared recommendation card** — one layout (what / what to do / how / how much / when / why / evidence / limitations /
-  missing information) used by disease, suitability and fertilizer results.
-* **English and Kannada** — selector in the header and Settings; stored on the device; persists across refresh and logout.
-  Translation infrastructure: `src/translation/` (`t(key, vars)`, `renderRich`, parity and coverage tests, `npm run i18n:scan`).
-* **Responsive layouts** — checked in a browser at desktop, 820 px and 390 px widths.
-* Removed from the Digital Twin and app shell: hard-coded figures and sample notifications found during the Phase 2 review.
+The farmer-facing app, authenticated data access, soil intelligence services, and plot records are separate layers. Planned AI and expert-review capabilities attach to this foundation without replacing the rule engine.
 
-**Disease Intelligence backend (implemented on this branch, [details](docs/DISEASE_INTELLIGENCE.md)):** a versioned knowledge base of six arecanut/coconut diseases
-built from two ICAR-CPCRI documents (42 quotes machine-verified against the downloaded files), a deterministic rule engine (no ML, no probabilities),
-a separate treatment engine, and saved assessments (migration `012`). **Limits:** records are source-verified but **not reviewed by a plant pathologist**;
-no pesticide label or registration has been checked, so **no chemical dose is ever shown** (institute recommendations appear as "reported, not label-verified" text);
-weather values are accepted but not used because the sources give no numeric thresholds.
+```mermaid
+flowchart TB
+    FARMER(["🌾 Farmer / Farm Manager"])
 
-**Still required from the backend (not implemented):**
+    subgraph EXPERIENCE["01 · APPLICATION EXPERIENCE"]
+        UI["NutriPalm AI Web App<br/>React · TypeScript"]
+        PLOT["Farm Plots & GPS Survey"]
+        SOILUI["Soil Reports & Recommendations"]
+        TWINUI["Digital Twin"]
+        UI --> PLOT
+        UI --> SOILUI
+        UI --> TWINUI
+    end
 
-```text
-POST /api/crop-suitability/assess
+    subgraph SECURITY["02 · IDENTITY & DATA ACCESS"]
+        AUTH["Supabase Authentication"]
+        GUARD["FastAPI<br/>JWT Validation & Ownership Checks"]
+        DB[("PostgreSQL<br/>Supabase · Row-Level Security")]
+    end
+
+    subgraph INTELLIGENCE["03 · SOIL INTELLIGENCE ENGINE"]
+        OCR["Soil Report Processing<br/>OCR & Parameter Extraction"]
+        VERIFY["Verification<br/>Review, Correction, Audit Trail"]
+        RULES["Rule Gate<br/>Approved, Cited Rules Only"]
+        CALC["Calculation<br/>Units, Products, Provenance"]
+        RESULT["Result<br/>Recommendation or insufficient_data"]
+        OCR --> VERIFY --> RULES --> CALC --> RESULT
+    end
+
+    subgraph ROADMAP["04 · PLANNED INTELLIGENCE"]
+        RAG["RAG Knowledge Retrieval<br/>Curated Agricultural Sources"]
+        EXPERT["Agronomist Review<br/>Complex & Exceptional Cases"]
+        KNOWLEDGE[("Reviewed Knowledge<br/>& Versioned Rules")]
+        RAG -. "Planned" .-> KNOWLEDGE
+        EXPERT -. "Planned" .-> KNOWLEDGE
+    end
+
+    FARMER --> UI
+    UI --> AUTH
+    UI --> DB
+    UI --> GUARD
+    GUARD --> DB
+    GUARD --> OCR
+    RESULT --> DB
+    PLOT --> DB
+    RESULT -. "Future escalation" .-> EXPERT
+    KNOWLEDGE -. "Approved sources and rules" .-> RULES
+
+    classDef actor fill:#153D32,color:#FFFFFF,stroke:#153D32,stroke-width:2px
+    classDef app fill:#E5F3EC,color:#153D32,stroke:#65A98B,stroke-width:1.5px
+    classDef security fill:#E8F0FC,color:#173D71,stroke:#7BA4DF,stroke-width:1.5px
+    classDef engine fill:#FFF2D9,color:#654214,stroke:#D9A441,stroke-width:1.5px
+    classDef future fill:#F1EAFE,color:#4A287D,stroke:#AC91E3,stroke-dasharray:5 5
+    classDef store fill:#E4F4F1,color:#14584F,stroke:#65B9AB,stroke-width:1.5px
+
+    class FARMER actor
+    class UI,PLOT,SOILUI,TWINUI app
+    class AUTH,GUARD security
+    class OCR,VERIFY,RULES,CALC,RESULT engine
+    class RAG,EXPERT future
+    class DB,KNOWLEDGE store
+
+    style EXPERIENCE fill:#F5FAF6,stroke:#A9CDB8,stroke-width:1px
+    style SECURITY fill:#F4F7FE,stroke:#A6BEE7,stroke-width:1px
+    style INTELLIGENCE fill:#FFFAEE,stroke:#E4C77E,stroke-width:1px
+    style ROADMAP fill:#FAF7FF,stroke:#BCA5E8,stroke-dasharray:5 5
 ```
 
-The frontend reads the backend's `/openapi.json` and enables a module **only if its path is advertised**; until then the page says the service is not available and
-sends nothing. The frontend never calculates a suitability score, a ranking or a fertilizer dose itself.
+<div align="center">
 
-## 6. Technology stack
+**Green** — Application · **Blue** — Identity and data access · **Gold** — Soil intelligence · **Purple dashed** — Planned
+
+</div>
+
+### How a soil assessment works
+
+```mermaid
+flowchart LR
+    A(["📄 Soil Report"]) --> B["OCR Extraction"]
+    B --> C{"All required values<br/>read clearly?"}
+    C -->|Yes| V["Verified Soil Report"]
+    C -->|No| R["Farmer reviews /<br/>corrects values"]
+    R -->|"Confirmed or corrected"| V
+    R -->|"Cannot be completed"| X["Nothing saved"]
+    V --> G{"Approved rule +<br/>plot facts available?"}
+    G -->|Yes| H(["🌱 Cited Recommendation"])
+    G -->|No| F["insufficient_data<br/>+ what is missing"]
+
+    classDef input fill:#E8F0FC,color:#173D71,stroke:#7BA4DF
+    classDef process fill:#E5F3EC,color:#153D32,stroke:#65A98B
+    classDef decision fill:#FFF2D9,color:#654214,stroke:#D9A441
+    classDef outcome fill:#D6F1DF,color:#124C2D,stroke:#4C9D6A
+    classDef review fill:#FCE8E6,color:#8E2720,stroke:#D87870
+
+    class A input
+    class B,V,R process
+    class C,G decision
+    class H outcome
+    class F,X review
+```
+
+### Processing states
+
+| `status` | Meaning |
+|---|---|
+| `failed` | Nothing could be read. **Nothing is saved.** |
+| `needs_review` | Values were read but a person must confirm or correct some. No soil report exists yet. |
+| `completed` | A verified soil report exists (`auto_validated`, `user_confirmed` or `user_corrected`). |
+
+Re-uploading the same document for the same plot reuses the stored extraction (idempotent by owner, plot and SHA-256). Documents themselves are never stored.
+
+---
+
+## 🧮 How a recommendation is made
+
+The engine has two rule kinds. Both must be backed by an **approved, cited record** before any number reaches a farmer.
+
+**1. Published schedule** (the kind the verified sources support): doses per palm per year by palm age, used exactly as printed.
+
+```text
+age_year        = whole years since the plot's planting date + 1
+per palm        = the schedule band for that age   (g N, g P₂O₅ or P, g K₂O or K per palm per year)
+plot total (kg) = per palm (g) × recorded palm count ÷ 1000
+per hectare     = plot total ÷ plot area in hectares
+products        = DAP for phosphorus (its nitrogen is credited once) → urea for remaining N → MOP for potassium
+```
+
+**2. Sufficiency target** (the original deficit model, still gated and currently without sourced targets): `target − verified soil value = nutrient to add`.
+
+**Units are explicit.** Fertilizer labels state P as P₂O₅ and K as K₂O; elemental P = 0.4364 × P₂O₅ and K = 0.8302 × K₂O (from standard atomic weights). Every conversion carries a declared basis (`elemental` or `oxide`); a rule's stated basis must match the engine's or it cannot be activated. An earlier version under-dosed elemental P by 2.29× and K by 1.20×; that is fixed and tested.
+
+**The engine refuses, with named reasons, when** the plot lacks a planting date, palm count or (for region-bound rules) a state; the planting date is in the future; the palms are older than a closed schedule covers; the crop is unsupported; or no approved rule exists. A refusal saves nothing.
+
+**A rule is activated only if** it is approved by a named reviewer with a role and a past date, cites a source (title, publisher, edition, year, locator, verbatim quote), states stage, region, units, basis and assumptions, passes plausibility and contiguity checks, records where the product grades were verified, and is the only record for its crop. Check a file without activating it:
+
+```bash
+cd backend && python -m app.services.rule_provenance check path/to/records.json
+```
+
+Every stored recommendation carries `engine_version`, `generated_at`, the soil values used, the rule citation, the calculation inputs, assumptions, and what was **not** considered. Yield, revenue and ROI are omitted unless the cited source supports them.
+
+---
+
+## 🗺️ The Digital Twin
+
+| Shown | Origin | When unavailable |
+|---|---|---|
+| Plot, boundary, area, planting date, palm count, stage, irrigation | `plots` row owned by the user | "Not available" |
+| Soil values and history | verified `soil_reports` only | "No verified soil test yet" |
+| Recommendations | engine-stamped rows only, always labelled **advice** | empty state |
+| Fertilizer applied | what the farmer recorded | "No application recorded yet" |
+| Current weather | Open-Meteo at the plot centroid | "N/A" |
+| Live scores (water stress, disease-risk model, crop-health fusion, oil-palm yield estimate) | documented formulas over live data — **modelled estimates, not measurements, not agronomically validated** | "N/A" |
+| NDVI | non-synthetic readings; Sentinel Hub when credentials work | "Config required" |
+| Soil moisture, cadastral parcel | not connected | "Not connected" / unavailable |
+
+---
+
+## 🧠 Planned: RAG-powered agricultural intelligence
+
+<sub>PLANNED FEATURE · NOT YET IMPLEMENTED</sub>
+
+The next stage is Retrieval-Augmented Generation: retrieve relevant agricultural references before generating an explanation or answering a farmer's question.
+
+`Agricultural Documents → Text Processing → Embeddings & Retrieval → Relevant Evidence → Grounded AI Response`
+
+The planned assistant will support source-grounded answers that identify their supporting material, plain-language soil-report explanations, interpretation of why a rule applies and what limitations remain, context-aware questions using soil, crop and plot data, and controlled, versioned knowledge updates.
+
+The source register in [`docs/FERTILIZER_SOURCES.md`](docs/FERTILIZER_SOURCES.md) is the starting corpus: each entry already records publisher, date, locator and how it was verified.
+
+**RAG will complement the rule engine. It will not independently establish dosages, manufacture evidence, or override approved rules.**
+
+---
+
+## 🧑‍🌾 Planned: the agronomist review network
+
+<sub>PLANNED WORKFLOW · HUMAN-IN-THE-LOOP DECISION SUPPORT · NOT YET IMPLEMENTED</sub>
+
+**AI can identify patterns. Agricultural professionals must assess the cases that fall outside them.**
+
+Conflicting soil indicators, questionable laboratory values, unsupported crops, region-specific requirements, or cases where a wrong treatment could harm a crop should be routed to a qualified agronomist instead of forcing an answer.
+
+```mermaid
+flowchart TD
+    A["Soil Assessment"] --> B{"Approved rules adequately<br/>support guidance?"}
+    B -->|Yes| C["Evidence-Based Recommendation"]
+    B -->|No| D["Create Agronomist Review Case"]
+
+    D --> E["Agronomist reviews<br/>report, crop and plot context"]
+    E --> F{"Expert decision"}
+
+    F -->|Approved guidance| G["Documented Recommendation"]
+    F -->|More evidence needed| H["Additional Testing / Information"]
+    F -->|Outside scope| I["Escalate or Decline Guidance"]
+
+    G --> J["Communicate Reviewed Outcome"]
+    H --> K["Await New Evidence"]
+    I --> L["Explain Limitations to Farmer"]
+
+    classDef normal fill:#E5F3EC,color:#153D32,stroke:#65A98B
+    classDef decision fill:#FFF2D9,color:#654214,stroke:#D9A441
+    classDef expert fill:#E8F0FC,color:#173D71,stroke:#7BA4DF
+    classDef safe fill:#FCE8E6,color:#8E2720,stroke:#D87870
+
+    class A,C,G,J normal
+    class B,F decision
+    class D,E,H,K expert
+    class I,L safe
+```
+
+**What the agronomist should receive:** the original report and extracted values, verification status and OCR uncertainties, crop/stage/plot details, the engine's result and why it escalated, the relevant rules and references, and prior assessments — with *measured facts, estimates, missing information and expert conclusions* kept distinct.
+
+**What the professional can do:** approve or modify a supported recommendation, request another test or more information, recommend investigation, or decline to advise. An approved review retains reviewer identity and role, rationale, sources, timestamp, details and precautions.
+
+**Building the knowledge base:** reviews may improve the reusable rule base only through controlled approval. An individual recommendation never becomes a universal rule automatically. This is already how the project works today in miniature: the [review checklist](docs/AGRONOMIST_REVIEW_CHECKLIST.md) (decisions D1–D17, per-crop sheets, record template) is the approval procedure, and a record carries no approval until a named reviewer signs it.
+
+---
+
+## 🔐 Security model
+
+Supabase Auth issues the session. The FastAPI backend verifies the JWT (PyJWT; `exp`, `aud`, `sub` required; algorithm pinned; key type must match; every failure is a 401) and then checks plot, report and extraction ownership in code, because it holds the service-role key, which bypasses row-level security. Another user's id answers `404`, identical to a missing one.
+
+The browser holds only the public anon key, so row-level security protects the direct path, and migration 013 stops the browser from writing anything that claims to be verified or engine-generated. Uploads are size, type and magic-byte checked, processed in memory, never written to disk, and bounded by page, time, pixel and concurrency limits. Startup fails in staging/production if required settings are missing; CORS has no wildcard outside development; secrets never reach the bundle (scanned). Missing data is shown as missing.
+
+---
+
+## 🧰 Technology foundation
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4, Framer Motion, Lucide icons, Leaflet / Google Maps JS API, jsPDF |
-| Backend | Python, FastAPI, Uvicorn; OCR with Tesseract + Poppler |
-| Data and auth | Supabase (PostgreSQL, Auth, Row Level Security) |
-| External data | Open-Meteo (weather), Sentinel Hub (NDVI, optional), Esri/OpenStreetMap tiles, Google Maps (optional) |
-| Tests | Vitest + jsdom, pytest, PGlite (PostgreSQL 17 in WASM) for migration/RLS checks, Playwright-core for browser E2E |
+| User experience | React 19, TypeScript, Vite, Tailwind |
+| Application API | Python, FastAPI |
+| Authentication | Supabase Auth |
+| Data persistence and authorization | PostgreSQL, Supabase, Row-Level Security (migrations `001`–`013`) |
+| Soil document processing | pdfplumber, Tesseract, Poppler (local) |
+| Fertilizer decision support | Evidence-gated rule engine (`rule_provenance.py`, `schedule_engine.py`, `fertilizer_catalog.py`) |
+| Geospatial | GPS boundary records, Open-Meteo, Sentinel Hub (optional) |
+| Packaging | Docker image for the backend (non-root, read-only-capable) |
+| Planned intelligence | RAG retrieval and agronomist-assisted review |
 
-## 7. System architecture
+---
 
-```text
- Browser (React + TS)
-   │  Supabase JS: auth + RLS-protected rows          ┌───────────────────────────┐
-   ├───────────────────────────────────────────────▶ │ Supabase Auth + Postgres  │
-   │                                                  └───────────────────────────┘
-   │  Bearer token: OCR, recommendations, twin, NDVI        ▲ service-role key (server only)
-   ├────────────▶ FastAPI ── JWT check ── plot-ownership check ──┘
-   │                  └── Tesseract/Poppler, Sentinel Hub (optional)
-   └── Open-Meteo (weather, direct from the browser)
-```
+## 🚀 Development roadmap
 
-## 8. Repository structure
+<div align="center">
 
-```text
-src/
-  components/            landing page, PrototypeApp (app shell + navigation), PrototypeAuth
-    prototype/           screens: Dashboard, Farmers, FarmPlots, Soil, Disease, Weather, DigitalTwin, CropSuitability,
-                         Recommendation (Nutrient & Fertilizer), History, Analytics, Settings, map components
-    phase2/              shared Phase 2 UI: RecommendationCard, status badges, empty/unavailable states
-  data/                  Supabase-backed stores (plots, farmers, digital twins)
-  hooks/                 data hooks (plot weather, latest soil report, backend capabilities, analytics)
-  lib/                   apiClient, supabaseClient, weather client, Google Maps loader, lib/phase2 (contracts, validators, capability probe)
-  translation/           i18n: context, hook, rich text, translations/en.json + kn.json
-  constants/cropBaselines.ts   mirror of the backend crop table (a test keeps them in sync)
-  __tests__/             Vitest suites
-backend/
-  app/                   FastAPI app: routers, services (nutrient, dosage, ROI, yield, explanation), repositories, ocr/, schemas
-  tests/                 pytest suites (including JWT/ownership and isolation tests)
-supabase/
-  migrations/            001–011 SQL migrations (apply in order)
-  tests/                 migration + two-user RLS verification (PGlite), emulated Supabase stack, browser E2E, remote verifier
-docs/                    PHASE1_AUDIT.md, PHASE2_FRONTEND_STATUS.md, SCRATCH_SUPABASE_VERIFICATION.md, GOOGLE_MAPS_SETUP.md, GIS_AND_TELEMETRY.md, walkthrough.md
-scripts/                 find-hardcoded-strings.mjs (i18n scanner) and an older i18n codemod
-SETUP.md                 detailed setup guide
-```
+| NOW | NEXT | LONG-TERM |
+|:---:|:---:|:---:|
+| **Soil Intelligence** | **Approved rule base** | **Expert Network** |
+| OCR, review, verified reports, evidence-gated engine | Agronomist approval of oil palm and coconut; more crops with real sources | Structured professional reviews and approved knowledge updates |
+| **Farm Digital Twins** | **RAG Assistant** | **Continuous Validation** |
+| Plot identity, live data, advice vs applied | Source-grounded agricultural Q&A | Evaluation against expert-reviewed cases |
 
-## 9. Prerequisites
+</div>
 
-* Node.js 20+ and npm
-* Python 3.11+
-* A Supabase project (use a **separate scratch project** for testing, never one that holds real data)
-* Optional: Tesseract OCR and Poppler (scanned-PDF OCR), a Sentinel Hub OAuth client (NDVI), a Google Maps JavaScript API key (Google imagery)
+The immediate priority is a dependable, source-backed rule base and a clear escalation process. RAG and professional review extend the system without compromising the integrity of its recommendations.
 
-Details and Windows notes: [`SETUP.md`](SETUP.md).
+---
 
-## 10. Local installation
+## 💻 Getting started
+
+**Prerequisites:** Node.js 20+, Python 3.11+, a Supabase project (use a **disposable** one for testing), Tesseract OCR and Poppler for scanned documents.
 
 ```bash
 git clone https://github.com/gee-46/NutriPalm-AI.git
 cd NutriPalm-AI
 npm install
-cd backend
-python -m venv .venv          # Windows: .venv\Scripts\activate after creating
-pip install -r requirements.txt
+cd backend && python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt                              # runtime + test deps; use requirements.txt in production
+cp .env.example .env                                             # then fill in backend/.env
+cd .. && cp .env.example .env.local                              # then fill in the frontend values
 ```
 
-## 11. Environment configuration
-
-Copy the examples and fill in your own values (never commit the filled-in files):
-
-| File | Copy to | Contains |
-|---|---|---|
-| `.env.example` | `.env.local` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL`, `VITE_GOOGLE_MAPS_API_KEY` (optional) — public values only |
-| `backend/.env.example` | `backend/.env` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` and/or `SUPABASE_JWKS_URL`, `ENVIRONMENT`, `CORS_ALLOW_ORIGINS`, `STRICT_NO_MOCK_DATA`, `SENTINEL_HUB_CLIENT_ID` / `SENTINEL_HUB_CLIENT_SECRET` (optional) |
-
-The frontend fails closed: without the Supabase URL and anon key, sign-in is refused. In production the backend refuses a
-wildcard CORS origin. The service-role key and JWT secret belong **only** in the backend environment.
-
-## 12. Frontend setup
+Apply every file in `supabase/migrations/` in numeric order (`001` … `013`; apply `013` before deploying the backend), then start both services:
 
 ```bash
-npm run dev        # Vite dev server, normally http://localhost:5173
-npm run build      # type-check (tsc -b) + production bundle
-npm run lint       # oxlint
-npm test           # Vitest
-npm run i18n:scan  # reports untranslated JSX text / attributes / toasts
+cd backend && python -m uvicorn app.main:app --reload --port 8000     # docs /docs · liveness /health · readiness /health/ready
+npm run dev                                                           # http://localhost:5173
 ```
 
-## 13. Backend setup
+Never commit `backend/.env`. Frontend `VITE_*` values are public by design. Configuration reference: [`.env.example`](.env.example) and [`backend/.env.example`](backend/.env.example). Details: [`SETUP.md`](SETUP.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+**Backend container:**
 
 ```bash
-cd backend
-python -m uvicorn app.main:app --reload     # http://127.0.0.1:8000, interactive docs at /docs, health at /health
+docker build -t nutripalm-backend backend/
+docker run --rm -p 8000:8000 --env-file backend/.env nutripalm-backend
+curl http://localhost:8000/health/ready      # 200 only if config, Tesseract and Poppler are present
 ```
 
-Set `VITE_API_BASE_URL` (for example `http://127.0.0.1:8000`) in the frontend environment. For OCR on scanned documents,
-install Tesseract and Poppler and, on Windows, set `TESSERACT_CMD` / `POPPLER_PATH` in `backend/.env` (see `SETUP.md`).
+### Use your own approved rules
 
-## 14. Database and Supabase setup
-
-Apply every file in `supabase/migrations/` **in numeric order** (`001` … `011`) with the Supabase SQL editor or CLI, then enable
-the auth providers you need. `011_farmers_and_rls_hardening.sql` adds the `farmers` table and the cross-reference RLS checks.
-To verify a **disposable** Supabase project against the two-user attack matrix, follow
-[`docs/SCRATCH_SUPABASE_VERIFICATION.md`](docs/SCRATCH_SUPABASE_VERIFICATION.md) (`npm run verify:remote` from `supabase/tests`; it
-refuses to run on a project that already contains data).
-
-## 15. Running tests
-
-Previously reported results (from the Phase 1 hardening and Phase 2 work). While preparing this README the frontend build, lint, unit tests and the backend
-`pytest` suite were re-run and gave the same results as below (build passes, 0 lint errors, 48/48, 173 passed + the same 6 OCR failures).
-The **browser E2E, migration/RLS and scratch-Supabase checks were not re-run** for this README update:
-
-| Suite | Last reported result |
-|---|---|
-| Frontend build (`npm run build`) | passed |
-| Frontend lint (`npm run lint`) | 0 errors (warnings remain) |
-| Frontend unit tests (`npm test`) | 48 / 48 passed |
-| Hardcoded-string scan (`npm run i18n:scan`) | 0 untranslated literals detected |
-| Browser E2E, two users (`supabase/tests`: `npm run e2e`) | 137 / 137 passed — **against an emulated Supabase stack, not managed Supabase** |
-| Backend (`cd backend && python -m pytest`) | 173 passed, 6 failed: the 6 real-OCR tests need Tesseract/Poppler, which were not installed on the audit machine (OCR itself was checked manually by the project owner) |
-| Migrations + RLS (`supabase/tests`: `npm run verify`) | 210 / 210 on PostgreSQL 17 (PGlite) with Supabase-compatible test roles; **managed Supabase verification is still outstanding** |
-
-The E2E suite starts its own emulated Supabase (GoTrue/PostgREST subset over PGlite), the FastAPI backend and Vite, and drives
-Microsoft Edge with Playwright. Set `E2E_PYTHON` (interpreter with the backend dependencies), optionally `E2E_BROWSER`, then
-`cd supabase/tests && npm install && npm run e2e`. The emulator is not a substitute for Supabase itself.
-
-## 16. Current limitations
-
-* **Not production-ready.** No managed-Supabase verification has been completed; the E2E suite uses an emulator.
-* **Crop Suitability is an interface only** (needs `POST /api/crop-suitability/assess`). **Disease Intelligence** covers six diseases from two sources; results are screenings, records are not expert-reviewed, and no pesticide label has been verified.
-* **Nutrient advice:** arecanut is not in the backend crop table; crop reference values are engineering defaults, **not
-  agronomist-validated**; the API does not return fertilizer quantity per palm, application method or timing (the UI lists these
-  as not provided). No prices, dosages or treatments are invented by the frontend.
-* **Weather:** current conditions and forecast only. Spray/fertilizer timing rules are not implemented.
-* **Configuration-dependent:** Google imagery (API key), Sentinel-2 NDVI (Sentinel Hub credentials), scanned-document OCR
-  (Tesseract/Poppler), Google sign-in (provider setup). Without them the app says the data is unavailable.
-* **Kannada** text has not been reviewed by a native speaker; backend-generated advice sentences and the PDF export are English only.
-* IoT sensor telemetry is not connected.
-* Some older screens still use small text and mixed styling.
-
-## 17. Security and data integrity
-
-* Supabase Auth sessions; backend JWT verification (HS256 or JWKS RS256/ES256); no hard-coded users or demo login.
-* Row-level security on every user-owned table, with insert/update checks that cross-reference ownership of related rows.
-* Backend ownership checks on every plot-scoped route; a request for another user's plot returns 404, not 403.
-* Uploads are size-limited (20 MB) and content-sniffed; malformed IDs resolve to "not found".
-* **Data integrity rule:** missing data is shown as missing (never `0`, never a default); nothing is estimated unless it comes from a
-  documented backend calculation; incomplete OCR results are not saved. Synthetic Digital Twin rows are excluded from displays.
-* Secrets: only publishable Supabase values go in the frontend; service-role key and JWT secret stay server-side and out of Git.
-  If a service-role key is ever exposed, rotate it.
-
-## 18. Development roadmap
-
-| Item | State |
-|---|---|
-| Phase 1: auth, farms/plots, GPS survey, OCR, recommendations, twin, analytics, hardening | built; managed-Supabase verification pending |
-| Phase 2 frontend: Kannada, farmer-first UI, new screens | built (this branch) |
-| Backend disease assessment (arecanut, coconut) with evidence and sources | built (6 diseases, 2 sources); expert review, more sources and label verification pending |
-| Backend crop suitability with ranked, evidence-backed results | planned |
-| Arecanut nutrient rules; per-plant dose, method and timing; agronomist-validated reference values | planned |
-| Weather-based advisory rules | planned |
-| Translatable backend advice (message codes); native-speaker Kannada review | planned |
-| IoT / sensor integration | future |
-
-## 19. Contributors / team roles
-
-Developed by **Gautam N Chipkar & Team** under **Samruddhi Organics** ([github.com/gee-46](https://github.com/gee-46)).
-Individual roles are not recorded in this repository; add them here.
-
-## 20. License
-
-No `LICENSE` file is present in the repository. The badge at the top reflects the project's stated position,
-**All Rights Reserved**. Add a license file before any redistribution.
+Point a deployment at its own pack with `RULE_PACK_PATH`. Start from a candidate record, resolve its open questions with an agronomist, add the reviewer and date, and validate with the `check` command above. Do not edit a record to "pass" validation without the underlying approval.
 
 ---
 
+## 🧪 Tests
+
+Results of the last full run, with their scope, are recorded in [`docs/PRODUCTION_READINESS_AUDIT.md`](docs/PRODUCTION_READINESS_AUDIT.md) §4. All of them are **local, PGlite or emulator** results; none proves anything about a managed Supabase project or a hosted deployment.
+
+| Command | What it covers | Last result |
+|---|---|---|
+| `npm run build` · `npm run lint` · `npm test` | type-check + bundle · oxlint · Vitest | pass · 0 errors · 68/68 |
+| `cd backend && python -m pytest` | OCR parsing/validation, review workflow, rule gate and validation, schedule engine, unit conversions, token attacks, API auth/ownership | 513 passed |
+| `cd backend && python -m eval.ocr_eval --include-synthetic` | per-field OCR metrics incl. review routing, with sample-size caveats | 1 real document only |
+| `cd supabase/tests && npm run verify` | migrations on clean PostgreSQL 17 (PGlite) + two-user RLS attack matrix | 304/304 |
+| `WEAKEN=1 npm run verify` | mutation check: weakened policies must make the tests fail | 45 expected failures |
+| `npm run verify:upgrade` | migration 013 on a populated 001–012 database is additive | 21/21 |
+| `npm run smoke:selftest` | the staging workflow script against the local emulator (`smoke:staging` for a real deployment) | 25/25 |
+| `E2E_PYTHON=… npm run e2e` (in `supabase/tests`) | real browser, real backend, **emulated** Supabase | 131/131 |
+| `python scripts/check_sentinel.py` (in `backend/`) | safe Sentinel Hub connectivity diagnosis | auth rejected |
+| `npm run verify:remote` | the RLS matrix against a disposable managed project | **never run** — see `docs/SCRATCH_SUPABASE_VERIFICATION.md` |
+
+Real recommendations were exercised only with clearly labelled **test-fixture** rules (accepted only when `ENVIRONMENT=development`). No approved real rule has ever been run.
+
+---
+
+## 📚 Documentation
+
+| Document | Purpose |
+|---|---|
+| [`docs/PRODUCTION_READINESS_AUDIT.md`](docs/PRODUCTION_READINESS_AUDIT.md) | baseline, findings, what changed, test evidence, blockers, go/no-go |
+| [`docs/FERTILIZER_SOURCES.md`](docs/FERTILIZER_SOURCES.md) | every fertilizer source read: what, where, how verified, what it supports |
+| [`docs/AGRONOMIST_REVIEW_CHECKLIST.md`](docs/AGRONOMIST_REVIEW_CHECKLIST.md) | decisions only an agronomist can make, per-crop sheets, rule-record templates |
+| [`docs/OCR_AND_FERTILIZER_PIPELINE.md`](docs/OCR_AND_FERTILIZER_PIPELINE.md) | OCR → recommendation contract, validation, rule gate, schedule arithmetic, measured accuracy |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | components, data model, Digital Twin data sources, API contract |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | environment, migrations, container, proxy requirements, what is unverified |
+| [`docs/SCRATCH_SUPABASE_VERIFICATION.md`](docs/SCRATCH_SUPABASE_VERIFICATION.md) · [`docs/GOOGLE_MAPS_SETUP.md`](docs/GOOGLE_MAPS_SETUP.md) · [`docs/GIS_AND_TELEMETRY.md`](docs/GIS_AND_TELEMETRY.md) | operational notes |
+| [`docs/PHASE1_AUDIT.md`](docs/PHASE1_AUDIT.md) · [`docs/PHASE2_FRONTEND_STATUS.md`](docs/PHASE2_FRONTEND_STATUS.md) | **historical** reports (they describe features since removed) |
+
+---
+
+## 🤝 Contributors and license
+
 <div align="center">
 
-**From soil data → evidence → actionable decisions.**
+### 🌴 NutriPalm AI
+
+*Better soil understanding. Smarter farm decisions. A more connected agricultural future.*
+
+**Developed by Gautam N Chipkar & Team**
+Samruddhi Organics
+
+[Repository](https://github.com/gee-46/NutriPalm-AI)
 
 </div>
+
+No `LICENSE` file is present; the project's stated position is **All Rights Reserved**. Add a license before any redistribution.

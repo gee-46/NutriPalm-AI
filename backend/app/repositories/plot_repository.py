@@ -19,7 +19,7 @@ from typing import Protocol
 
 from postgrest.exceptions import APIError
 
-from app.database import get_supabase_client
+from app.database import get_supabase_client, is_missing_table
 from app.exceptions import (
     PlotNotFound,
     RepositoryNotConfigured,
@@ -38,11 +38,15 @@ def _row_to_plot_input(row: dict) -> PlotInput:
     Map a `plots` table row to PlotInput.
 
     Expected columns:
-        id, owner_id, crop, area, area_unit
+        id, owner_id, crop, area, area_unit; optional: planting_date, plant_count, state
     """
     area_unit = row.get("area_unit", "hectare")
     if area_unit == "acres":
         area_unit = "acre"
+
+    count = row.get("plant_count")
+    if not (isinstance(count, int) and not isinstance(count, bool) and count > 0):
+        count = None  # a missing or nonsensical count is "not recorded", never a guess
 
     return PlotInput(
         plot_id=row["id"],
@@ -50,6 +54,9 @@ def _row_to_plot_input(row: dict) -> PlotInput:
         crop=row["crop"],
         area=row["area"],
         area_unit=area_unit,
+        planting_date=row.get("planting_date") or None,
+        plant_count=count,
+        state=(row.get("state") or "").strip() or None,
     )
 
 
@@ -62,7 +69,7 @@ class SupabasePlotRepository:
         try:
             response = (
                 client.table("plots")
-                .select("id, owner_id, crop, area, area_unit")
+                .select("id, owner_id, crop, area, area_unit, planting_date, plant_count, state")
                 .eq("id", plot_id)
                 .maybe_single()
                 .execute()
@@ -71,7 +78,7 @@ class SupabasePlotRepository:
             if getattr(exc, "code", None) == "22P02":
                 # Malformed UUID: indistinguishable from an unknown plot.
                 raise PlotNotFound(f"Plot '{plot_id}' was not found.") from exc
-            if getattr(exc, "code", None) == "42P01":
+            if is_missing_table(exc):
                 raise RepositoryNotConfigured(
                     "Plot data source is not configured: "
                     "the 'plots' table does not exist."

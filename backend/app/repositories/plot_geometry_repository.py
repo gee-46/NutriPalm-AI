@@ -17,7 +17,7 @@ from typing import Any, Protocol
 
 from postgrest.exceptions import APIError
 
-from app.database import get_supabase_client
+from app.database import get_supabase_client, is_missing_table
 from app.exceptions import PlotNotFound, RepositoryNotConfigured
 
 
@@ -64,7 +64,7 @@ class SupabasePlotGeometryRepository:
             if getattr(exc, "code", None) == "22P02":
                 # Malformed UUID: indistinguishable from an unknown plot.
                 raise PlotNotFound(f"Plot '{plot_id}' was not found.") from exc
-            if getattr(exc, "code", None) == "42P01":
+            if is_missing_table(exc):
                 raise RepositoryNotConfigured(
                     "Plot data source is not configured: "
                     "the 'plots' table does not exist."

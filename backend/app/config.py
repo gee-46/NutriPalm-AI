@@ -44,10 +44,24 @@ class Settings(BaseSettings):
     poppler_path: str = ""
     tesseract_cmd: str = ""
 
+    # --- OCR resource limits (a soil report is a handful of pages) ---
+    ocr_max_pages: int = 15
+    ocr_page_timeout_seconds: int = 60
+    ocr_total_timeout_seconds: int = 180
+    # Concurrent OCR jobs per worker process; extra requests wait, then get 503.
+    ocr_max_concurrent: int = 2
+    ocr_queue_wait_seconds: int = 30
+    max_upload_mb: int = 20
+
     # --- App ---
     environment: str = "development"
     api_v1_prefix: str = "/api"
     cors_allow_origins: str = "http://localhost:5173"
+
+    # --- Recommendation rules ---
+    # Optional path to a verified-rules JSON file (see app/services/rule_provenance.py).
+    # Empty = the pack shipped with the code, which is intentionally empty.
+    rule_pack_path: str = ""
 
     # --- Feature flags ---
     strict_no_mock_data: bool = True
@@ -102,6 +116,29 @@ class Settings(BaseSettings):
             raise ValueError(
                 "CORS_ALLOW_ORIGINS must list explicit origins (no '*') in "
                 "staging and production."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def require_core_configuration_in_deployments(self) -> "Settings":
+        """
+        Staging and production must not start half-configured: every authenticated
+        request would otherwise fail later with an opaque 500/503. Optional
+        integrations (Sentinel Hub, Google Maps) are NOT required.
+        """
+        if self.environment == "development":
+            return self
+        missing = []
+        if not self.supabase_url:
+            missing.append("SUPABASE_URL")
+        if not self.supabase_service_role_key:
+            missing.append("SUPABASE_SERVICE_ROLE_KEY")
+        if not (self.supabase_jwt_secret or self.supabase_jwks_url or self.supabase_url):
+            missing.append("SUPABASE_JWT_SECRET or SUPABASE_JWKS_URL")
+        if missing:
+            raise ValueError(
+                "Missing required configuration for "
+                f"{self.environment}: {', '.join(missing)}. See backend/.env.example."
             )
         return self
 

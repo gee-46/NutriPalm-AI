@@ -82,7 +82,11 @@ def build_recommendation(
     analysis = nutrient_analyzer.analyze(soil, requirement)
     severity = severity_calculator.calculate(analysis)
     dosage_plan = dosage_calculator.calculate(
-        analysis, area_ha, price_overrides=fertilizer_price_overrides
+        analysis,
+        area_ha,
+        price_overrides=fertilizer_price_overrides,
+        p_basis=requirement.p_basis,
+        k_basis=requirement.k_basis,
     )
     yield_prediction = yield_predictor.predict(requirement, analysis, severity)
     roi = roi_calculator.calculate(

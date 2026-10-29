@@ -29,6 +29,7 @@ def deficient_oil_palm_soil() -> SoilTestInput:
         potassium_kg_ha=325.0,  # within 5% tolerance of target (340) -> adequate
         organic_carbon_percent=0.9,
         ph=5.5,
+        verification_status="user_confirmed",
     )
 
 
@@ -52,6 +53,7 @@ def healthy_rice_soil() -> SoilTestInput:
         potassium_kg_ha=60.0,
         organic_carbon_percent=0.6,
         ph=6.2,
+        verification_status="user_confirmed",
     )
 
 

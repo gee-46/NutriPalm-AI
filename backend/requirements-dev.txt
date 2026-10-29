@@ -1,0 +1,7 @@
+# Everything needed to run the backend test suite and the OCR evaluation.
+-r requirements.txt
+pytest>=8.0
+# tests/fixtures/soil_report_files.py renders sample PDFs/scans for the OCR tests
+img2pdf>=0.5
+reportlab>=4.0
+pypdf>=4.0

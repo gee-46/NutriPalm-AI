@@ -21,6 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.exceptions import UnsupportedCrop
+from app.services.fertilizer_catalog import NutrientBasis
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,14 @@ class CropRequirement:
     # a fully-severe (severity=1.0) nutrient deficiency situation caps yield
     # at 60% of optimal_yield_t_ha.
     max_yield_loss_fraction: float
+
+    # How the P and K soil-test values and targets above are expressed: as the element (P, K) or as
+    # the oxide (P2O5, K2O). N is always elemental. This decides how many kg of P2O5/K2O-labelled
+    # fertilizer a deficit needs (a 2.29x / 1.20x difference), so it is NOT a detail. ELEMENTAL is the
+    # project's unverified working assumption (soil-test extractants report P and K); the verified rule
+    # record must state it explicitly and it must match (see rule_provenance.py).
+    p_basis: NutrientBasis = NutrientBasis.ELEMENTAL
+    k_basis: NutrientBasis = NutrientBasis.ELEMENTAL
 
 
 # NOTE: values below are illustrative V1 defaults. See module docstring.

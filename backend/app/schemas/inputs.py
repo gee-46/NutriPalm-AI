@@ -13,6 +13,8 @@ Keeping these as separate Pydantic models means:
 """
 from __future__ import annotations
 
+from datetime import date
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -33,6 +35,12 @@ class SoilTestInput(BaseModel):
 
     organic_carbon_percent: float = Field(ge=0, le=100)
     ph: float = Field(ge=0, le=14)
+
+    # How the numbers were verified: 'auto_validated' | 'user_confirmed' |
+    # 'user_corrected'. None = the row was not created by the verified upload
+    # workflow (e.g. written straight from the browser, or older than migration
+    # 013); the recommendation endpoint refuses to build advice from it.
+    verification_status: str | None = None
 
     @field_validator("ph")
     @classmethod
@@ -55,6 +63,12 @@ class PlotInput(BaseModel):
     crop: str
     area: float = Field(gt=0)
     area_unit: str = Field(default="hectare")
+
+    # Optional plot facts the farmer entered. A per-palm rule needs the planting date (palm age) and the number of
+    # palms; a region-bound rule needs the state. None means "not recorded" - never a guess.
+    planting_date: date | None = None
+    plant_count: int | None = Field(default=None, gt=0)
+    state: str | None = None
 
     @field_validator("area_unit")
     @classmethod

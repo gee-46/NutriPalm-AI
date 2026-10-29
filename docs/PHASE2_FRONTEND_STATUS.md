@@ -1,3 +1,6 @@
+> **Superseded.** This describes the Phase 2 frontend, including Disease Intelligence, Crop Suitability, Weather Advisory and Analytics, which have been
+> **removed** from the product. Current status: [`PRODUCTION_READINESS_AUDIT.md`](PRODUCTION_READINESS_AUDIT.md).
+
 # Phase 2 frontend status — farmer-first UI, English + Kannada
 
 Branch `phase2/farmer-first-frontend` (from `audit/phase1-hardening`). Frontend only: no migrations were run, the

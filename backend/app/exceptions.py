@@ -28,8 +28,29 @@ class RecommendationNotFound(NutriPalmError):
     """The referenced recommendation_id does not exist."""
 
 
-class DiseaseAssessmentNotFound(NutriPalmError):
-    """The referenced disease assessment id does not exist."""
+class ExtractionNotFound(NutriPalmError):
+    """The referenced soil-report extraction does not exist (or belongs to someone else)."""
+
+
+class ExtractionConflict(NutriPalmError):
+    """The same document was already stored for this plot."""
+
+
+class ExtractionNotConfirmable(NutriPalmError):
+    """
+    The confirmation request cannot produce a trustworthy soil report.
+
+    ``problems`` maps parameter -> human-readable reason, so the UI can point at
+    each field that still needs a decision.
+    """
+
+    def __init__(self, problems: dict[str, str]):
+        super().__init__("; ".join(f"{k}: {v}" for k, v in problems.items()))
+        self.problems = problems
+
+
+class ExtractionAlreadyResolved(NutriPalmError):
+    """The extraction was already confirmed (possibly by a concurrent request)."""
 
 
 class NotAuthorized(NutriPalmError):

@@ -83,10 +83,8 @@ def _recommended_actions(dosage_plan: DosagePlan) -> list[str]:
             f"Apply {dosage.quantity_kg_total:.1f} kg of {dosage.product_display_name} "
             f"across the plot ({dosage.quantity_kg_per_ha:.1f} kg per hectare)."
         )
-    actions.append(
-        "Split large applications into 2-3 doses over the growing season rather than "
-        "applying everything at once, to reduce nutrient loss."
-    )
+    # Timing / splitting is deliberately not advised here: no timing rule is
+    # backed by a cited source, and an unsourced schedule would read as advice.
     return actions
 
 
