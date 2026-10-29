@@ -10,7 +10,7 @@ An agricultural intelligence platform by **Samruddhi Organics**
 
 Soil-report intelligence, evidence-gated fertilizer recommendations, and farm-level digital twins — with a roadmap toward retrieval-grounded AI and professional agronomic review.
 
-[![Status](https://img.shields.io/badge/status-not%20production--ready-orange?style=flat-square)](docs/PRODUCTION_READINESS_AUDIT.md)
+[![Status](https://img.shields.io/badge/status-not%20production--ready-orange?style=flat-square)](#-honest-status)
 [![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20TypeScript-149ECA?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
@@ -21,13 +21,12 @@ Soil-report intelligence, evidence-gated fertilizer recommendations, and farm-le
 
 > **Status: not production-ready.** The code is tested locally (see [Tests](#-tests)), but nothing has been verified on a managed Supabase project or a hosted
 > deployment, and **no fertilizer quantity is produced until an agronomist approves a cited rule** (see [Honest status](#-honest-status)).
-> The complete picture, with evidence, is in [`docs/PRODUCTION_READINESS_AUDIT.md`](docs/PRODUCTION_READINESS_AUDIT.md).
 
 ---
 
 ## 📑 Contents
 
-[Vision](#-the-vision) · [Product](#-the-product) · [Honest status](#-honest-status) · [Architecture](#-system-architecture) · [How a recommendation is made](#-how-a-recommendation-is-made) · [Digital Twin](#-the-digital-twin) · [Planned: RAG](#-planned-rag-powered-agricultural-intelligence) · [Planned: agronomist review](#-planned-the-agronomist-review-network) · [Security](#-security-model) · [Tech](#-technology-foundation) · [Roadmap](#-development-roadmap) · [Getting started](#-getting-started) · [Tests](#-tests) · [Docs](#-documentation)
+[Vision](#-the-vision) · [Product](#-the-product) · [Honest status](#-honest-status) · [Architecture](#-system-architecture) · [How a recommendation is made](#-how-a-recommendation-is-made) · [Digital Twin](#-the-digital-twin) · [Planned: RAG](#-planned-rag-powered-agricultural-intelligence) · [Planned: agronomist review](#-planned-the-agronomist-review-network) · [Security](#-security-model) · [Tech](#-technology-foundation) · [Roadmap](#-development-roadmap) · [Getting started](#-getting-started) · [Tests](#-tests)
 
 ---
 
@@ -103,7 +102,7 @@ A recommendation is **advice**, never a record that something happened.
 | Arecanut | Same 2022 article, Table 2 (+ a CPCRI KVK leaflet) | not an engine crop yet | no |
 | Rice, maize, sugarcane, banana | none found | no sourced model | no |
 
-Candidate records live in [`backend/app/services/data/candidate_rules/`](backend/app/services/data/candidate_rules/). They are **never loaded**; the shipped rule pack [`verified_rules.json`](backend/app/services/data/verified_rules.json) is empty, and a test pins that. Sources, how each was read, and what is unresolved: [`docs/FERTILIZER_SOURCES.md`](docs/FERTILIZER_SOURCES.md). What an agronomist must decide: [`docs/AGRONOMIST_REVIEW_CHECKLIST.md`](docs/AGRONOMIST_REVIEW_CHECKLIST.md).
+Candidate records live in [`backend/app/services/data/candidate_rules/`](backend/app/services/data/candidate_rules/). They are **never loaded**; the shipped rule pack [`verified_rules.json`](backend/app/services/data/verified_rules.json) is empty, and a test pins that. Sources, schedules, and crop targets require formal agronomist review before approval.
 
 ### Known limitations
 
@@ -287,7 +286,7 @@ The next stage is Retrieval-Augmented Generation: retrieve relevant agricultural
 
 The planned assistant will support source-grounded answers that identify their supporting material, plain-language soil-report explanations, interpretation of why a rule applies and what limitations remain, context-aware questions using soil, crop and plot data, and controlled, versioned knowledge updates.
 
-The source register in [`docs/FERTILIZER_SOURCES.md`](docs/FERTILIZER_SOURCES.md) is the starting corpus: each entry already records publisher, date, locator and how it was verified.
+Published agricultural research and verified university fertilizer schedules serve as the starting corpus, recording publisher, date, locator, and verification basis.
 
 **RAG will complement the rule engine. It will not independently establish dosages, manufacture evidence, or override approved rules.**
 
@@ -333,7 +332,7 @@ flowchart TD
 
 **What the professional can do:** approve or modify a supported recommendation, request another test or more information, recommend investigation, or decline to advise. An approved review retains reviewer identity and role, rationale, sources, timestamp, details and precautions.
 
-**Building the knowledge base:** reviews may improve the reusable rule base only through controlled approval. An individual recommendation never becomes a universal rule automatically. This is already how the project works today in miniature: the [review checklist](docs/AGRONOMIST_REVIEW_CHECKLIST.md) (decisions D1–D17, per-crop sheets, record template) is the approval procedure, and a record carries no approval until a named reviewer signs it.
+**Building the knowledge base:** reviews may improve the reusable rule base only through controlled approval. An individual recommendation never becomes a universal rule automatically: a structured review procedure and record template ensure a record carries no approval until a named reviewer signs it.
 
 ---
 
@@ -399,7 +398,7 @@ cd backend && python -m uvicorn app.main:app --reload --port 8000     # docs /do
 npm run dev                                                           # http://localhost:5173
 ```
 
-Never commit `backend/.env`. Frontend `VITE_*` values are public by design. Configuration reference: [`.env.example`](.env.example) and [`backend/.env.example`](backend/.env.example). Details: [`SETUP.md`](SETUP.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+Never commit `backend/.env`. Frontend `VITE_*` values are public by design. Configuration reference: [`.env.example`](.env.example) and [`backend/.env.example`](backend/.env.example). Details: [`SETUP.md`](SETUP.md).
 
 **Backend container:**
 
@@ -417,7 +416,7 @@ Point a deployment at its own pack with `RULE_PACK_PATH`. Start from a candidate
 
 ## 🧪 Tests
 
-Results of the last full run, with their scope, are recorded in [`docs/PRODUCTION_READINESS_AUDIT.md`](docs/PRODUCTION_READINESS_AUDIT.md) §4. All of them are **local, PGlite or emulator** results; none proves anything about a managed Supabase project or a hosted deployment.
+All test results are **local, PGlite or emulator** results; none proves anything about a managed Supabase project or a hosted deployment.
 
 | Command | What it covers | Last result |
 |---|---|---|
@@ -430,26 +429,12 @@ Results of the last full run, with their scope, are recorded in [`docs/PRODUCTIO
 | `npm run smoke:selftest` | the staging workflow script against the local emulator (`smoke:staging` for a real deployment) | 25/25 |
 | `E2E_PYTHON=… npm run e2e` (in `supabase/tests`) | real browser, real backend, **emulated** Supabase | 131/131 |
 | `python scripts/check_sentinel.py` (in `backend/`) | safe Sentinel Hub connectivity diagnosis | auth rejected |
-| `npm run verify:remote` | the RLS matrix against a disposable managed project | **never run** — see `docs/SCRATCH_SUPABASE_VERIFICATION.md` |
+| `npm run verify:remote` | the RLS matrix against a disposable managed project | **never run** (requires disposable Supabase project) |
 
 Real recommendations were exercised only with clearly labelled **test-fixture** rules (accepted only when `ENVIRONMENT=development`). No approved real rule has ever been run.
 
 ---
 
-## 📚 Documentation
-
-| Document | Purpose |
-|---|---|
-| [`docs/PRODUCTION_READINESS_AUDIT.md`](docs/PRODUCTION_READINESS_AUDIT.md) | baseline, findings, what changed, test evidence, blockers, go/no-go |
-| [`docs/FERTILIZER_SOURCES.md`](docs/FERTILIZER_SOURCES.md) | every fertilizer source read: what, where, how verified, what it supports |
-| [`docs/AGRONOMIST_REVIEW_CHECKLIST.md`](docs/AGRONOMIST_REVIEW_CHECKLIST.md) | decisions only an agronomist can make, per-crop sheets, rule-record templates |
-| [`docs/OCR_AND_FERTILIZER_PIPELINE.md`](docs/OCR_AND_FERTILIZER_PIPELINE.md) | OCR → recommendation contract, validation, rule gate, schedule arithmetic, measured accuracy |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | components, data model, Digital Twin data sources, API contract |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | environment, migrations, container, proxy requirements, what is unverified |
-| [`docs/SCRATCH_SUPABASE_VERIFICATION.md`](docs/SCRATCH_SUPABASE_VERIFICATION.md) · [`docs/GOOGLE_MAPS_SETUP.md`](docs/GOOGLE_MAPS_SETUP.md) · [`docs/GIS_AND_TELEMETRY.md`](docs/GIS_AND_TELEMETRY.md) | operational notes |
-| [`docs/PHASE1_AUDIT.md`](docs/PHASE1_AUDIT.md) · [`docs/PHASE2_FRONTEND_STATUS.md`](docs/PHASE2_FRONTEND_STATUS.md) | **historical** reports (they describe features since removed) |
-
----
 
 ## 🤝 Contributors and license
 
