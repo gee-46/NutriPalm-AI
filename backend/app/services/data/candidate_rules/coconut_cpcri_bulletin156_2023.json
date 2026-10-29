@@ -1,0 +1,102 @@
+{
+  "status": "pending_review",
+  "_candidate": {
+    "state": "PENDING AGRONOMIST REVIEW - NOT ACTIVE, AND NOT YET EXPRESSIBLE AS AN ENGINE RECORD. Never loaded by the engine.",
+    "engine_support": "BLOCKED by data the plot does not hold: Table 3 differs for Tall varieties and Hybrids, and the `plots` table has no variety column; the bulletin is for NORTH EAST INDIA (Assam trials), and applicable_states would have to list those states. For a plot elsewhere (e.g. Karnataka) the engine would correctly answer insufficient_data (region_not_covered).",
+    "what_would_unblock": [
+      "Add a coconut variety (tall / hybrid / dwarf) to the plot and the plot form, OR obtain a source with a single schedule for the region you serve.",
+      "Agronomist decision on region applicability (see open_questions).",
+      "A rule record per variety, or a `variety` dimension in the schedule record and engine."
+    ],
+    "evidence_primary": {
+      "document": "Subramanian P., Thamban C., Niral V., Joseph Rajkumar, Merin Babu, Manikantan M.R., Alpana Das, Singh L.S. and Anok Uchoi. 2023. Cultivation Practices of Coconut - North East India. Technical Bulletin No. 156, ICAR-CPCRI, Kasaragod. 52 p. (published with the Coconut Development Board, Kochi; August 2023)",
+      "pdf": "https://cpcri.gov.in/filemgr/webfs/download/Coconut-NE-2023.pdf",
+      "locator": "Table 3 'General fertilizer recommendation for coconut (g/palm)', bulletin page 20; text on pages 19-20",
+      "how_it_was_read": "PDF text layer extracted with pdftotext on 2026-10-30; the table page was rendered to an image and read visually.",
+      "reuse_permission": "NOT ESTABLISHED (no licence text read).",
+      "table_3_as_printed_g_per_palm": {
+        "columns": "February-March application (N, P2O5, K2O) | September-October application (N, P2O5, K2O)",
+        "tall_varieties": {
+          "first_year": "Planting in February-March; only the September-October application: 50, 40, 105",
+          "second_year": "83, 67, 175 | 83, 67, 175",
+          "third_year": "167, 133, 350 | 167, 133, 350",
+          "fourth_year_onwards": "250, 200, 525 | 250, 200, 525"
+        },
+        "hybrids": {
+          "first_year": "Planting in February-March; only the September-October application: 50, 50, 200",
+          "second_year": "83, 83, 333 | 83, 83, 333",
+          "third_year": "167, 167, 666 | 167, 167, 666",
+          "fourth_year_onwards": "250, 250, 1000 | 250, 250, 1000"
+        }
+      },
+      "derived_annual_totals_g_per_palm_per_year__ENGINEER_ARITHMETIC_NOT_PRINTED": {
+        "tall": {
+          "year_1": [
+            50,
+            40,
+            105
+          ],
+          "year_2": [
+            166,
+            134,
+            350
+          ],
+          "year_3": [
+            334,
+            266,
+            700
+          ],
+          "year_4_onwards": [
+            500,
+            400,
+            1050
+          ]
+        },
+        "hybrid": {
+          "year_1": [
+            50,
+            50,
+            200
+          ],
+          "year_2": [
+            166,
+            166,
+            666
+          ],
+          "year_3": [
+            334,
+            334,
+            1332
+          ],
+          "year_4_onwards": [
+            500,
+            500,
+            2000
+          ]
+        }
+      },
+      "text_that_disagrees_with_the_table": "Page 19-20: \"application of 690 : 400 : 1,050 g NPK and 500: 500:2000 g NPK per palm per year is recommended for adult palms (more than 3 years old palms) for tall and hybrid varieties respectively under Assam conditions.\" For hybrids this matches Table 3 (500:500:2000). For tall varieties the table sums to 500 g N, not 690 g N (690 g N is what 1.5 kg urea contains; the same paragraph says 1.5 kg urea for tall palms). The P (400) and K (1,050) agree."
+    },
+    "evidence_secondary_not_a_dated_publication": {
+      "document": "ICAR-CPCRI web page 'Research Achievements - Crop Production - Coconut Cultivation practices - Nutrient management' (https://cpcri.gov.in/page/research_achievements_crop_production/). No author, edition or year is printed for this text (the site footer 'Last Updated' is site-wide).",
+      "verbatim": "Recommended dose of fertilizer for coconut palm is application of Organic Manure @50kg/palm or 30 kg green manure, 500 g N, 320 g P2O5 and 1200 g K2O/palm/year in two split doses during September and May. ... However, soil test based nutrient application is recommended for efficient utilization of resources. In acid soils, for soil test values of more than 20 ppm, P application can be skipped.",
+      "note": "Single dose for 'coconut palm' with no variety or age split (age scaling for young palms is not stated on that page). The P2O5 figure (320 g) differs from the NE bulletin's tall-variety total (400 g). Cannot be an engine source because it has no citable year/edition."
+    },
+    "other_statements_in_the_bulletin_that_matter": [
+      "\"Based on the field experiments conducted at Kahikuchi, Assam (under AICRP on palms)\" - the NE numbers come from Assam trials.",
+      "\"However it is always advisable, based on soil test value the chemical fertilizer should be applied.\"",
+      "\"when the available phosphorus is more than 20 ppm in the soil phosphorus application can be skipped and it can be resumed when the phosphorus level in the soil is less than 20 ppm.\" (extractant not stated in the text read; ppm, not kg/ha)",
+      "Quantity in the first application: \"approximately one tenth of the recommended dose ... for adult palms. During the second year, one third ... may be doubled during the third year. From the fourth year onwards ... the rate recommended for adult palms.\"",
+      "\"Under acidic soil condition, the source of phosphorus should be rock phosphate.\" (the engine uses DAP for phosphorus)",
+      "Lime/dolomite 1 kg per palm per year on acidic soils; MgSO4 0.5 kg per palm where Mg deficiency shows; borax about 100 g quarterly in B-deficient localities."
+    ],
+    "open_questions": [
+      "Region: may an Assam-trial schedule be used outside North East India? (The engine says no unless applicable_states lists the state.)",
+      "Tall-variety nitrogen: 500 g (Table 3) or 690 g (text)? Ask the bulletin's authors; do not choose.",
+      "Which products does the schedule assume? The text converts to urea, rock phosphate and MOP; the engine's phosphorus product is DAP.",
+      "Is the soil-test P > 20 ppm 'skip' rule usable? It needs the extractant, the soil pH condition, and a conversion between ppm and the kg/ha the soil report stores; none is stated.",
+      "Reuse permission for the table."
+    ],
+    "superseded_for_engine_use_by": "coconut_cpcri_indian_horticulture_2022.json (a variety-free, age-based ICAR-CPCRI table that the engine can express). This worksheet stays because it states a DIFFERENT adult total for North East India, which the agronomist must reconcile (see that file's first open question)."
+  }
+}

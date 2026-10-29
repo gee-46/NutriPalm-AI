@@ -1,0 +1,5 @@
+{
+  "pack_version": "1",
+  "comment": "Intentionally empty. A record is added only after an agronomist has checked the crop targets in app/services/crop_rules.py against a primary source and recorded the citation. See app/services/rule_provenance.py and docs/OCR_AND_FERTILIZER_PIPELINE.md.",
+  "rules": []
+}

@@ -1,0 +1,69 @@
+{
+  "status": "pending_review",
+  "_candidate": {
+    "state": "PENDING AGRONOMIST REVIEW - NOT ACTIVE. This file is never loaded by the engine (only verified_rules.json or RULE_PACK_PATH is).",
+    "how_to_activate": "An agronomist resolves every item in `open_questions`, then copies this record into the rule pack with status 'approved', reviewed_by {name, role}, reviewed_on, and (if the review finds a mismatch) corrected numbers. `python -m app.services.rule_provenance check <this file>` must then print [OK ] for the record.",
+    "engine_support": "READY. Inputs needed from the plot: planting date and palm count (both optional columns on `plots`; when missing the API answers insufficient_data and names them).",
+    "evidence": {
+      "document": "Behera S K, Suresh K and Mathur R K (2019). 4R Nutrient management practices for higher oil palm yield. Indian Farming 69(08): 05-06, August 2019. Indian Council of Agricultural Research.",
+      "landing_page": "https://epubs.icar.org.in/index.php/IndFarm/article/view/94456",
+      "pdf": "https://epubs.icar.org.in/index.php/IndFarm/article/download/94456/37891/243349",
+      "authors_affiliation": "ICAR-Indian Institute of Oil Palm Research, Pedavegi, West Godavari, Andhra Pradesh 534 450 (first author's address in the PDF: ICAR-Indian Institute of Soil Science, Bhopal)",
+      "kind_of_source": "Journal/extension article by ICAR scientists. It is NOT a formal package-of-practices or an ICAR-IIOPR recommendation bulletin.",
+      "how_it_was_read": "PDF text layer extracted with pdftotext on 2026-10-30; the layout of Table 1 in the text layer was jumbled, so the table was rendered to an image and read visually. The values below are from the rendered table.",
+      "table_1_as_printed": "Table 1. Recommended dose of nutrients for oil palm. Age of the palm (years) / Nutrients (g/palm/year): 1st: N 400, P2O5 200, K2O 400, MgSO4 125 | 2nd: N 800, P2O5 400, K2O 800, MgSO4 250 | 3rd and above: N 1,200, P2O5 600, K2O 1,200, MgSO4 500",
+      "reuse_permission": "NOT ESTABLISHED. The PDF carries no licence statement we could read; numbers and a short quotation are cited with attribution, but the owner should confirm ICAR's reuse terms before publishing the table verbatim in product material.",
+      "not_endorsed": "Nothing here implies that ICAR, IIOPR or the authors endorsed or supplied data to NutriPalm AI."
+    },
+    "open_questions": [
+      "Region: the article states no state restriction and says 'the nutrient application requirement varied across locations representing different agro-climatic regions'. Is an all-India rule acceptable, or must `applicable_states` list the states the schedule was derived for?",
+      "Counting of palm age: Table 1 labels rows '1st', '2nd', '3rd and above' without defining them. The record assumes year N = the Nth 12-month period after planting. Confirm (planting vs transplanting date; age of seedling vs age in the field).",
+      "Soil/leaf-analysis adjustment: the article says 'The authors also suggested the need for modifying the existing rates based on soil and leaf analysis' but gives no rule. The engine applies no adjustment (soil_test_adjustment = none). Decide whether that is acceptable for farmer-facing advice or whether an adjustment rule with its own source must be added first.",
+      "Source quality: this is a journal article, not a package of practices. Is it an acceptable primary source, or should the ICAR-IIOPR bulletin / state agricultural university package be obtained instead? (A KVK document found by web search lists 400/800 g urea-type figures for years 1-2 in product terms; it was NOT read and is not used.)",
+      "Organic manure: the article says 'Whenever organic fertilizers are applied, nutrient applications through chemical fertilizers need to be reduced proportionately.' The engine does not know what organic inputs the farmer applied and does not reduce the dose.",
+      "Products: the article names urea, ammonium sulphate, DAP, SSP, rock phosphate, MOP and others as acceptable sources; the engine uses urea, DAP and MOP only. Confirm that is acceptable (e.g. DAP supplying P and N together at this crop's age, MOP chloride tolerance).",
+      "Fertiliser grades: confirm urea 46 % N, DAP 18-46-0 and MOP 60 % K2O against the CURRENT Fertiliser (Control) Order Schedule I (the copy read was an older consolidated text).",
+      "MgSO4 (125/250/500 g per palm) and boron (10 g/palm/year in B-deficient soils) are in the source but outside the engine; they are not recommended by NutriPalm AI."
+    ]
+  },
+  "rule_kind": "published_schedule",
+  "crop": "oil_palm",
+  "rule_version": "indian-farming-2019-08-table-1",
+  "status": "pending_review",
+  "applicable_stage": "Oil palm in the field, by year after planting: year 1, year 2, year 3 and above (the source does not distinguish variety, soil type, spacing or yield target)",
+  "region": "India (the source states no state restriction; ICAR-IIOPR, Pedavegi, Andhra Pradesh)",
+  "applicable_states": null,
+  "units": {"dose": "g/palm/year"},
+  "nutrient_basis": {"phosphorus": "oxide", "potassium": "oxide"},
+  "age_basis": "Year N of the palm is the Nth 12-month period after the planting date (year 1 = the first 12 months). The source labels its rows '1st', '2nd' and '3rd and above' without defining the counting; this is the engine's reading and needs confirmation.",
+  "schedule": [
+    {"age_year_from": 1, "age_year_to": 1, "n_g": 400, "p_g": 200, "k_g": 400},
+    {"age_year_from": 2, "age_year_to": 2, "n_g": 800, "p_g": 400, "k_g": 800},
+    {"age_year_from": 3, "age_year_to": null, "n_g": 1200, "p_g": 600, "k_g": 1200}
+  ],
+  "soil_test_adjustment": "none",
+  "timing_note": "\"it is advised to apply N, P and K fertilizers in four equal splits at three months interval under irrigated conditions ... Under rain-fed conditions, fertilizer application should be made shortly before the onset of the rainy season and not before or during the dry season or in the middle of the rains, and are generally given in two splits.\" (Indian Farming 69(08), p. 6, 'Right time of nutrient application')",
+  "assumptions": [
+    "Table 1 gives grams of N, P2O5 and K2O per palm per year; the MgSO4 column is outside the engine.",
+    "The doses are applied as printed, without adjustment for soil-test values, leaf analysis, organic manure already applied, variety, spacing, irrigation or yield target.",
+    "The palm count comes from the plot record; the engine never estimates it from the area."
+  ],
+  "source": {
+    "id": "indian-farming-2019-08-oil-palm-4r",
+    "title": "4R Nutrient management practices for higher oil palm yield",
+    "publisher": "Indian Council of Agricultural Research (Indian Farming 69(08), Aug 2019); authors S K Behera, K Suresh, R K Mathur (ICAR-IIOPR / ICAR-IISS)",
+    "edition": "Indian Farming, Vol. 69, No. 8, August 2019",
+    "year": 2019,
+    "locator": "Table 1 (p. 5) and 'Right time of nutrient application' (p. 6)",
+    "quote": "The details of nutrient recommendation in oil palm, based on the palm age is given in Table 1.",
+    "url": "https://epubs.icar.org.in/index.php/IndFarm/article/view/94456"
+  },
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "product_grades_verified": {
+    "urea": "FCO 1985 Schedule I Part A 1(a) no. 2: total nitrogen 46.00 % minimum (consolidated copy of unknown amendment date; READ BY AN ENGINEER, REVIEWER TO RE-CONFIRM against the current Schedule I)",
+    "dap": "FCO 1985 Schedule I Part A 1(d) no. 2 (18-46-0): total N 18.0 % min; neutral ammonium citrate soluble P2O5 46.0 % min (same caveat)",
+    "mop": "FCO 1985 Schedule I Part A 1(c) no. 1: water soluble potash (as K2O) 60.0 % min (same caveat)"
+  },
+  "covers_yield_and_economics": false
+}

@@ -1,0 +1,81 @@
+{
+  "_candidate": {
+    "state": "PENDING AGRONOMIST REVIEW - NOT ACTIVE. This file is never loaded by the engine (only verified_rules.json or RULE_PACK_PATH is).",
+    "how_to_activate": "An agronomist resolves every item in `open_questions`, then copies this record into the rule pack with status 'approved', reviewed_by {name, role}, reviewed_on. `python -m app.services.rule_provenance check <this file>` must then print [OK ] for the record.",
+    "engine_support": "READY (no variety dimension in this table). Inputs needed from the plot: planting date and palm count; when missing the API answers insufficient_data and names them.",
+    "evidence": {
+      "document": "Surekha, Bhavishya, Subramanian P., Ravi Bhat and S. Elain Apshara (2022). Adoption of advanced agro-technologies: A harbinger of enhanced income from Coconut, Arecanut and Cocoa farming. Indian Horticulture, November-December 2022, pp. 44-48. Indian Council of Agricultural Research. Authors are scientists of ICAR-Central Plantation Crops Research Institute (Kasaragod, Kerala; Regional Station Vittal, Karnataka).",
+      "pdf": "https://epubs.icar.org.in/index.php/IndHort/article/download/129748/48482/472819",
+      "kind_of_source": "Technology/extension article by ICAR-CPCRI scientists that states 'the nutrient recommendations of ICAR-CPCRI should be followed (Table 1)'. It is NOT the formal CPCRI package-of-practices bulletin.",
+      "how_it_was_read": "PDF text layer extracted with pdftotext on 2026-10-30; the layout of Table 1 in the text layer was scrambled, so the page was rendered to an image and the table read visually. Volume/issue number is not shown on the pages read.",
+      "table_1_as_printed_g_per_palm": {
+        "columns": "May-June application (N, P2O5, K2O) | September-October application (N, P2O5, K2O)",
+        "first_year": "Planting in May-June; only the September-October application: 50, 40, 135",
+        "second_year": "50, 40, 135 | 110, 80, 270",
+        "third_year": "110, 80, 270 | 220, 160, 540",
+        "fourth_year_onwards": "170, 120, 400 | 330, 200, 800"
+      },
+      "annual_totals_ENGINEER_ARITHMETIC_NOT_PRINTED": {
+        "year_1": [50, 40, 135],
+        "year_2": [160, 120, 405],
+        "year_3": [330, 240, 810],
+        "year_4_onwards": [500, 320, 1200],
+        "note": "Each annual total is the sum of the two printed applications. The year 4+ total (500 : 320 : 1200) equals the figure on the ICAR-CPCRI web page 'Research Achievements - Coconut Cultivation practices - Nutrient management' (see coconut_cpcri_bulletin156_2023.json, evidence_secondary)."
+      },
+      "text_on_age_scaling": "\"During the first year, the quantity of fertilizer to be applied is approximately one-tenth of the recommended dose for adult palms. During the second year, one-third of the dosage recommended for adult palms should be applied, and the dosage should be doubled in the third year. From the fourth year onwards, fertilizers may be applied at the rate recommended for adult palms.\" The table totals (50, 160, 330 g N against 500) follow this only approximately (e.g. year-2 P2O5 is 120 g, one-third of 320 would be 107 g).",
+      "reuse_permission": "NOT ESTABLISHED. The pages carry no licence text we read; the owner should confirm ICAR's reuse terms before reproducing the table verbatim in product material.",
+      "not_endorsed": "Nothing here implies that ICAR, ICAR-CPCRI or the authors endorsed or supplied data to NutriPalm AI."
+    },
+    "open_questions": [
+      "Region: the article states no state restriction. The ICAR-CPCRI North East India bulletin (Technical Bulletin 156, 2023) gives a DIFFERENT adult total for Assam trials (tall: 500 : 400 : 1050; hybrid: 500 : 500 : 2000 g N : P2O5 : K2O). Which applies where? Should this record list `applicable_states`?",
+      "The first-year column assumes planting in May-June ('Planting in May-June'). For palms planted in other months the table gives no first-year dose. Should the first-year band be used for all plantings, or should year 1 be withheld?",
+      "Counting of palm age: the record assumes year N = the Nth 12-month period after planting. The article says the first dose is applied three months after planting. Confirm the convention and whether the age is of the seedling or of the palm in the field.",
+      "Variety: this table has no tall / hybrid / dwarf split, while the North East bulletin does. Is a single schedule acceptable for all varieties?",
+      "Soil-test adjustment: the article says 'It is recommended to test soil in the coconut garden (once in 3 years), and the type and dosage of chemical fertilizers are recommended.' but states no rule. A different CPCRI page says P application can be skipped for soil values above 20 ppm in acid soils (extractant not stated). The engine applies no adjustment.",
+      "Organic manure: the article recommends 10 kg/palm six months after planting rising by 10 kg a year to 50 kg/palm from year 5. The engine does not know what organic inputs were applied and does not reduce the chemical dose.",
+      "Products: the article's boron (120 g borax/palm), dolomite/lime (1 kg/palm) and magnesium sulphate (0.5 kg/palm) are outside the engine. The engine uses urea, DAP and MOP; the CPCRI North East bulletin says rock phosphate is the phosphorus source in acidic soils.",
+      "Fertiliser grades: confirm urea, DAP and MOP grades against the CURRENT Fertiliser (Control) Order Schedule I."
+    ]
+  },
+  "rule_kind": "published_schedule",
+  "crop": "coconut",
+  "rule_version": "indian-horticulture-2022-11-table-1",
+  "status": "pending_review",
+  "applicable_stage": "Coconut palms in the field, by year after planting: year 1, 2, 3 and 4 onwards (the table has no variety, soil or irrigation split)",
+  "region": "India (the source states no state restriction; ICAR-CPCRI, Kasaragod / Vittal)",
+  "applicable_states": null,
+  "units": {"dose": "g/palm/year"},
+  "nutrient_basis": {"phosphorus": "oxide", "potassium": "oxide"},
+  "age_basis": "Year N of the palm is the Nth 12-month period after planting (year 1 = the first 12 months). The table's first-year column is stated for planting in May-June and holds only the September-October application; the counting convention itself is not defined in the source and needs confirmation.",
+  "schedule": [
+    {"age_year_from": 1, "age_year_to": 1, "n_g": 50, "p_g": 40, "k_g": 135},
+    {"age_year_from": 2, "age_year_to": 2, "n_g": 160, "p_g": 120, "k_g": 405},
+    {"age_year_from": 3, "age_year_to": 3, "n_g": 330, "p_g": 240, "k_g": 810},
+    {"age_year_from": 4, "age_year_to": null, "n_g": 500, "p_g": 320, "k_g": 1200}
+  ],
+  "soil_test_adjustment": "none",
+  "timing_note": "\"The fertilizer should be applied in two splits, one-third of the recommended dose is applied after the receipt of summer showers around the palms within a radius of 1.8 m and forked in. ... Two-thirds of the recommended fertilizer dose is applied over the green leaf or compost and covered with soil.\" Table 1 lists the application months as May-June and September-October. (Indian Horticulture, Nov-Dec 2022, p. 45, 'Manuring')",
+  "assumptions": [
+    "The annual doses are the sums of the two applications printed in Table 1 (May-June and September-October); the sums are arithmetic, not printed.",
+    "The doses are applied as printed, without adjustment for soil-test values, organic manure, variety, irrigation or yield target.",
+    "The palm count comes from the plot record; the engine never estimates it from the area."
+  ],
+  "source": {
+    "id": "indian-horticulture-2022-11-coconut-arecanut-cocoa",
+    "title": "Adoption of advanced agro-technologies: A harbinger of enhanced income from Coconut, Arecanut and Cocoa farming",
+    "publisher": "Indian Council of Agricultural Research (Indian Horticulture); authors Surekha, Bhavishya, Subramanian P., Ravi Bhat, S. Elain Apshara (ICAR-CPCRI)",
+    "edition": "Indian Horticulture, November-December 2022",
+    "year": 2022,
+    "locator": "Table 1 'General fertilizer recommendation for coconut (g/palm)', p. 45, with the 'Manuring' text on the same page",
+    "quote": "The first dose of fertilizer is applied three months after planting, and the nutrient recommendations of ICAR-CPCRI should be followed (Table 1).",
+    "url": "https://epubs.icar.org.in/index.php/IndHort/article/download/129748/48482/472819"
+  },
+  "reviewed_by": null,
+  "reviewed_on": null,
+  "product_grades_verified": {
+    "urea": "FCO 1985 Schedule I Part A 1(a) no. 2: total nitrogen 46.00 % minimum (consolidated copy of unknown amendment date; READ BY AN ENGINEER, REVIEWER TO RE-CONFIRM against the current Schedule I)",
+    "dap": "FCO 1985 Schedule I Part A 1(d) no. 2 (18-46-0): total N 18.0 % min; neutral ammonium citrate soluble P2O5 46.0 % min (same caveat)",
+    "mop": "FCO 1985 Schedule I Part A 1(c) no. 1: water soluble potash (as K2O) 60.0 % min (same caveat)"
+  },
+  "covers_yield_and_economics": false
+}

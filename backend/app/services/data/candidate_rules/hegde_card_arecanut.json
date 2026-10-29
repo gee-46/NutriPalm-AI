@@ -1,0 +1,59 @@
+{
+  "status": "pending_review",
+  "kind": "candidate extracted from a document already in the repository - NOT approved, NOT active",
+  "warning": "Nothing in this file is loaded by the engine. It is a worksheet for an agronomist. The values below are what one laboratory printed for one soil sample; they are not a published crop recommendation and must not be copied into verified_rules.json without a primary source.",
+  "document": {
+    "file": "backend/tests/fixtures/P_P_Hegde_Rayee.pdf",
+    "title": "Soil Health Card, Nitte - RuTAGe Smart Village Center (RSVC), testing date 2026-08-21",
+    "pages": 1,
+    "text_layer": true,
+    "permission_note": "The card's disclaimer says the report is not to be reproduced wholly or in part without the laboratory's prior written approval. Only the numbers and short labels needed to identify each item are recorded here; obtain the laboratory's permission before publishing anything further from it."
+  },
+  "crop_on_card": "Arecanut (Irrigated Kharif)",
+  "engine_support": "arecanut is NOT in the engine's crop catalog (oil palm, rice, maize, sugarcane, banana, coconut); a rule cannot be activated for it until the catalog, targets and bases are added and reviewed",
+  "recommendation_section": {
+    "page": 1,
+    "heading_quote": "RECOMMENDATION (Source: State Agricultural Universities)",
+    "named_publication": null,
+    "publication_status": "The card says the recommendation comes from 'State Agricultural Universities' but names no publication, edition, page or state. It is therefore NOT traceable and cannot be approved as a source.",
+    "printed_items": [
+      {"product": "DAP", "kg_per_ha": 130.43, "combination": 1, "quote": "DAP - 130.43 Kg Per Hectare"},
+      {"product": "MOP", "kg_per_ha": 234.5, "combination": "1 and 2", "quote": "MOP - 234.50 Kg Per Hectare"},
+      {"product": "Urea", "kg_per_ha": 382.66, "combination": 1, "quote": "Urea - 382.66 Kg Per Hectare"},
+      {"product": "SSP", "kg_per_ha": 375.0, "combination": 2, "quote": "SSP - 375.00 Kg Per Hectare"},
+      {"product": "Urea", "kg_per_ha": 433.7, "combination": 2, "quote": "Urea - 433.70 Kg Per Hectare"},
+      {"product": "FYM / Compost / Manure", "tonnes_per_ha": 20.0, "quote": "FYM / Compost / Manure : 20.0 (Tonne Per Hectare)"},
+      {"product": "Borax (micronutrient)", "kg_per_ha": 10.0, "quote": "Borax - 10.00 Kg Per Hectare"}
+    ],
+    "stated_scope": "'THE FERTILIZER RECOMMENDATION SHOWN IN THIS REPORT IS FOR A FULL SEASON OF THE SELECTED CROP.'",
+    "derived_by_arithmetic_not_authoritative": {
+      "method": "printed kg/ha x nominal label grade (DAP 18-46-0, SSP 16% P2O5, MOP 60% K2O, urea 46% N)",
+      "combination_1": {"N_kg_per_ha": 199.5, "P2O5_kg_per_ha": 60.0, "K2O_kg_per_ha": 140.7},
+      "combination_2": {"N_kg_per_ha": 199.5, "P2O5_kg_per_ha": 60.0, "K2O_kg_per_ha": 140.7},
+      "observation": "Both combinations deliver the same nutrients (about 200 N : 60 P2O5 : 140.7 K2O kg/ha) and the phosphate product quantities are exactly 60 kg P2O5 divided by the product's P2O5 grade. So this laboratory's doses are computed on the OXIDE basis for fertilizer. That is consistent with the label convention, but it does not say which basis its soil-test values are on.",
+      "elemental_equivalent_of_the_phosphate_and_potash_doses": {"P_kg_per_ha": 26.2, "K_kg_per_ha": 116.8},
+      "caveat": "The printed quantities do not visibly depend on the sample's measured values (N 211, P 23.46, K 319 kg/ha); whether they were adjusted for the soil test is not stated."
+    }
+  },
+  "soil_test_interpretation_ranges": {
+    "page": 1,
+    "status": "label-to-range mapping inferred from an interleaved two-column text layer; confirm against the printed card before relying on it",
+    "ranges_as_printed": [
+      {"quote": "RANGE: 280 – 560 kg/ha", "probable_parameter": "available nitrogen", "unit": "kg/ha"},
+      {"quote": "RANGE: 110 – 280", "probable_parameter": "available potassium", "unit": "kg/ha (unit not on the same line)"},
+      {"quote": "RANGE: 10 – 25", "probable_parameter": "available phosphorus", "unit": "kg/ha (unit not on the same line)"},
+      {"quote": "RANGE: 6.5 - 7.5", "probable_parameter": "pH", "unit": null},
+      {"quote": "RANGE: 0.50 - 0.75", "probable_parameter": "organic carbon", "unit": "% (as 'w%' elsewhere on the card)"},
+      {"quote": "RANGE: < 1 w%", "probable_parameter": "uncertain (EC or organic matter)", "unit": null}
+    ],
+    "what_these_are": "the laboratory's printed 'medium/normal' interpretation bands for this card, not crop nutrient targets and not fertilizer rates",
+    "relationship_to_engine_targets": "none: the engine's targets are single sufficiency numbers (e.g. N 280, P 45, K 340 kg/ha for oil palm); these are ranges for a different crop and purpose"
+  },
+  "rule_records": [],
+  "review_questions_for_the_agronomist": [
+    "Which State Agricultural University recommendation (state, publication, edition, page) is this card quoting for arecanut?",
+    "Are the printed doses a fixed package of practice per hectare or soil-test-adjusted?",
+    "Are the card's N/P/K values on an elemental or oxide basis (Olsen/Bray P as P or P2O5; ammonium-acetate K as K or K2O)?",
+    "Does the engine need an arecanut entry at all, or should the product stay with its six catalog crops?"
+  ]
+}

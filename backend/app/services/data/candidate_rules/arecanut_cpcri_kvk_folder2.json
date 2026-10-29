@@ -1,0 +1,110 @@
+{
+  "status": "pending_review",
+  "_candidate": {
+    "state": "PENDING AGRONOMIST REVIEW - NOT ACTIVE, AND NOT EXPRESSIBLE AS AN ENGINE RECORD. Never loaded by the engine.",
+    "engine_support": "BLOCKED ONLY BY DECISION D11: arecanut is not a crop in app/services/crop_rules.py, whose entries need sufficiency targets that no source supports. The dated 2022 ICAR-CPCRI article below supplies a citable year and an age-based table, so the record would otherwise fit the published_schedule schema. To serve arecanut the engine needs 'schedule-only crops' (a crop with a published schedule but no deficit-model targets): a small code change in rule_provenance.validate_record, the recommendations router and the plot crop list, plus tests.",
+    "evidence": {
+      "document": "'ARECANUT CULTIVATION PRACTICES', KVK Folder No. 2, Krishi Vigyan Kendra, ICAR - Central Plantation Crops Research Institute, Kasaragod 671 124, Kerala. Published by M. K. Nair, Director, CPCRI. Compiled & edited by V. M. Reddy, Ravi Bhat, M. R. Hegde. Printed at Codeword Process & Printers, Mangalore.",
+      "year": "NOT PRINTED in the text read (cover and last page checked). Unresolved; the library catalogue or CPCRI must supply it.",
+      "pdf": "https://cpcri.gov.in/filemgr/webfs/publication/arecanut_cultivation_practices(eng).pdf",
+      "how_it_was_read": "Scanned leaflet with an OCR text layer, extracted with pdftotext on 2026-10-30 (OCR artefacts such as 'P20S' for P2O5 and 'K0 2' for K2O; the digits were cross-checked against the rendered page).",
+      "locator": "Section 'Fertilizer application' (page 3 of the 6-page PDF)",
+      "verbatim": "A fertilizer dose of 100 g N, 40 g P2O5 and 140 g K2O per palm per year is recommended. 12 kg of green leaf and 12 kg compost or cattle manure should also be applied along with fertilizer. During the first and second year after planting only 1/3 and 2/3 of chemical fertilizers respectively and full dose of green manure and cattle manure are to be applied.",
+      "timing_verbatim": "Under rainfed conditions, 1/3 of the recommended dose in April-May and 2/3 in September-October should be applied. Under irrigated conditions the April-May dose can be applied in February.",
+      "spacing_in_same_leaflet": "2.7 x 2.7 m (North-South line deflected by 35 degrees towards West)",
+      "reuse_permission": "NOT ESTABLISHED."
+    },
+    "derived_by_engineer_arithmetic_not_printed": {
+      "schedule_g_per_palm_per_year": {
+        "year_1": [
+          33.3,
+          13.3,
+          46.7
+        ],
+        "year_2": [
+          66.7,
+          26.7,
+          93.3
+        ],
+        "year_3_onwards": [
+          100,
+          40,
+          140
+        ]
+      },
+      "note": "Years 1 and 2 are 1/3 and 2/3 of the printed dose, as stated in the leaflet; the leaflet does not say whether 'first year after planting' is the first 12 months."
+    },
+    "open_questions": [
+      "The year problem is resolved by the 2022 Indian Horticulture article (see evidence_dated_source); the undated KVK leaflet is corroboration only.",
+      "Year of publication and edition of the leaflet (required by the record schema).",
+      "Is a KVK leaflet an acceptable primary source for arecanut, or should the current CPCRI/UAS package of practices be used? The leaflet gives rock phosphate in product terms elsewhere (other sites), but this text gives nutrients only.",
+      "Relation to the Nitte RSVC soil-health card in this repository (candidate_rules/hegde_card_arecanut.json), which prints per-hectare doses labelled 'Source: State Agricultural Universities' (about 199.5 N : 60 P2O5 : 140.7 K2O kg/ha, derived from its product quantities). 100 g N x 1,372 palms/ha (2.7 x 2.7 m) is about 137 kg N/ha, so the two are not the same recommendation; which is current for the farmer's state?",
+      "Decision D11: add arecanut to the engine's crop list (and the plot crop picker) at all?",
+      "Reuse permission."
+    ],
+    "evidence_dated_source": {
+      "document": "Surekha, Bhavishya, Subramanian P., Ravi Bhat and S. Elain Apshara (2022). Adoption of advanced agro-technologies: A harbinger of enhanced income from Coconut, Arecanut and Cocoa farming. Indian Horticulture, November-December 2022, p. 48 (Table 2). ICAR-CPCRI authors.",
+      "pdf": "https://epubs.icar.org.in/index.php/IndHort/article/download/129748/48482/472819",
+      "how_it_was_read": "Text layer scrambled; the page was rendered to an image and Table 2 read visually on 2026-10-30.",
+      "table_2_as_printed_g_per_palm_per_year": {
+        "columns": "First year | Second year | Third year onwards",
+        "nitrogen_N": [
+          33,
+          66,
+          100
+        ],
+        "phosphorus_P2O5": [
+          13,
+          26,
+          40
+        ],
+        "potassium_K2O": [
+          46,
+          92,
+          140
+        ],
+        "products_when_phosphorus_source_is_rock_phosphate_or_SSP": {
+          "urea": [
+            72,
+            144,
+            220
+          ],
+          "rock_phosphate": [
+            65,
+            130,
+            200
+          ],
+          "SSP": [
+            83,
+            167,
+            250
+          ],
+          "MOP": [
+            77,
+            154,
+            235
+          ]
+        },
+        "products_when_phosphorus_source_is_DAP": {
+          "urea": [
+            61,
+            121,
+            182
+          ],
+          "DAP": [
+            29,
+            58,
+            87
+          ],
+          "MOP": [
+            77,
+            154,
+            235
+          ]
+        }
+      },
+      "relation_to_leaflet": "The third-year-onwards doses equal the leaflet's 100 : 40 : 140. Young-palm doses are printed here (33/13/46 and 66/26/92) instead of being left as 1/3 and 2/3. The printed second-year K2O (92) differs slightly from two-thirds of 140 (93.3). Use the printed table values, not the engineer arithmetic below.",
+      "reuse_permission": "NOT ESTABLISHED."
+    }
+  }
+}
