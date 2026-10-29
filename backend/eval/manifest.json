@@ -1,0 +1,80 @@
+{
+  "comment": "Authorized, human-verified soil reports and their ground truth (schema v2; validated by `python -m eval.ocr_eval --validate-only`). Add real reports under eval/dataset/ - never commit a report you are not authorized to share. See eval/README.md for exactly which samples are still missing. Values use the report's own unit; omit a parameter the report does not print. Bound readings such as '>5' are strings. `unit_stated` = the report prints a unit directly beside that value. `recorded_on` is the date the ground truth was recorded in this manifest, not necessarily the date it was checked against the paper report.",
+  "schema_version": 2,
+  "documents": [
+    {
+      "id": "nitte-rsvc-card-arecanut-2026-08-21",
+      "file": "../tests/fixtures/P_P_Hegde_Rayee.pdf",
+      "sha256": "3052ee6c2e7e089c67478ff076a8484cec59f9d6fde59775364cfc80006f521d",
+      "report_type": "digital_pdf",
+      "laboratory": "Nitte - RuTAGe Smart Village Center (RSVC), Soil Health Card, single page, two-column layout",
+      "authorization": "Committed to this repository by the project owner as a test fixture. Written permission from the laboratory / farmer to use it for evaluation is NOT recorded, and the card's own disclaimer forbids reproduction without the laboratory's written approval.",
+      "authorization_confirmed": false,
+      "verified_by": "project owner (values asserted in tests/test_ocr_pipeline.py::test_pipeline_hegde_report); not independently re-checked by a second person",
+      "notes": "unit_stated flags were read by the harness author from the card's text layer (unit printed on the same line as the value); the values themselves are the owner's.",
+      "ground_truth": {
+        "nitrogen": {
+          "value": 211.0,
+          "unit": "kg/ha",
+          "unit_stated": true
+        },
+        "phosphorus": {
+          "value": 23.46,
+          "unit": "kg/ha",
+          "unit_stated": false
+        },
+        "potassium": {
+          "value": 319.0,
+          "unit": "kg/ha",
+          "unit_stated": true
+        },
+        "ph": {
+          "value": 5.81,
+          "unit": null,
+          "unit_stated": false
+        },
+        "electrical_conductivity": {
+          "value": 0.08,
+          "unit": "dS/m",
+          "unit_stated": true
+        },
+        "organic_carbon": {
+          "value": 0.64,
+          "unit": "%",
+          "unit_stated": false
+        },
+        "zinc": {
+          "value": 0.73,
+          "unit": "mg/kg",
+          "unit_stated": false
+        },
+        "sulfur": {
+          "value": 28.13,
+          "unit": "mg/kg",
+          "unit_stated": true
+        },
+        "boron": {
+          "value": 0.49,
+          "unit": "mg/kg",
+          "unit_stated": false
+        },
+        "iron": {
+          "value": ">5",
+          "unit": "mg/kg",
+          "unit_stated": false
+        },
+        "manganese": {
+          "value": 3.25,
+          "unit": "ppm",
+          "unit_stated": true
+        },
+        "copper": {
+          "value": 0.4,
+          "unit": "mg/kg",
+          "unit_stated": true
+        }
+      },
+      "recorded_on": "2026-10-30"
+    }
+  ]
+}
