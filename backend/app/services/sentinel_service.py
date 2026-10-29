@@ -68,6 +68,29 @@ class NdviResult:
     source: str = "Sentinel-2 (Sentinel Hub Statistical API)"
 
 
+# Documented token endpoint (https://docs.sentinel-hub.com/api/latest/api/overview/authentication/). The legacy
+# `/oauth/token` path this module used before still answers, but is no longer the documented one.
+TOKEN_PATH = "/auth/realms/main/protocol/openid-connect/token"
+
+
+def _explain_token_failure(response: httpx.Response | None, exc: Exception) -> str:
+    """A reason an operator can act on. Never contains the client id, the secret or any response body text."""
+    if response is None:
+        return f"Could not reach Sentinel Hub to authenticate ({type(exc).__name__})."
+    try:
+        code = response.json().get("error")
+    except ValueError:
+        code = None
+    if response.status_code in (400, 401) and code in ("unauthorized_client", "invalid_client"):
+        return (
+            "Sentinel Hub rejected the configured OAuth client credentials "
+            f"(HTTP {response.status_code} {code}). Create a new OAuth client in the Sentinel Hub dashboard "
+            "(User settings -> OAuth clients) and update SENTINEL_HUB_CLIENT_ID / SENTINEL_HUB_CLIENT_SECRET."
+        )
+    suffix = f" {code}" if code else ""
+    return f"Sentinel Hub authentication failed (HTTP {response.status_code}{suffix})."
+
+
 def _get_access_token(settings: Settings) -> str:
     """Fetch (and cache) an OAuth2 client-credentials token for Sentinel Hub."""
     now = time.time()
@@ -79,23 +102,24 @@ def _get_access_token(settings: Settings) -> str:
         if _TOKEN_CACHE["token"] and now < _TOKEN_CACHE["expires_at"]:
             return _TOKEN_CACHE["token"]
 
-        token_url = f"{settings.sentinel_hub_base_url.rstrip('/')}/oauth/token"
+        token_url = f"{settings.sentinel_hub_base_url.rstrip('/')}{TOKEN_PATH}"
+        response = None
         try:
             response = httpx.post(
                 token_url,
                 data={
                     "grant_type": "client_credentials",
-                    "client_id": settings.sentinel_hub_client_id,
-                    "client_secret": settings.sentinel_hub_client_secret,
+                    "client_id": settings.sentinel_hub_client_id.strip(),
+                    "client_secret": settings.sentinel_hub_client_secret.strip(),
                 },
                 timeout=10.0,
             )
             response.raise_for_status()
             payload = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            raise GeospatialServiceUnavailable(
-                "Could not authenticate with Sentinel Hub."
-            ) from exc
+            reason = _explain_token_failure(response, exc)
+            logger.warning("sentinel.auth_failed: %s", reason)
+            raise GeospatialServiceUnavailable(reason) from exc
 
         access_token = payload.get("access_token")
         expires_in = payload.get("expires_in", 3000)
