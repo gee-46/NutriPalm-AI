@@ -45,7 +45,16 @@ def _jsonable(value: Any) -> Any:
 
 
 class RecommendationRepository(Protocol):
-    def save(self, result: RecommendationResult) -> dict:
+    def save(
+        self,
+        result: RecommendationResult,  # or schedule_engine.ScheduleRecommendation (analysis/yield/roi are None)
+        *,
+        engine_version: str,
+        generated_at: str,
+        provenance: dict,
+        stored: dict | None = None,
+    ) -> dict:
+        """`stored` overrides the jsonb columns (used to withhold unsourced economics)."""
         ...
 
     def list_for_owner(self, owner_id: str) -> list[dict]:
@@ -62,9 +71,18 @@ class RecommendationRepository(Protocol):
 class SupabaseRecommendationRepository:
     TABLE = "recommendations"
 
-    def save(self, result: RecommendationResult) -> dict:
+    def save(
+        self,
+        result: RecommendationResult,
+        *,
+        engine_version: str,
+        generated_at: str,
+        provenance: dict,
+        stored: dict | None = None,
+    ) -> dict:
         client = get_supabase_client()
         now = datetime.now(timezone.utc).isoformat()
+        stored = stored or {}
 
         row = {
             "id": str(uuid.uuid4()),
@@ -73,11 +91,14 @@ class SupabaseRecommendationRepository:
             "soil_report_id": result.soil_report_id,
             "crop": result.crop,
             # Pass structured Python values directly to Supabase/Postgres JSONB.
-            "deficiencies": _jsonable(result.analysis.findings),
-            "fertilizer_plan": _jsonable(result.dosage_plan.dosages),
-            "yield_prediction": _jsonable(result.yield_prediction),
-            "roi": _jsonable(result.roi),
-            "explanation": _jsonable(result.explanation),
+            "deficiencies": _jsonable(result.analysis.findings) if result.analysis is not None else [],
+            "fertilizer_plan": stored.get("fertilizer_plan", _jsonable(result.dosage_plan.dosages)),
+            "yield_prediction": stored.get("yield_prediction", _jsonable(result.yield_prediction)),
+            "roi": stored.get("roi", _jsonable(result.roi)),
+            "explanation": stored.get("explanation", _jsonable(result.explanation)),
+            "engine_version": engine_version,
+            "generated_at": generated_at,
+            "provenance": provenance,
             "status": "generated",
             "created_at": now,
             "updated_at": now,
