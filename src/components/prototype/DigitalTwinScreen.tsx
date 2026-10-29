@@ -9,6 +9,7 @@ import { useDigitalTwinSnapshots, useTwinPrediction, useDigitalTwinHistory, useL
 import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
 import { supabase } from "../../lib/supabaseClient";
 import { getCropBaseline } from "../../constants/cropBaselines";
+import { TwinManagementPanel } from "./TwinManagementPanel";
 
 
 
@@ -123,6 +124,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
       .from("soil_reports")
       .select("ph, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, electrical_conductivity")
       .eq("plot_id", activePlotId)
+      .not("verification_status", "is", null) // only verified soil tests feed the twin
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -1301,6 +1303,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
         </div>
 
       </div>
+
+      {/* Soil tests (measured), advice (not applied) and fertilizer actually applied, for this plot */}
+      {activePlotId && (
+        <TwinManagementPanel plotId={activePlotId} showToast={showToast} onNavigate={onNavigate} />
+      )}
 
       {/* ================= 9. EXPORT REPORT MODAL ================= */}
       <AnimatePresence>

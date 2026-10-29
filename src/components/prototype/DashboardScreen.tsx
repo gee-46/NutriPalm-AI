@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bug, FileText, FlaskConical, Map as MapIcon, Sprout } from "lucide-react";
+import { Cpu, FileText, FlaskConical, Map as MapIcon } from "lucide-react";
 import { useTranslation } from "../../translation/useTranslation";
 import type { Plot } from "../../data/plots";
-import { useBackendCapabilities } from "../../hooks/useBackendCapabilities";
 import { useLatestSoilReport } from "../../hooks/useLatestSoilReport";
 import { listRecommendations, type RecommendationRecord } from "../../lib/apiClient";
-import { listDiseaseAssessments } from "../../lib/phase2/capabilities";
-import type { DiseaseAssessmentRecord } from "../../lib/phase2/contracts";
 import { DashboardWeatherCard } from "./DashboardWeatherCard";
 import { EmptyState, ErrorBanner, PlotSelect } from "../phase2/shared";
 
@@ -64,7 +61,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onOpenRecommendation,
 }) => {
   const { t, locale } = useTranslation();
-  const caps = useBackendCapabilities();
 
   const savedPlots = useMemo(() => plots.filter((p) => !p.isDemo && !p.id.startsWith("plot-")), [plots]);
   const [plotId, setPlotId] = useState("");
@@ -75,28 +71,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const { report, loading: reportLoading } = useLatestSoilReport(plotId || undefined);
 
-  const [diseaseChecks, setDiseaseChecks] = useState<DiseaseAssessmentRecord[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    if (!currentUser || caps.disease !== "available" || !plotId) {
-      setDiseaseChecks([]);
-      return;
-    }
-    listDiseaseAssessments(plotId)
-      .then((r) => !cancelled && setDiseaseChecks(r))
-      .catch(() => !cancelled && setDiseaseChecks([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser, caps.disease, plotId]);
-  const latestCheck = diseaseChecks[0];
   const [recs, setRecs] = useState<RecommendationRecord[]>([]);
   const [recError, setRecError] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     if (!currentUser) return;
     listRecommendations()
-      .then((r) => !cancelled && (setRecs(r), setRecError(null)))
+      .then((r) => !cancelled && (setRecs(r.filter((x) => !!x.engine_version)), setRecError(null)))
       .catch((e) => !cancelled && (setRecs([]), setRecError(e instanceof Error ? e.message : t("p2.common.error_generic"))));
     return () => {
       cancelled = true;
@@ -129,9 +110,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const quick: Array<{ label: string; icon: React.ReactNode; go: () => void }> = [
     { label: t("p2.dash.q_farms"), icon: <MapIcon className="h-6 w-6" />, go: () => onNavigate("Farm Plots") },
     { label: t("p2.dash.q_soil"), icon: <FileText className="h-6 w-6" />, go: () => onNavigate("Soil Reports") },
-    { label: t("p2.dash.q_disease"), icon: <Bug className="h-6 w-6" />, go: () => onNavigate("Disease Intelligence") },
-    { label: t("p2.dash.q_grow"), icon: <Sprout className="h-6 w-6" />, go: () => onNavigate("Crop Suitability") },
     { label: t("p2.dash.q_recs"), icon: <FlaskConical className="h-6 w-6" />, go: () => onNavigate("Recommendations") },
+    { label: t("p3.dash.q_twin"), icon: <Cpu className="h-6 w-6" />, go: () => onNavigate("Digital Twin") },
   ];
 
   return (
@@ -192,21 +172,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </Card>
 
               <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs">
-                <DashboardWeatherCard plot={plot} onOpen={() => onNavigate("Weather")} />
+                <DashboardWeatherCard plot={plot} onOpen={() => onNavigate("Digital Twin")} />
               </section>
 
-              <Card title={t("p2.dash.disease")} icon={<Bug className="h-5 w-5" />}>
-                <p className="text-sm font-medium text-gray-700">
-                  {caps.disease === "checking"
-                    ? t("p2.dash.disease_checking")
-                    : caps.disease === "available"
-                      ? latestCheck
-                        ? t("p2.dis.dash_latest", { risk: t(({ low: "p2.status.low", moderate: "p2.status.moderate", high: "p2.status.high", insufficient_evidence: "p2.status.insufficient" } as Record<string, string>)[latestCheck.risk_level] ?? "p2.status.unknown"), date: new Date(latestCheck.created_at).toLocaleDateString(locale) })
-                        : t("p2.dis.dash_none")
-                      : t("p2.dash.disease_unavailable")}
-                </p>
-                <LinkButton onClick={() => onNavigate("Disease Intelligence")}>{t("p2.dash.q_disease")}</LinkButton>
-              </Card>
 
               <Card title={t("p2.dash.nutrients")} icon={<FlaskConical className="h-5 w-5" />}>
                 <p className="text-sm font-medium text-gray-700">
@@ -246,7 +214,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* Quick actions */}
       <section aria-label={t("p2.dash.quick")} className="space-y-3">
         <h2 className="text-xl font-extrabold text-gray-900">{t("p2.dash.quick")}</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
           {quick.map((q) => (
             <button
               key={q.label}
