@@ -12,6 +12,7 @@ export interface SoilReportRow {
   ph: number;
   electrical_conductivity: number | null;
   created_at: string;
+  verification_status: "auto_validated" | "user_confirmed" | "user_corrected" | null;
 }
 
 export interface LatestSoilReportState {
@@ -20,7 +21,7 @@ export interface LatestSoilReportState {
   error: boolean;
 }
 
-/** Latest saved soil report for a saved plot, or null. Never invents values. */
+/** Latest VERIFIED soil report for a saved plot, or null. Never invents values; unverified rows are ignored. */
 export function useLatestSoilReport(plotId: string | undefined, enabled = true): LatestSoilReportState {
   const [state, setState] = useState<LatestSoilReportState>({ report: null, loading: false, error: false });
 
@@ -33,8 +34,9 @@ export function useLatestSoilReport(plotId: string | undefined, enabled = true):
     setState({ report: null, loading: true, error: false });
     supabase
       .from("soil_reports")
-      .select("id, plot_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph, electrical_conductivity, created_at")
+      .select("id, plot_id, nitrogen_kg_ha, phosphorus_kg_ha, potassium_kg_ha, organic_carbon_percent, ph, electrical_conductivity, created_at, verification_status")
       .eq("plot_id", plotId)
+      .not("verification_status", "is", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()

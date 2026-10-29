@@ -25,6 +25,27 @@ async function getHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+/** An API error whose `detail` may be structured (e.g. {code, problems}). */
+export class ApiError extends Error {
+  status: number;
+  code: string | null;
+  problems: Record<string, string> | null;
+  constructor(status: number, detail: unknown, fallback: string) {
+    const d = detail as { code?: string; message?: string; problems?: Record<string, string> } | string | null;
+    const message =
+      typeof d === "string" ? d : d && typeof d === "object" && d.message ? d.message : fallback;
+    super(message);
+    this.status = status;
+    this.code = d && typeof d === "object" && typeof d.code === "string" ? d.code : null;
+    this.problems = d && typeof d === "object" && d.problems ? d.problems : null;
+  }
+}
+
+async function failFrom(response: Response, fallback: string): Promise<never> {
+  const body = await response.json().catch(() => null);
+  throw new ApiError(response.status, body?.detail ?? null, fallback || `Server error: ${response.status}`);
+}
+
 /** Authenticated request to the FastAPI backend (same token handling as every other call in this file). */
 export async function authenticatedFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = await getHeaders();
@@ -38,13 +59,52 @@ export interface RecommendationRequestPayload {
   fertilizer_price_overrides?: Record<string, number>;
 }
 
+export interface RecommendationProvenancePayload {
+  crop: string;
+  area_ha: number;
+  soil_report_id: string;
+  soil_verification_status: string;
+  soil_values_used: Record<string, number>;
+  rule: {
+    crop: string;
+    rule_version: string;
+    source: { id: string; title: string; publisher: string; year: number | string; locator: string; quote: string; url?: string };
+    reviewed_by: string;
+    reviewed_on: string;
+  };
+  assumptions: string[];
+  not_considered: string[];
+  /** Published-schedule rules only: how the per-palm doses became product quantities. */
+  schedule?: PublishedScheduleDetail | null;
+}
+
+/** Palm-age schedule arithmetic behind a published-schedule recommendation (nothing here is estimated). */
+export interface PublishedScheduleDetail {
+  age_year: number;
+  planting_date: string | null;
+  plant_count: number;
+  palms_per_ha: number;
+  /** Grams per palm per year exactly as the cited table states them. */
+  per_palm_g_per_year: { n: number; p: number; k: number };
+  /** Basis the source states P and K in ("oxide" = P2O5 / K2O). */
+  nutrient_basis: { n: string; p: string; k: string };
+  products_g_per_palm_per_year: Record<string, number>;
+  timing_note: string | null;
+}
+
+/** A generated recommendation (advice only -- never a record of fertilizer applied). */
 export interface RecommendationResponsePayload {
+  state: "generated";
   recommendation_id?: string;
   plot_id: string;
   soil_report_id: string;
   crop: string;
   status: string;
   created_at?: string;
+  engine_version: string;
+  generated_at: string;
+  provenance: RecommendationProvenancePayload;
+  /** Empty for published-schedule rules (no soil-test comparison is made). */
   findings: Array<{
     nutrient: string;
     display_name: string;
@@ -54,17 +114,21 @@ export interface RecommendationResponsePayload {
     deficit_kg_ha: number;
     percent_of_target: number;
   }>;
-  ph_in_range: boolean;
-  organic_carbon_in_range: boolean;
-  overall_severity: string;
+  ph_in_range: boolean | null;
+  organic_carbon_in_range: boolean | null;
+  overall_severity: string | null;
   fertilizer_plan: Array<{
     nutrient: string;
     product_code: string;
     product_display_name: string;
     quantity_kg_per_ha: number;
     quantity_kg_total: number;
-    estimated_cost_inr: number;
+    /** Basis the P/K deficit was expressed in when the product quantity was computed (elemental or oxide). */
+    nutrient_basis?: string;
+    /** Only present for products the caller priced. */
+    estimated_cost_inr: number | null;
   }>;
+  /** Present only when the cited rule also supports a yield model. */
   yield_prediction: {
     optimal_yield_t_ha: number;
     current_yield_t_ha: number;
@@ -72,7 +136,7 @@ export interface RecommendationResponsePayload {
     additional_yield_t_ha: number;
     ph_limiting: boolean;
     organic_carbon_limiting: boolean;
-  };
+  } | null;
   roi: {
     fertilizer_cost: number;
     current_yield_total_t: number;
@@ -82,15 +146,41 @@ export interface RecommendationResponsePayload {
     expected_additional_revenue: number;
     estimated_profit: number;
     roi_percentage: number | null;
-  };
+  } | null;
   explanation: {
     summary: string;
     identified_issues: string[];
     recommended_actions: string[];
-    expected_benefit: string;
+    expected_benefit: string | null;
     warnings: string[];
   };
 }
+
+/** The engine declined to give a recommendation. Nothing was saved. */
+export interface InsufficientDataPayload {
+  state: "insufficient_data";
+  plot_id: string;
+  soil_report_id: string;
+  crop: string | null;
+  engine_version: string;
+  generated_at: string;
+  reasons: Array<{
+    code:
+      | "crop_not_set"
+      | "unsupported_crop"
+      | "no_verified_rule"
+      | "state_not_recorded"
+      | "region_not_covered"
+      | "plant_count_missing"
+      | "planting_date_missing"
+      | "planting_date_in_future"
+      | "age_outside_schedule";
+    message: string;
+  }>;
+  required: string[];
+}
+
+export type RecommendationOutcome = RecommendationResponsePayload | InsufficientDataPayload;
 
 export interface RecommendationRecord {
   id: string;
@@ -106,22 +196,38 @@ export interface RecommendationRecord {
   yield_prediction: any;
   roi: any;
   explanation: any;
+  engine_version?: string | null;
+  generated_at?: string | null;
+  provenance?: RecommendationProvenancePayload | null;
 }
 
 export interface OcrExtractedField {
   parameter: string;
   raw_label: string | null;
-  value: number | null;
+  value: number | string | null;
   unit: string | null;
   confidence: number;
   validation: "valid" | "review" | "missing" | "unusable";
   warnings: string[];
+  /** Where the value came from in the document. */
+  extracted_text?: string | null;
+  source_text?: string | null;
+  page?: number | null;
+  unit_source?: "stated" | "assumed_default" | "not_applicable" | null;
+  normalizations?: string[];
 }
+
+export type ExtractionStatus = "failed" | "needs_review" | "completed";
 
 export interface SoilReportUploadResponsePayload {
   success: boolean;
+  status: ExtractionStatus;
+  /** True once a verified soil report exists. */
   persisted: boolean;
+  reused: boolean;
+  extraction_id: string | null;
   soil_report_id: string | null;
+  verification_status: "auto_validated" | "user_confirmed" | "user_corrected" | null;
   plot_id: string;
   raw_text: string;
   nitrogen: OcrExtractedField;
@@ -132,7 +238,18 @@ export interface SoilReportUploadResponsePayload {
   organic_carbon: OcrExtractedField;
   extras: OcrExtractedField[];
   micronutrients: OcrExtractedField[];
+  /** Required parameters that still need a decision. */
+  review_required: string[];
+  not_saved: string[];
+  corrections: Array<Record<string, unknown>>;
+  pipeline_version: string | null;
+  page_count: number;
   warnings: string[];
+}
+
+export interface ConfirmExtractionPayload {
+  corrections: Record<string, { value: number; unit: string | null; reason?: string }>;
+  confirmed: string[];
 }
 
 /**
@@ -166,18 +283,35 @@ export async function uploadSoilReport(
     body: formData,
   });
 
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({ detail: "Failed to process soil report" }));
-    throw new Error(errBody.detail || `Server error: ${response.status}`);
-  }
+  if (!response.ok) return failFrom(response, "Failed to process soil report");
 
+  return response.json();
+}
+
+/** The owner's confirmations/corrections for an extraction awaiting review. */
+export async function confirmExtraction(
+  extractionId: string,
+  payload: ConfirmExtractionPayload
+): Promise<SoilReportUploadResponsePayload> {
+  const response = await authenticatedFetch(`/api/soil-reports/extractions/${encodeURIComponent(extractionId)}/confirm`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) return failFrom(response, "Could not confirm the soil report");
+  return response.json();
+}
+
+/** Stored extractions for a plot (newest first) -- lets a pending review survive a page refresh. */
+export async function listExtractions(plotId: string): Promise<SoilReportUploadResponsePayload[]> {
+  const response = await authenticatedFetch(`/api/soil-reports/extractions?plot_id=${encodeURIComponent(plotId)}`);
+  if (!response.ok) return failFrom(response, "Could not load soil report extractions");
   return response.json();
 }
 
 /**
  * Generate a new AI Recommendation from plot and soil report details.
  */
-export async function createRecommendation(payload: RecommendationRequestPayload): Promise<RecommendationResponsePayload> {
+export async function createRecommendation(payload: RecommendationRequestPayload): Promise<RecommendationOutcome> {
   const headers = await getHeaders();
   const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
     method: "POST",
@@ -185,10 +319,7 @@ export async function createRecommendation(payload: RecommendationRequestPayload
     body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({ detail: "Failed to generate recommendation" }));
-    throw new Error(errBody.detail || `Server error: ${response.status}`);
-  }
+  if (!response.ok) return failFrom(response, "Failed to generate recommendation");
 
   return response.json();
 }
