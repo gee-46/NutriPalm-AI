@@ -1,0 +1,16 @@
+# Example only: shows sensible resource limits. Copy, adapt, and supply real values through your secret store.
+# Do not commit a filled-in copy. Limits below were chosen from one measured run (see docs/DEPLOYMENT.md section 4).
+services:
+  backend:
+    build: .
+    image: nutripalm-backend
+    ports: ["8000:8000"]
+    env_file: .env            # SUPABASE_*, ENVIRONMENT, CORS_ALLOW_ORIGINS, ... (never baked into the image)
+    mem_limit: 1g             # 2 workers x up to OCR_MAX_CONCURRENT=2 jobs; a single A4/300dpi job peaked at ~155 MiB RSS
+    cpus: 2
+    pids_limit: 256
+    read_only: true           # uploads are processed in memory and never written to disk
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
