@@ -15,11 +15,12 @@ Other database/query/data errors are deliberately not swallowed.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Protocol
 
 from postgrest.exceptions import APIError
 
-from app.database import get_supabase_client
+from app.database import get_supabase_client, is_missing_table
 from app.exceptions import (
     RepositoryNotConfigured,
     SoilReportNotFound,
@@ -56,8 +57,14 @@ class SoilReportWriter(Protocol):
         electrical_conductivity: float | None = None,
         micronutrients: dict | None = None,
         validation_summary: dict | None = None,
+        extraction_id: str | None = None,
+        verification_status: str | None = None,
     ) -> dict:
         """Persist a new soil report row and return the inserted row."""
+        ...
+
+    def delete_soil_report(self, soil_report_id: str, owner_id: str) -> None:
+        """Remove a report created moments ago (compensation when the follow-up write fails)."""
         ...
 
 
@@ -78,6 +85,7 @@ def _row_to_soil_input(row: dict) -> SoilTestInput:
         potassium_kg_ha=row["potassium_kg_ha"],
         organic_carbon_percent=row["organic_carbon_percent"],
         ph=row["ph"],
+        verification_status=row.get("verification_status"),
     )
 
 
@@ -93,7 +101,7 @@ class SupabaseSoilReportRepository:
                 .select(
                     "id, plot_id, owner_id, nitrogen_kg_ha, "
                     "phosphorus_kg_ha, potassium_kg_ha, "
-                    "organic_carbon_percent, ph"
+                    "organic_carbon_percent, ph, verification_status"
                 )
                 .eq("id", soil_report_id)
                 .maybe_single()
@@ -105,7 +113,7 @@ class SupabaseSoilReportRepository:
                 raise SoilReportNotFound(
                     f"Soil report '{soil_report_id}' was not found."
                 ) from exc
-            if getattr(exc, "code", None) == "42P01":
+            if is_missing_table(exc):
                 raise RepositoryNotConfigured(
                     "Soil report data source is not configured: "
                     "the 'soil_reports' table does not exist."
@@ -134,6 +142,8 @@ class SupabaseSoilReportRepository:
         electrical_conductivity: float | None = None,
         micronutrients: dict | None = None,
         validation_summary: dict | None = None,
+        extraction_id: str | None = None,
+        verification_status: str | None = None,
     ) -> dict:
         client = get_supabase_client()
 
@@ -149,6 +159,11 @@ class SupabaseSoilReportRepository:
             "micronutrients": micronutrients,
             "validation_summary": validation_summary,
             "status": "Completed",
+            "extraction_id": extraction_id,
+            "verification_status": verification_status,
+            "verified_at": (
+                datetime.now(timezone.utc).isoformat() if verification_status else None
+            ),
         }
 
         try:
@@ -156,7 +171,7 @@ class SupabaseSoilReportRepository:
                 client.table("soil_reports").insert(payload).select().execute()
             )
         except APIError as exc:
-            if getattr(exc, "code", None) == "42P01":
+            if is_missing_table(exc):
                 raise RepositoryNotConfigured(
                     "Soil report data source is not configured: "
                     "the 'soil_reports' table does not exist."
@@ -169,6 +184,13 @@ class SupabaseSoilReportRepository:
                 "Insert into 'soil_reports' did not return the created row."
             )
         return rows[0]
+
+
+    def delete_soil_report(self, soil_report_id: str, owner_id: str) -> None:
+        client = get_supabase_client()
+        client.table("soil_reports").delete().eq("id", soil_report_id).eq(
+            "owner_id", owner_id
+        ).execute()
 
 
 def get_soil_report_repository() -> SoilReportRepository:
