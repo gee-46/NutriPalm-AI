@@ -50,7 +50,7 @@ function httpError(status, code, message) {
   e.pgrst = { code, message, details: null, hint: null };
   return e;
 }
-const TABLES = new Set(["profiles", "farmers", "plots", "soil_reports", "recommendations", "digital_twins", "ndvi_readings", "weather_observations", "field_observations", "disease_assessments"]);
+const TABLES = new Set(["profiles", "farmers", "plots", "soil_reports", "recommendations", "digital_twins", "ndvi_readings", "weather_observations", "field_observations", "disease_assessments", "soil_report_extractions", "fertilizer_applications"]);
 // resource embedding supported by this emulator (what the app uses)
 const EMBEDS = {
   plots: {

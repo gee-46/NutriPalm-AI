@@ -1,4 +1,5 @@
-// Browser end-to-end verification of the Phase 1 journey, two users.
+// Browser end-to-end verification of the retained product (soil-report OCR review + fertilizer
+// recommendation + Digital Twin), two users.
 //
 //   cd supabase/tests && npm install && npm run e2e
 //
@@ -13,7 +14,7 @@
 // asserted to degrade gracefully. Device GPS is emulated by the browser's geolocation override.
 
 import { spawn, execSync } from "node:child_process";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import crypto from "node:crypto";
 import path from "node:path";
@@ -28,6 +29,10 @@ const files = process.env.E2E_FILES || path.join(tmpdir(), "e2e-files");
 const shots = process.env.E2E_SHOTS || path.join(tmpdir(), "e2e-shots");
 mkdirSync(shots, { recursive: true });
 process.env.TEMP ??= tmpdir();
+
+// Fixtures: real PDFs rendered with the backend's own fixture helpers, and a TEST-ONLY rule pack so the
+// recommendation engine can run (the shipped rule pack is empty on purpose).
+execSync(`"${process.env.E2E_PYTHON || "python"}" "${path.join(here, "make_fixtures.py")}" "${files}"`, { cwd: path.join(repo, "backend"), stdio: "inherit", env: { ...process.env, PYTHONPATH: path.join(repo, "backend") } });
 
 const results = [];
 const check = (group, name, pass, detail = "") => {
@@ -60,6 +65,10 @@ const baseEnv = {
   SUPABASE_JWT_SECRET: secret,
   CORS_ALLOW_ORIGINS: "http://127.0.0.1:5173",
   ENVIRONMENT: "development",
+  RULE_PACK_PATH: path.join(files, "test_rule_pack.json"),
+  // hermetic: never use a developer's local Sentinel credentials in the test run
+  SENTINEL_HUB_CLIENT_ID: "",
+  SENTINEL_HUB_CLIENT_SECRET: "",
   VITE_SUPABASE_URL: stack.url,
   VITE_SUPABASE_ANON_KEY: stack.anonKey,
   VITE_API_BASE_URL: "http://127.0.0.1:8000",
@@ -74,13 +83,16 @@ const dbGet = async (table, q = "select=*") => (await fetch(`${stack.url}/rest/v
 // Known, accepted console noise (documented in docs/PHASE1_AUDIT.md)
 const IGNORE_CONSOLE = [
   // Chrome logs every non-2xx response as a console error. Only the deliberate ones are accepted, matched by URL:
-  /status of 404 \(Not Found\) @ http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports|disease)/, // B probing A's ids
+  /status of 404 \(Not Found\) @ http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports)/, // B probing A's ids
   /status of 401 \(Unauthorized\) @ http:\/\/127\.0\.0\.1:8000\/api\/recommendations/, // tokenless / forged call
   /status of (401|403|404|406|409) .* @ http:\/\/127\.0\.0\.1:54321\/rest\/v1\//, // deliberate REST attacks
   // framework-level: framer-motion pathLength animation on the boot splash SVGs (static `d`), not app logic
   /attribute d: Expected moveto path command/,
   /GOOGLE_MAPS_API_KEY_MISSING/, // keyless fallback is intentional
   /Download the React DevTools/,
+  // deliberate in this run: confirming a review with required values still missing (422), and probing a removed endpoint (404)
+  /status of 422 .* @ http:\/\/127\.0\.0\.1:8000\/api\/soil-reports\/extractions\/[0-9a-f-]+\/confirm/,
+  /status of 404 .* @ http:\/\/127\.0\.0\.1:8000\/api\/disease\/vocabulary/,
 ];
 const consoleIssues = [];
 const trackIssues = (events, who) => () => {
@@ -160,54 +172,70 @@ try {
   const ndviReq = events.requests.filter((r) => /\/api\/geospatial\/ndvi\//.test(r));
   check("A-ndvi", "NDVI requested through the authenticated backend for this plot's id", ndviReq.some((r) => r.includes(plotA.id)), ndviReq.join(","));
 
-  // ---- soil reports (frontend integration; OCR itself verified manually by the owner)
+  // ---- soil reports: a partial read goes to REVIEW (nothing saved), the owner completes it, a clear read is saved directly
   await goto(page, "Soil Reports");
   await page.locator("input[type=file]").setInputFiles(path.join(files, "soil_partial.pdf"));
-  await page.waitForTimeout(8500);
+  await page.locator("#review-title").waitFor({ timeout: 60000 });
   let soilText = await page.locator("main").innerText();
-  const partialRows = await dbGet("soil_reports");
-  check("A-soil", "incomplete report is NOT persisted", partialRows.length === 0, JSON.stringify(partialRows));
-  // Each parameter that is absent from the report must read "Not Found"/"N/A" in its OWN row. (A bare
-  // number search is unreliable: the benchmark card legitimately prints reference targets such as 280 kg/ha.)
-  check("A-soil", "missing K, OC and pH each show as missing in their own row (not invented)", /Potassium \(K\)\s+Not Found/i.test(soilText) && /Organic Carbon \(C\)\s+Not Found/i.test(soilText) && /Acidity pH\s+N\/A/i.test(soilText), soilText.slice(0, 1200));
-  check("A-soil", "the values that ARE on the report (N=245, P=22) are shown", /Nitrogen \(N\)\s+245 kg\/ha/i.test(soilText) && /Phosphorus \(P\)\s+22 kg\/ha/i.test(soilText), soilText.slice(0, 600));
-  check("A-soil", "user is told the report was not saved", /not saved|Not Saved|could not be confidently|Low Confidence/i.test(soilText), soilText.slice(0, 200));
-  await page.locator("input[type=file]").setInputFiles(path.join(files, "soil_full.pdf")).catch(async () => {
-    await page.getByRole("button", { name: /Re-upload|Update Report/ }).first().click();
-    await page.locator("input[type=file]").setInputFiles(path.join(files, "soil_full.pdf"));
-  });
-  await page.waitForTimeout(9000);
+  check("A-soil", "an incomplete read goes to the review step, not to a saved report", (await dbGet("soil_reports")).length === 0, JSON.stringify(await dbGet("soil_reports")));
+  const ext1 = await dbGet("soil_report_extractions");
+  check("A-soil", "the extraction is stored as 'needs_review' with the document hash (the document itself is not stored)", ext1.length === 1 && ext1[0].status === "needs_review" && /^[0-9a-f]{64}$/.test(ext1[0].source_sha256) && ext1[0].soil_report_id === null, JSON.stringify(ext1.map((e) => e.status)));
+  check("A-soil", "missing K, OC and pH are shown as 'Not found' with empty inputs (never zero)", (soilText.match(/Not found in the report/g) || []).length >= 3 && (await page.locator("#rv-potassium").inputValue()) === "" && (await page.locator("#rv-ph").inputValue()) === "" && (await page.locator("#rv-organic_carbon").inputValue()) === "", soilText.slice(0, 600));
+  check("A-soil", "the values that ARE on the report (N=245, P=22) are shown as read", (await page.locator("#rv-nitrogen").inputValue()) === "245" && (await page.locator("#rv-phosphorus").inputValue()) === "22");
+  await page.getByRole("button", { name: /Confirm and save/ }).click();
+  await page.waitForTimeout(1500);
+  check("A-soil", "confirming without supplying the missing values is refused, and nothing is saved", /still need your attention/.test(await page.locator("main").innerText()) && (await dbGet("soil_reports")).length === 0);
+  await page.locator("#rv-potassium").fill("150");
+  await page.locator("#rv-organic_carbon").fill("0.6");
+  await page.locator("#rv-ph").fill("6.8");
+  await page.getByRole("button", { name: /Confirm and save/ }).click();
+  await page.waitForTimeout(3500);
+  let soilRows = await dbGet("soil_reports");
+  const corrected = soilRows[0];
+  check("A-soil", "after the owner's corrections a verified soil report exists for A's plot (user_corrected)", soilRows.length === 1 && corrected.owner_id === uidA && corrected.plot_id === plotA.id && corrected.verification_status === "user_corrected" && corrected.potassium_kg_ha === 150 && corrected.nitrogen_kg_ha === 245, JSON.stringify(corrected));
+  const ext2 = (await dbGet("soil_report_extractions"))[0];
+  check("A-soil", "the audit trail keeps what was read (nothing) and what the owner typed, per parameter", ext2.status === "completed" && ext2.soil_report_id === corrected.id && ext2.corrections.length === 3 && ext2.corrections.every((c) => c.original_value === null && c.corrected_value !== null && c.at), JSON.stringify(ext2.corrections));
+
+  // a clearly readable report is saved directly and marked auto_validated
+  await goto(page, "Soil Reports");
+  await page.getByRole("button", { name: /Re-upload|Update Report/ }).first().click().catch(() => {});
+  await page.locator("input[type=file]").setInputFiles(path.join(files, "soil_full.pdf"));
+  await page.waitForTimeout(6000);
   soilText = await page.locator("main").innerText();
-  const soilRows = await dbGet("soil_reports");
-  soilA = soilRows[0];
-  check("A-soil", "complete report persisted to A's plot with the extracted values", soilRows.length === 1 && soilA.owner_id === uidA && soilA.plot_id === plotA.id && soilA.nitrogen_kg_ha === 245 && soilA.phosphorus_kg_ha === 18 && soilA.potassium_kg_ha === 142 && soilA.ph === 6.8 && soilA.organic_carbon_percent === 0.62 && soilA.electrical_conductivity === 0.42, JSON.stringify(soilA));
+  soilRows = await dbGet("soil_reports", "select=*&order=created_at.asc");
+  soilA = soilRows.find((r) => r.verification_status === "auto_validated");
+  check("A-soil", "a clear read is saved directly, linked to its extraction", soilRows.length === 2 && !!soilA && soilA.owner_id === uidA && soilA.plot_id === plotA.id && soilA.nitrogen_kg_ha === 245 && soilA.phosphorus_kg_ha === 18 && soilA.potassium_kg_ha === 142 && soilA.ph === 6.8 && soilA.organic_carbon_percent === 0.62 && soilA.electrical_conductivity === 0.42 && !!soilA.extraction_id, JSON.stringify(soilA));
   check("A-soil", "micronutrients not on the report stay missing (null) in the database", soilA.micronutrients === null || Object.values(soilA.micronutrients).every((v) => v.value !== null), JSON.stringify(soilA.micronutrients));
-  check("A-soil", "UI shows N/P/K/pH/EC/OC from the report and 'Not reported' for micronutrients", /245 kg\/ha/.test(soilText) && /142 kg\/ha/.test(soilText) && /6\.8/.test(soilText) && /0\.42 dS\/m/.test(soilText) && /0\.62 ?%/.test(soilText) && /Not reported/i.test(soilText));
+  check("A-soil", "UI shows N/P/K/pH/EC/OC from the report and 'Not reported' for micronutrients", /245 kg\/ha/.test(soilText) && /142 kg\/ha/.test(soilText) && /6\.8/.test(soilText) && /0\.42 dS\/m/.test(soilText) && /0\.62 ?%/.test(soilText) && /Not reported/i.test(soilText), soilText.slice(0, 300));
+  check("A-soil", "no sample report can be loaded into a real plot", !/Load Sample Report|realistic sample/i.test(soilText));
+  const reup = await page.evaluate(async () => 0);
   await page.screenshot({ path: path.join(shots, "A-04-soil.png"), fullPage: true });
 
-  // ---- recommendations: must come from the backend
+  // ---- recommendations: from the backend, gated on a cited rule, advice is not an application
   await goto(page, "Recommendations");
   await page.waitForTimeout(2000);
+  check("A-reco", "there is no crop-price input any more (nothing in the output depends on it)", (await page.getByLabel("Crop selling price in rupees per ton").count()) === 0);
   const genBtn = page.getByRole("button", { name: /Get advice/i }).first();
-  await genBtn.click();
-  await page.waitForTimeout(800);
-  check("A-reco", "generate without a crop price is refused with a clear message (no silent default)", /crop selling price/i.test(await page.locator("body").innerText()));
-  await page.getByLabel("Crop selling price in rupees per ton").fill("13500");
+  await page.waitForFunction(() => {
+    const b = Array.from(document.querySelectorAll("button")).find((el) => /Get advice/i.test(el.innerText));
+    return b && !b.disabled;
+  }, { timeout: 20000 });
   const postP = page.waitForResponse((r) => /\/api\/recommendations$/.test(r.url()) && r.request().method() === "POST", { timeout: 30000 });
   await genBtn.click();
   const postR = await postP;
   const postBody = JSON.parse(postR.request().postData() || "{}");
   check("A-reco", "browser called POST /api/recommendations (authoritative engine is the backend)", postR.status() === 201, postR.status());
-  check("A-reco", "request carries plot_id, soil_report_id and the entered price - and no owner/user id", postBody.plot_id === plotA.id && postBody.soil_report_id === soilA.id && postBody.crop_price_per_ton_inr === 13500 && !("owner_id" in postBody) && !("user_id" in postBody), JSON.stringify(postBody));
+  check("A-reco", "request carries only plot_id and soil_report_id (the latest VERIFIED report) - no owner/user id, no price", postBody.plot_id === plotA.id && postBody.soil_report_id === soilA.id && Object.keys(postBody).sort().join() === "plot_id,soil_report_id", JSON.stringify(postBody));
   const authH = postR.request().headers()["authorization"] || "";
   check("A-reco", "request is authenticated with the user's bearer token", /^Bearer ey/.test(authH));
   await page.waitForTimeout(2500);
   const recRows = await dbGet("recommendations");
   recA = recRows[0];
-  check("A-reco", "recommendation persisted for A, plot and soil report match", recRows.length === 1 && recA.owner_id === uidA && recA.plot_id === plotA.id && recA.soil_report_id === soilA.id, JSON.stringify(recRows.map((r) => ({ o: r.owner_id, p: r.plot_id }))));
+  check("A-reco", "recommendation persisted for A, plot and soil report match, stamped with engine version and provenance", recRows.length === 1 && recA.owner_id === uidA && recA.plot_id === plotA.id && recA.soil_report_id === soilA.id && recA.engine_version === "rec-2.2" && recA.provenance?.rule?.rule_version === "e2e-test-fixture" && recA.provenance?.soil_verification_status === "auto_validated", JSON.stringify(recRows.map((r) => ({ o: r.owner_id, e: r.engine_version }))));
+  await page.getByText("Basis of this recommendation").first().waitFor({ timeout: 20000 }).catch(() => {});
   const recText = await page.locator("main").innerText();
-  check("A-reco", "UI shows backend results (dosage table, economics, saved timestamp)", /Fertilizer plan|Dose|Economics|Saved/i.test(recText) && /Fertilizer cost/.test(recText));
-  check("A-reco", "UI uses the crop price entered by the user in ROI", /13,500/.test(recText));
+  check("A-reco", "UI shows the dosage plan with its basis (engine, rule, soil values used) and says it is advice, not an application", /Fertilizer to apply/.test(recText) && /Basis of this recommendation/.test(recText) && /Engine rec-2\.[12]/.test(recText) && /This is advice only/.test(recText), recText.slice(0, 300));
+  check("A-reco", "no yield, revenue or ROI is shown (their baselines are not sourced)", !/Fertilizer cost|Extra income|Profit|ROI|Expected yield/i.test(recText));
   const ls = await page.evaluate(() => Object.keys(localStorage).filter((k) => /lastRecommendation|soil_report_/.test(k)));
   check("A-reco", "recommendation is not computed/cached locally in the browser", ls.length === 0, ls.join(","));
   await page.screenshot({ path: path.join(shots, "A-05-reco.png"), fullPage: true });
@@ -215,7 +243,7 @@ try {
   await waitForConsole(page);
   await goto(page, "Recommendations");
   await page.waitForTimeout(3000);
-  check("A-reco", "saved recommendation is shown again after reload (history from the API)", /Fertilizer cost/.test(await page.locator("main").innerText()));
+  check("A-reco", "saved recommendation is shown again after reload (history from the API)", /Basis of this recommendation/.test(await page.locator("main").innerText()));
 
   // ---- second plot for twin / isolation between plots
   await surveyAndCreatePlot(page, { plotName: "Plot Beta", farmer: "Ravi Kumar" }).catch(async (e) => { check("A-plot2", "second plot survey flow", false, e.message); });
@@ -253,14 +281,39 @@ try {
   check("A-twin", "Beta has no stored snapshot, so Alpha's 77% does not leak into it", !/77\s*%/.test(betaText), betaText.slice(0, 200));
   await page.screenshot({ path: path.join(shots, "A-06b-twin-beta.png"), fullPage: true });
 
-  // ---- analytics
-  await goto(page, "Analytics");
-  await page.waitForTimeout(3500);
-  const an = await page.locator("main").innerText();
-  await page.screenshot({ path: path.join(shots, "A-07-analytics.png"), fullPage: true });
-  await noFake(page, "A-analytics", "analytics");
-  check("A-analytics", "KPIs match the account (2 plots, 1 soil report, 1 recommendation)", /2 plots/i.test(an) && /1 \/ 2/.test(an) && /recommendations saved\s*1/i.test(an), an.slice(0, 400));
-  check("A-analytics", "no invented forecast/telemetry (no 'Qtl/Ac', 'VWC', 'Live Active Sync')", !/Qtl\/Ac|VWC|Live Active Sync|Mixed Canopy/.test(an));
+  // ---- MANAGEMENT RECORDS in the twin: measured vs advice vs applied are separate, and applied is user-recorded
+  await page.locator("main").getByText("Plot Alpha", { exact: true }).first().click();
+  await page.waitForTimeout(3000);
+  await page.locator("#app-product").scrollIntoViewIfNeeded();
+  let mgmt = await page.locator("main").innerText();
+  check("A-mgmt", "the twin lists the plot's verified soil tests and its recommendation under separate headings", /Soil tests \(measured\)/.test(mgmt) && /Recommendations \(advice, not applied\)/.test(mgmt) && /Fertilizer applied \(recorded by you\)/.test(mgmt) && /No fertilizer application recorded yet/.test(mgmt) && /Corrected by you/.test(mgmt) && /Read clearly, no changes/.test(mgmt), mgmt.slice(-900));
+  check("A-mgmt", "a recommendation is NOT shown as an application that happened", (await dbGet("fertilizer_applications")).length === 0);
+  await page.locator("#app-qty").fill("0");
+  await page.locator("#app-product").fill("Urea");
+  await page.getByRole("button", { name: "Save application" }).click();
+  check("A-mgmt", "zero quantity is refused client-side and nothing is written", /greater than zero/.test(await page.locator("main").innerText()) && (await dbGet("fertilizer_applications")).length === 0);
+  await page.locator("#app-qty").fill("50");
+  await page.locator("#app-unit").selectOption("kg");
+  await page.locator("#app-rec").selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Save application" }).click();
+  await page.waitForTimeout(2500);
+  const appRows = await dbGet("fertilizer_applications");
+  check("A-mgmt", "the application is stored for A's plot, linked to the recommendation, and shown after saving", appRows.length === 1 && appRows[0].owner_id === uidA && appRows[0].plot_id === plotA.id && appRows[0].recommendation_id === recA.id && Number(appRows[0].quantity) === 50 && /Urea · 50 kg/.test(await page.locator("main").innerText()), JSON.stringify(appRows));
+  await page.reload({ waitUntil: "networkidle" });
+  await waitForConsole(page);
+  await goto(page, "Digital Twin");
+  await page.waitForTimeout(3000);
+  await page.locator("main").getByText("Plot Alpha", { exact: true }).first().click();
+  await page.waitForTimeout(2500);
+  await page.locator("#app-product").scrollIntoViewIfNeeded();
+  check("A-mgmt", "history persists after a refresh", /Urea · 50 kg/.test(await page.locator("main").innerText()));
+  await page.screenshot({ path: path.join(shots, "A-06c-twin-management.png"), fullPage: true });
+
+  // ---- removed features are not reachable
+  const navNames = await page.locator("aside nav button").allInnerTexts();
+  check("A-scope", "navigation offers only the retained features", navNames.length === 9 && !navNames.some((n) => /Disease|Suitab|Analytics|Weather|ರೋಗ|ವಿಶ್ಲೇಷ/i.test(n)), navNames.join(" | "));
+  const disGone = await page.evaluate(async () => (await fetch("http://127.0.0.1:8000/api/disease/vocabulary")).status);
+  check("A-scope", "the disease endpoints no longer exist on the backend (404, not just hidden)", disGone === 404, disGone);
 
   // ============================================================ PHASE 2 (farmer-first UI, English + Kannada)
   const mainText = () => page.locator("main").innerText();
@@ -271,93 +324,13 @@ try {
     await page.waitForTimeout(2500);
   };
 
-  // ---- disease intelligence: real backend assessment, source-attributed, never a diagnosis
-  // A coconut plot owned by A (inserted with the service role, as plots are normally created through the survey flow).
-  const cocoPlot = (await dbPost(stack, "plots", { owner_id: uidA, name: "Coconut Garden", crop: "Coconut", area: 1.2, area_unit: "acres", state: "Karnataka", district: "Udupi" }))[0];
-  check("P2-disease", "test coconut plot created for A", !!cocoPlot?.id, JSON.stringify(cocoPlot));
-  await page.reload({ waitUntil: "networkidle" });
-  await waitForConsole(page);
-  await goto(page, "Disease Intelligence");
-  await page.waitForTimeout(2500);
-  let p2t = await mainText();
-  await page.screenshot({ path: path.join(shots, "P2-01-disease.png"), fullPage: true });
-  check("P2-disease", "the service is available and the symptom list is loaded from the backend", !/Disease assessment is not available yet/.test(p2t) && (await page.locator("main input[type=checkbox]").count()) > 20, p2t.slice(0, 200));
-  check("P2-disease", "only arecanut and coconut are offered", (await page.locator("#disease-crop option").allInnerTexts()).filter((x) => !/Choose/.test(x)).join("|") === "Arecanut (ಅಡಿಕೆ)|Coconut (ತೆಂಗು)");
-  check("P2-disease", "every input has a label and photos are not pretended", (await page.locator("main label").count()) >= 10 && /Photos cannot be uploaded yet/.test(p2t));
-  await page.getByRole("button", { name: "Check disease risk" }).click();
-  check("P2-disease", "submitting with nothing chosen is refused with a message and no request", /Choose a plot first/.test(await mainText()) && noPost(/\/api\/disease\/assess/));
-  await pickPlot("#disease-plot", "Coconut Garden");
-  await page.getByRole("button", { name: "Check disease risk" }).click();
-  check("P2-disease", "a plot without symptoms is refused client-side", /Choose at least one symptom/.test(await mainText()) && noPost(/\/api\/disease\/assess/));
-  await page.getByLabel("Spear (spindle) leaf withering or drying").check();
-  await page.getByLabel("Spindle comes out easily when pulled").check();
-  await page.locator("#cond-high_rainfall_area").selectOption("yes");
-  const disPost = page.waitForResponse((r) => /\/api\/disease\/assess$/.test(r.url()) && r.request().method() === "POST", { timeout: 30000 });
-  await page.getByRole("button", { name: "Check disease risk" }).click();
-  const disResp = await disPost;
-  const disBody = JSON.parse(disResp.request().postData() || "{}");
-  check("P2-disease", "browser called POST /api/disease/assess with the user's bearer token (201)", disResp.status() === 201 && /^Bearer ey/.test(disResp.request().headers()["authorization"] || ""), disResp.status());
-  check("P2-disease", "request sends symptom codes, plot and crop - and no owner/user/region fields", disBody.plot_id === cocoPlot.id && disBody.crop === "coconut" && disBody.symptom_codes?.length === 2 && !("owner_id" in disBody) && !("user_id" in disBody) && !("state" in disBody), JSON.stringify(disBody));
-  await page.waitForTimeout(1500);
-  p2t = await mainText();
-  await page.screenshot({ path: path.join(shots, "P2-01b-disease-result.png"), fullPage: true });
-  check("P2-disease", "result is labelled a screening, not a diagnosis, and the disease is only 'possible'", /Screening result — not a diagnosis/.test(p2t) && /Possible disease — not confirmed/.test(p2t) && /Bud rot of coconut/.test(p2t), p2t.slice(0, 300));
-  check("P2-disease", "risk category is shown with words (High risk), with the cited ICAR-CPCRI source linked over https", /High risk/.test(p2t) && (await page.locator("main a[href^='https://epubs.icar.org.in']").count()) > 0);
-  check("P2-disease", "chemical guidance says NOT label-verified / information only - no dose, rate or product instruction is invented", /NOT label-verified/.test(p2t) && /not a dose/i.test(p2t) && /qualified agricultural officer/.test(p2t) && !/apply \d|spray \d+ ?(ml|g|kg)/i.test(p2t));
-  check("P2-disease", "management is grouped by the decision hierarchy", /Watch and confirm/.test(p2t) && /Garden cleanliness/.test(p2t) && /Biological methods/.test(p2t));
-  const disRows = await dbGet("disease_assessments", "select=*");
-  check("P2-disease", "assessment saved for A with the token's owner id, plot, risk, versions", disRows.length === 1 && disRows[0].owner_id === uidA && disRows[0].plot_id === cocoPlot.id && disRows[0].risk_level === "high" && !!disRows[0].kb_version && !!disRows[0].rule_version && disRows[0].top_disease_id === "coconut_bud_rot", JSON.stringify(disRows.map((r) => ({ o: r.owner_id, r: r.risk_level }))));
-  const assessIdA = disRows[0]?.id;
-  await page.reload({ waitUntil: "networkidle" });
-  await waitForConsole(page);
-  await goto(page, "Disease Intelligence");
-  await page.waitForTimeout(1500);
-  await pickPlot("#disease-plot", "Coconut Garden");
-  await page.waitForTimeout(1500);
-  check("P2-disease", "the saved assessment is listed again after a reload and can be reopened", /Earlier checks for this plot/.test(await mainText()) && (await page.getByRole("button", { name: "Open", exact: true }).count()) === 1);
-  await page.getByRole("button", { name: "Open", exact: true }).click();
-  await page.waitForTimeout(1500);
-  check("P2-disease", "reopened result shows the same disease and sources", /Bud rot of coconut/.test(await mainText()));
-  // insufficient evidence: an arecanut symptom on a coconut plot matches nothing
-  await page.reload({ waitUntil: "networkidle" });
-  await waitForConsole(page);
-  await goto(page, "Disease Intelligence");
-  await page.waitForTimeout(1500);
-  await pickPlot("#disease-plot", "Coconut Garden");
-  await page.getByLabel("Water-soaked lesions on nuts").check();
-  await page.getByRole("button", { name: "Check disease risk" }).click();
-  await page.waitForTimeout(2000);
-  p2t = await mainText();
-  check("P2-disease", "unmatched symptoms give an insufficient-evidence result (not a guess) with follow-up questions", /Not enough evidence to assess/.test(p2t) && /does not mean your palms are healthy/.test(p2t) && !/Possible disease/.test(p2t) && /Questions that would help/.test(p2t), p2t.slice(0, 300));
-  check("P2-disease", "both assessments are now saved for A only", (await dbGet("disease_assessments", "select=owner_id")).length === 2);
-
-  // ---- crop suitability: shows real inputs + missing information, no ranking
-  await goto(page, "Crop Suitability");
-  await page.waitForTimeout(1500);
-  await pickPlot("#suit-plot", "Plot Alpha");
-  p2t = await mainText();
-  await page.screenshot({ path: path.join(shots, "P2-02-suitability.png"), fullPage: true });
-  check("P2-suit", "shows the plot's real soil values from the saved report (pH 6.8, N 245)", /6\.8/.test(p2t) && /245/.test(p2t), p2t.slice(0, 400));
-  check("P2-suit", "lists what is missing (texture, drainage, water) instead of inventing it", /Soil texture/.test(p2t) && /Drainage/.test(p2t) && /Water availability/.test(p2t));
-  check("P2-suit", "no crop ranking or score is shown; unavailable state is explicit", /Crop suggestions are not available yet/.test(p2t) && !/Rank 1|Suitability score/.test(p2t));
-  check("P2-suit", "the action is disabled and nothing was sent to a suitability endpoint", (await page.getByRole("button", { name: "Find suitable crops" }).isDisabled()) && noPost(/crop-suitability/));
-
-  // ---- weather advisory: real weather, no spraying/fertilising claims
-  await goto(page, "Weather");
-  await page.waitForTimeout(1500);
-  await pickPlot("#weather-plot", "Plot Alpha");
-  await page.waitForTimeout(2500);
-  p2t = await mainText();
-  await page.screenshot({ path: path.join(shots, "P2-03-weather.png"), fullPage: true });
-  check("P2-weather", "shows current temperature and a forecast table for the plot centroid", /°C/.test(p2t) && /Chance of rain/.test(p2t), p2t.slice(0, 300));
-  check("P2-weather", "says farm-work advice is not available and makes no best-time claim", /Weather-based farm advice is not available yet/.test(p2t) && !/best time|safe to spray|good day to/i.test(p2t));
-
+  let p2t;
   // ---- nutrient & fertilizer page keeps the backend's numbers and labels each kind of value
   await goto(page, "Recommendations");
   await pickPlot("#nf-plot", "Plot Alpha");
   await page.waitForTimeout(1500);
   p2t = await mainText();
-  check("P2-nutrient", "separates observed / derived / recommendation / predicted values", /Observed/.test(p2t) && /Derived/.test(p2t) && /Recommendation/.test(p2t) && /Predicted/.test(p2t), p2t.slice(0, 300));
+  check("P2-nutrient", "separates observed / derived / recommendation values, and shows no 'predicted' block without a source", /Observed/.test(p2t) && /Derived/.test(p2t) && /Recommendation/.test(p2t) && !/Predicted/.test(p2t), p2t.slice(0, 300));
   check("P2-nutrient", "says what the server does not provide (per-plant quantity, method, timing)", /Quantity per plant[\s\S]*not give this yet/.test(p2t) && /How to apply it/.test(p2t) && /When to apply it/.test(p2t));
   check("P2-nutrient", "missing micronutrient / unknown values are never shown as 0", !/\b0 kg\/ha\b/.test(p2t));
 
@@ -365,8 +338,7 @@ try {
   await goto(page, "History");
   await page.waitForTimeout(2500);
   p2t = await mainText();
-  check("P2-history", "lists the saved soil report, fertilizer advice and plots", /Soil report · Plot Alpha/.test(p2t) && /Fertilizer advice · Plot Alpha/.test(p2t) && /Plot added · Plot Beta/.test(p2t), p2t.slice(0, 400));
-  check("P2-history", "saved disease checks are listed with the plot name", /Disease check · Coconut Garden/.test(p2t) && /Risk: High risk/.test(p2t), p2t.slice(0, 300));
+  check("P2-history", "lists the verified soil reports, fertilizer advice, applied fertilizer and plots", /Soil report · Plot Alpha/.test(p2t) && /Fertilizer advice · Plot Alpha/.test(p2t) && /Fertilizer applied · Plot Alpha/.test(p2t) && /Plot added · Plot Beta/.test(p2t), p2t.slice(0, 500));
   await page.getByRole("button", { name: "Soil reports", exact: true }).click();
   await page.waitForTimeout(500);
   check("P2-history", "the filter really filters", !/Fertilizer advice · Plot/.test(await mainText()));
@@ -390,7 +362,7 @@ try {
   const knDash = await mainText();
   check("P2-lang", "dashboard text changes to Kannada", KN.test(knDash) && knDash !== enDash, knDash.slice(0, 200));
   const navKn = await page.locator("aside nav").innerText();
-  check("P2-lang", "navigation (group titles and items) is in Kannada", /ಜಮೀನಿನ ಆರೋಗ್ಯ/.test(navKn) && /ನಾನು ಯಾವ ಬೆಳೆ ಬೆಳೆಯಬೇಕು\?/.test(navKn), navKn.slice(0, 300));
+  check("P2-lang", "navigation (group titles and items) is in Kannada", /ಜಮೀನಿನ ಆರೋಗ್ಯ/.test(navKn) && /ಮಣ್ಣು/.test(navKn), navKn.slice(0, 300));
   check("P2-lang", "choice is stored on the device", (await page.evaluate(() => localStorage.getItem("nutripalm_lang"))) === "kn");
   await page.reload({ waitUntil: "networkidle" });
   await page.locator("aside nav").waitFor({ timeout: 45000 });
@@ -399,10 +371,10 @@ try {
 
   // walk the whole navigation in Kannada
   const navCount = await page.locator("aside nav button").count();
-  check("P2-lang", "navigation exposes all 13 destinations", navCount === 13, navCount);
-  const STRICT = new Set(["Dashboard", "Disease Intelligence", "Crop Suitability", "Weather", "History", "Recommendations"]);
+  check("P2-lang", "navigation exposes all 9 destinations", navCount === 9, navCount);
+  const STRICT = new Set(["Dashboard", "History", "Recommendations"]);
   const looseReport = {};
-  const pageOrder = ["Dashboard", "Farmers", "Farm Plots", "Soil Reports", "Disease Intelligence", "Weather", "Digital Twin", "Crop Suitability", "Recommendations", "History", "Analytics", "Profile", "Settings"];
+  const pageOrder = ["Dashboard", "Farmers", "Farm Plots", "Soil Reports", "Digital Twin", "Recommendations", "History", "Profile", "Settings"];
   for (let i = 0; i < navCount; i++) {
     await page.locator("aside nav button").nth(i).click();
     await page.waitForTimeout(2200);
@@ -421,7 +393,7 @@ try {
   for (const [label, vp] of [["tablet 820x1180", { width: 820, height: 1180 }], ["phone 390x844", { width: 390, height: 844 }]]) {
     await page.setViewportSize(vp);
     await page.waitForTimeout(800);
-    for (const id of ["Dashboard", "Recommendations", "Disease Intelligence"]) {
+    for (const id of ["Dashboard", "Recommendations", "Soil Reports"]) {
       if (vp.width < 768) {
         await page.getByRole("button", { name: "ಮೆನು ತೆರೆಯಿರಿ" }).click();
         await page.waitForTimeout(500);
@@ -441,7 +413,9 @@ try {
   await page.setViewportSize({ width: 1360, height: 900 });
   await page.waitForTimeout(500);
 
-  // accessibility basics
+  // accessibility basics (on the Soil Reports page, which carries the upload controls)
+  await page.locator("aside nav button").nth(pageOrder.indexOf("Soil Reports")).click();
+  await page.waitForTimeout(1500);
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   const focus = await page.evaluate(() => {
@@ -492,13 +466,13 @@ try {
   await waitForConsole(pb);
   const bDash = await pb.locator("body").innerText();
   check("B-isolation", "B's dashboard shows B's name and zero data (none of A's)", /Bob Grower/.test(bDash) && !/Alice Farmer|Plot Alpha|Ravi Kumar/.test(bDash));
-  for (const screen of ["Farmers", "Farm Plots", "Soil Reports", "Recommendations", "Analytics", "Digital Twin"]) {
+  for (const screen of ["Farmers", "Farm Plots", "Soil Reports", "Recommendations", "Digital Twin"]) {
     await goto(pb, screen);
     await pb.waitForTimeout(1500);
     const t = await pb.locator("main").innerText();
     check("B-isolation", `${screen}: none of A's farmer/plots/report/recommendation appear`, !/Ravi Kumar|Plot Alpha|Plot Beta|Alice/.test(t), t.slice(0, 120));
   }
-  await pb.screenshot({ path: path.join(shots, "B-01-analytics-empty.png"), fullPage: true });
+  await pb.screenshot({ path: path.join(shots, "B-01-empty.png"), fullPage: true });
 
   // direct attacks from B's real browser session
   const attacks = await pb.evaluate(async ({ api, rest, ids }) => {
@@ -523,25 +497,24 @@ try {
     const r4 = await fetch(`${rest}/rest/v1/plots?id=eq.${ids.plot}`, { method: "DELETE", headers: rh }); out.restDelete = { status: r4.status, body: await r4.json() };
     const r5 = await fetch(`${rest}/rest/v1/soil_reports`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: JSON.parse(localStorage.getItem(key)).user.id, plot_id: ids.plot, nitrogen_kg_ha: 1, phosphorus_kg_ha: 1, potassium_kg_ha: 1, organic_carbon_percent: 1, ph: 7 }) }); out.restInsertOnA = { status: r5.status, body: await r5.json() };
     const r6 = await fetch(`${rest}/rest/v1/plots?select=id`, { headers: rh }); out.restOwnPlots = { status: r6.status, body: await r6.json() };
-    out.disAssess = await jget(`${api}/api/disease/assess`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plot_id: ids.cocoPlot, crop: "coconut", symptom_codes: ["spear_leaf_withering"] }) });
-    out.disGet = await jget(`${api}/api/disease/assessments/${ids.assess}`);
-    out.disList = await jget(`${api}/api/disease/assessments`);
-    out.disListA = await jget(`${api}/api/disease/assessments?plot_id=${ids.cocoPlot}`);
-    out.disForgedPlot = await jget(`${api}/api/disease/assess`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plot_id: "' OR 1=1 --", crop: "coconut", symptom_codes: ["spear_leaf_withering"] }) });
-    const r7 = await fetch(`${rest}/rest/v1/disease_assessments?id=eq.${ids.assess}`, { headers: rh }); out.restAssess = { status: r7.status, body: await r7.json() };
-    const r8 = await fetch(`${rest}/rest/v1/disease_assessments`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: JSON.parse(localStorage.getItem(key)).user.id, plot_id: ids.cocoPlot, crop: "coconut", risk_level: "low", request: {}, result: {}, kb_version: "x", rule_version: "y" }) }); out.restAssessInsert = { status: r8.status, body: await r8.json().catch(() => null) };
-    const r9 = await fetch(`${rest}/rest/v1/disease_assessments?id=eq.${ids.assess}`, { method: "DELETE", headers: rh }); out.restAssessDelete = { status: r9.status, body: await r9.json().catch(() => []) };
+    out.extGet = await jget(`${api}/api/soil-reports/extractions/${ids.ext}`);
+    out.extList = await jget(`${api}/api/soil-reports/extractions?plot_id=${ids.plot}`);
+    out.extConfirm = await jget(`${api}/api/soil-reports/extractions/${ids.ext}/confirm`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ corrections: { nitrogen: { value: 1, unit: "kg/ha" } }, confirmed: [] }) });
+    const rA = await fetch(`${rest}/rest/v1/soil_report_extractions?id=eq.${ids.ext}`, { headers: rh }); out.restExt = { status: rA.status, body: await rA.json() };
+    const rB = await fetch(`${rest}/rest/v1/fertilizer_applications?plot_id=eq.${ids.plot}`, { headers: rh }); out.restApps = { status: rB.status, body: await rB.json() };
+    const uid = JSON.parse(localStorage.getItem(key)).user.id;
+    const rC = await fetch(`${rest}/rest/v1/fertilizer_applications`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: uid, plot_id: ids.plot, applied_on: "2026-01-01", product_name: "x", quantity: 1, quantity_unit: "kg" }) }); out.restAppInsertOnA = { status: rC.status, body: await rC.json().catch(() => null) };
+    const rD = await fetch(`${rest}/rest/v1/soil_reports`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: uid, plot_id: ids.ownPlot, nitrogen_kg_ha: 1, phosphorus_kg_ha: 1, potassium_kg_ha: 1, organic_carbon_percent: 1, ph: 7, verification_status: "user_confirmed" }) }); out.restForgedVerified = { status: rD.status, body: await rD.json().catch(() => null) };
+    const rE = await fetch(`${rest}/rest/v1/recommendations?id=eq.${ids.rec}`, { method: "PATCH", headers: rh, body: JSON.stringify({ fertilizer_plan: [] }) }); out.restRecPatch = { status: rE.status, body: await rE.json().catch(() => null) };
     return out;
-  }, { api: "http://127.0.0.1:8000", rest: stack.url, ids: { plot: plotA.id, rec: recA.id, soil: soilA.id, cocoPlot: cocoPlot.id, assess: assessIdA } });
+  }, { api: "http://127.0.0.1:8000", rest: stack.url, ids: { plot: plotA.id, rec: recA.id, soil: soilA.id, ext: soilA.extraction_id, ownPlot: plotA.id } });
   for (const k of ["twinLive", "twinPred", "ndvi", "cadastral", "rec", "recCreate", "upload"]) {
     check("B-attack", `API ${k}: B's token against A's resource -> 404 with no data`, attacks[k].status === 404 && !JSON.stringify(attacks[k].body).includes(plotA.id.slice(0, 8) + "x"), `${attacks[k].status} ${JSON.stringify(attacks[k].body)}`);
   }
-  check("B-attack", "disease: B assessing A's plot is 404 with no data (and nothing is saved)", attacks.disAssess.status === 404 && !JSON.stringify(attacks.disAssess.body).includes("Karnataka") && !JSON.stringify(attacks.disAssess.body).includes("Udupi"), `${attacks.disAssess.status} ${JSON.stringify(attacks.disAssess.body)}`);
-  check("B-attack", "disease: B reading A's saved assessment by id is 404", attacks.disGet.status === 404 && JSON.stringify(attacks.disGet.body) === JSON.stringify({ detail: "Assessment not found." }), JSON.stringify(attacks.disGet));
-  check("B-attack", "disease: B's history is empty, also when filtered by A's plot id", attacks.disList.status === 200 && attacks.disList.body.length === 0 && attacks.disListA.body.length === 0, JSON.stringify([attacks.disList, attacks.disListA]));
-  check("B-attack", "disease: a forged plot id is 404", attacks.disForgedPlot.status === 404, JSON.stringify(attacks.disForgedPlot));
-  check("B-attack", "disease: REST read of A's assessment returns no rows; insert on A's plot is rejected; delete removes nothing", attacks.restAssess.body.length === 0 && attacks.restAssessInsert.status >= 400 && attacks.restAssessDelete.body.length === 0, JSON.stringify([attacks.restAssess, attacks.restAssessInsert, attacks.restAssessDelete]));
-  check("B-attack", "disease: A's assessments are intact and still only A's after B's attacks", (await dbGet("disease_assessments", "select=owner_id")).length === 2 && (await dbGet("disease_assessments", "select=owner_id")).every((r) => r.owner_id === uidA));
+  check("B-attack", "soil extractions: B reading, listing or confirming A's extraction is 404 with no data", [attacks.extGet, attacks.extConfirm].every((r) => r.status === 404 && !JSON.stringify(r.body).includes("245")) && attacks.extList.status === 404, JSON.stringify([attacks.extGet, attacks.extList, attacks.extConfirm]));
+  check("B-attack", "REST: B sees none of A's extractions or applications; inserting an application on A's plot is rejected", attacks.restExt.body.length === 0 && attacks.restApps.body.length === 0 && attacks.restAppInsertOnA.status >= 400, JSON.stringify([attacks.restExt, attacks.restApps, attacks.restAppInsertOnA]));
+  check("B-attack", "REST: B cannot write a soil report that claims verification, nor rewrite an engine-generated recommendation", attacks.restForgedVerified.status >= 400 && attacks.restRecPatch.body?.length === 0, JSON.stringify([attacks.restForgedVerified, attacks.restRecPatch]));
+  check("B-attack", "A's verified data is intact after B's attacks", (await dbGet("soil_reports")).length === 2 && (await dbGet("soil_report_extractions")).every((e) => e.owner_id === uidA) && (await dbGet("recommendations"))[0].fertilizer_plan.length > 0);
   check("B-attack", "API recommendation list for B is empty", attacks.recList.status === 200 && attacks.recList.body.length === 0, JSON.stringify(attacks.recList));
   check("B-attack", "REST read of A's plot returns no rows", attacks.restPlot.status === 200 && attacks.restPlot.body.length === 0, JSON.stringify(attacks.restPlot));
   check("B-attack", "REST read of A's soil reports returns no rows", attacks.restSoil.body.length === 0);
@@ -562,6 +535,8 @@ try {
   const expected = (h) =>
     /^404 (GET|POST) http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports|disease)/.test(h) || // B's attacks on A's ids
     /^401 GET http:\/\/127\.0\.0\.1:8000\/api\/recommendations/.test(h) || // deliberate tokenless / forged calls
+    /^422 POST http:\/\/127\.0\.0\.1:8000\/api\/soil-reports\/extractions\/[0-9a-f-]+\/confirm/.test(h) || // deliberate: confirm with required values missing
+    /^404 GET http:\/\/127\.0\.0\.1:8000\/api\/disease\/vocabulary/.test(h) || // deliberate: removed endpoint
     /^(401|403|404|406|409) \S+ http:\/\/127\.0\.0\.1:54321\/rest\/v1\//.test(h) || // deliberate REST attacks and maybeSingle probes
     /^40[0-9] POST http:\/\/127\.0\.0\.1:54321\/rest\/v1\/soil_reports/.test(h);
   const unexpected = allHttp.filter((h) => !expected(h));
@@ -569,8 +544,6 @@ try {
   const dupLive = events.requests.filter((r) => /\/twin\/live/.test(r)).length;
   const recGets = sa.events.requests.filter((r) => /^GET .*\/api\/recommendations$/.test(r)).length;
   check("console", "no request storm on /api/recommendations (effects must not re-run on every render)", recGets < 40, recGets);
-  const disGets = sa.events.requests.filter((r) => /\/api\/disease\//.test(r)).length;
-  check("console", "no request storm on /api/disease/*", disGets < 60, disGets);
   check("console", "no request storm (live twin polled < 12x during the run)", dupLive < 12, dupLive);
   await sa.browser.close();
   await sb.browser.close();

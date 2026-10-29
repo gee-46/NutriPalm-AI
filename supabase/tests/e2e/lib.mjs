@@ -20,7 +20,7 @@ export async function newSession(opts = {}) {
 }
 
 export async function openAuth(page) {
-  await page.goto(APP, { waitUntil: "networkidle" });
+  await page.goto(APP, { waitUntil: "domcontentloaded" });
   const explore = page.getByRole("button", { name: /Explore Prototype/ }).first();
   await explore.waitFor({ timeout: 30000 });
   await page.waitForTimeout(2500); // landing loader

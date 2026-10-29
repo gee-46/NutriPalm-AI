@@ -7,7 +7,10 @@
     "verify": "node verify.mjs",
     "verify:remote": "node verify-remote.mjs",
     "e2e": "node e2e/run.mjs",
-    "e2e:stack-selftest": "node e2e-stack/selftest.mjs"
+    "e2e:stack-selftest": "node e2e-stack/selftest.mjs",
+    "verify:upgrade": "node verify-upgrade.mjs",
+    "smoke:staging": "node staging-smoke.mjs",
+    "smoke:selftest": "node staging-smoke.mjs --selftest"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.0",
