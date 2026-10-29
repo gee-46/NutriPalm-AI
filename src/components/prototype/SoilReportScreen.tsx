@@ -10,6 +10,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { uploadSoilReport } from "../../lib/apiClient";
 import type { SoilReportUploadResponsePayload } from "../../lib/apiClient";
 import { SoilNutrientAnalyticsCard } from "../analytics/SoilNutrientAnalyticsCard";
+import { ExtractionReview } from "./ExtractionReview";
 import { getCropBaseline } from "../../constants/cropBaselines";
 
 interface SoilReportScreenProps {
@@ -18,7 +19,7 @@ interface SoilReportScreenProps {
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
 }
 
-type ScreenStage = "upload" | "processing" | "results";
+type ScreenStage = "upload" | "processing" | "review" | "results";
 type ProcessingSubstep = "upload" | "ocr" | "extraction" | "analysis" | "completed";
 
 export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
@@ -60,7 +61,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const healthPercent: number | null = sqiValue ? Math.round(sqiValue * 100) : null;
   const healthStatus = sqiCategory ? sqiCategory.toUpperCase() : "NOT REPORTED";
 
-  type MicroValue = { value: number | null; unit?: string | null; validation?: string };
+  type MicroValue = { value: number | string | null; unit?: string | null; validation?: string };
   const micro = (param: string): MicroValue | null =>
     ocrResult?.micronutrients?.find(m => m.parameter === param) ??
     (savedReport?.micronutrients?.[param] as MicroValue | undefined) ??
@@ -114,6 +115,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         .from("soil_reports")
         .select("*")
         .eq("plot_id", plotId)
+        .not("verification_status", "is", null)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -216,6 +218,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
       size: `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`,
       time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     });
+    handledAnswer.current = null;
     setOcrResult(null);
     setUploadError(null);
     setStage("processing");
@@ -246,7 +249,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        const next = prev + 1;
+        const next = Math.min(prev + 1, 90); // 100% is reserved for the real response
         
         if (next < 25) setActiveSubstep("upload");
         else if (next < 50) setActiveSubstep("ocr");
@@ -254,11 +257,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         else if (next < 95) setActiveSubstep("analysis");
         else setActiveSubstep("completed");
 
-        if (next >= 100) {
-          clearInterval(progressInterval);
-          clearInterval(logInterval);
-          return 100;
-        }
         return next;
       });
     }, 60);
@@ -269,10 +267,34 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     };
   }, [stage, logDatabase]);
 
-  // Handle OCR Completion
+  // A verified soil report now exists (read clearly, or confirmed/corrected by the owner).
+  // Re-read it from the database so what is shown is exactly what was saved (including corrections).
+  const applyVerified = useCallback(
+    async (result: SoilReportUploadResponsePayload) => {
+      onUploadSuccess({ id: result.soil_report_id ?? undefined, plotId: selectedPlotId, persisted: true });
+      if (!selectedPlotId.startsWith("plot-")) {
+        supabase.from("plots").update({ soil_report_attached: true }).eq("id", selectedPlotId).then(() => {});
+      }
+      updatePlot(selectedPlotId, { soilReportAttached: true });
+      await fetchPlotReport(selectedPlotId);
+      setIsUpdatingReport(false);
+      setStage("results");
+      triggerToast(t("p3.review.saved"), "success");
+    },
+    [selectedPlotId, onUploadSuccess, updatePlot, fetchPlotReport, triggerToast, t]
+  );
+
+  // Handle the backend's answer to an upload -- exactly once per answer. The callbacks this effect uses change
+  // identity when the plot store updates (applyVerified itself updates it), so without this guard the effect
+  // would re-run, re-save and re-fetch in a loop until the page froze (found by the browser E2E).
+  const handledAnswer = useRef<unknown>(null);
   useEffect(() => {
-    if (stage !== "processing" || progress < 100) return;
+    if (stage !== "processing") return;
     if (!ocrResult && !uploadError) return;
+    const answer = ocrResult ?? uploadError;
+    if (handledAnswer.current === answer) return;
+    handledAnswer.current = answer;
+    setProgress(100);
 
     if (uploadError) {
       setLogs(prev => [...prev, `[ERROR] ${uploadError}`]);
@@ -282,94 +304,26 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
       return;
     }
 
-    if (ocrResult) {
-      const summarizeField = (label: string, f: SoilReportUploadResponsePayload["nitrogen"]) =>
-        f.value === null
-          ? `[WARN] ${label}: not found in the document.`
-          : `[INFO] Extracted: ${label} = ${f.value}${f.unit ? ` ${f.unit}` : ""} (${Math.round(f.confidence * 100)}% confidence, ${f.validation})`;
+    if (!ocrResult) return;
 
-      setLogs(prev => [
-        ...prev,
-        summarizeField("Nitrogen", ocrResult.nitrogen),
-        summarizeField("Phosphorus", ocrResult.phosphorus),
-        summarizeField("Potassium", ocrResult.potassium),
-        summarizeField("Soil pH", ocrResult.ph),
-        summarizeField("Electrical Conductivity", ocrResult.electrical_conductivity),
-        summarizeField("Organic Carbon", ocrResult.organic_carbon),
-        "[SYSTEM] Diagnostic parameters synchronized successfully."
-      ]);
-
-      const microForStorage = Object.fromEntries(
-        (ocrResult.micronutrients ?? [])
-          .filter(m => m.value !== null)
-          .map(m => [m.parameter, { value: m.value, unit: m.unit, validation: m.validation }])
-      );
-
-      if (ocrResult.persisted) {
-        // The backend only saves a report when every required value was extracted and validated.
-        const fullReportRecord = {
-          id: ocrResult.soil_report_id ?? undefined,
-          plot_id: selectedPlotId,
-          nitrogen_kg_ha: ocrResult.nitrogen.value,
-          phosphorus_kg_ha: ocrResult.phosphorus.value,
-          potassium_kg_ha: ocrResult.potassium.value,
-          organic_carbon_percent: ocrResult.organic_carbon.value,
-          ph: ocrResult.ph.value,
-          electrical_conductivity: ocrResult.electrical_conductivity.value,
-          micronutrients: Object.keys(microForStorage).length ? microForStorage : null,
-          status: "Completed",
-          created_at: new Date().toISOString(),
-        };
-
-        onUploadSuccess({
-          id: fullReportRecord.id,
-          plotId: selectedPlotId,
-          nitrogen: ocrResult.nitrogen,
-          phosphorus: ocrResult.phosphorus,
-          potassium: ocrResult.potassium,
-          organic_carbon: ocrResult.organic_carbon,
-          ph: ocrResult.ph,
-          electrical_conductivity: ocrResult.electrical_conductivity,
-          micronutrients: ocrResult.micronutrients,
-          persisted: true
-        });
-
-        // Update plot flag in DB
-        if (!selectedPlotId.startsWith("plot-")) {
-          supabase
-            .from("plots")
-            .update({ soil_report_attached: true })
-            .eq("id", selectedPlotId)
-            .then(() => {});
-        }
-        updatePlot(selectedPlotId, { soilReportAttached: true });
-
-        setSavedReport(fullReportRecord);
-        setIsUpdatingReport(false);
-        setStage("results");
-        triggerToast("Soil report verified and successfully saved to database.", "success");
-      } else {
-        // Low confidence / missing required values: show what was read, save nothing.
-        onUploadSuccess({
-          id: undefined,
-          plotId: selectedPlotId,
-          nitrogen: ocrResult.nitrogen,
-          phosphorus: ocrResult.phosphorus,
-          potassium: ocrResult.potassium,
-          organic_carbon: ocrResult.organic_carbon,
-          ph: ocrResult.ph,
-          electrical_conductivity: ocrResult.electrical_conductivity,
-          micronutrients: ocrResult.micronutrients,
-          persisted: false
-        });
-
-        setSavedReport(null);
-        setIsUpdatingReport(false);
-        setStage("results");
-        triggerToast("Some required values could not be read. The report was not saved.", "warning");
-      }
+    if (ocrResult.status === "failed") {
+      const why = ocrResult.warnings[0] ? ` ${ocrResult.warnings[0]}` : "";
+      triggerToast(`${t("p3.soil.failed")}${why}`, "warning");
+      setStage("upload");
+      setFile(null);
+      return;
     }
-  }, [stage, progress, ocrResult, uploadError, selectedPlotId, onUploadSuccess, triggerToast, updatePlot]);
+
+    if (ocrResult.status === "needs_review") {
+      setSavedReport(null);
+      setIsUpdatingReport(false);
+      setStage("review");
+      triggerToast(t("p3.soil.needs_review_toast"), "warning");
+      return;
+    }
+
+    void applyVerified(ocrResult);
+  }, [stage, ocrResult, uploadError, triggerToast, applyVerified, t]);
 
   const activeDisplayReport = savedReport || (ocrResult ? {
     nitrogen_kg_ha: ocrResult.nitrogen.value,
@@ -444,6 +398,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
               <select
+                aria-label={t("p3.soil.plot_label")}
                 value={selectedPlotId}
                 onChange={(e) => {
                   setSelectedPlotId(e.target.value);
@@ -503,6 +458,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                 <input
                   ref={fileInputRef}
                   type="file"
+                  aria-label={t("p3.soil.file_label")}
                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                   className="hidden"
                   onChange={handleFileSelected}
@@ -540,43 +496,22 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     {t('soilreportscreen.browse_files')}
                   </span>
                 </div>
-
-                {/* Demo Sample Quick Load */}
-                <div className="flex justify-between items-center bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-xs text-indigo-800 text-left">
-                  <div className="flex gap-2.5 items-start">
-                    <FileText className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-extrabold">{t('soilreportscreen.don_t_have_a_report_pdf_handy')}</p>
-                      <p className="text-[11px] text-indigo-700/80 mt-1">
-                        {t('soilreportscreen.click_below_to_load_a_realistic_sample_s')}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (plots.length === 0) {
-                        triggerToast("Please add a plot first before loading samples.", "warning");
-                        return;
-                      }
-                      try {
-                        const res = await fetch("/sample-soil-report.pdf");
-                        const blob = await res.blob();
-                        const sampleFile = new File([blob], "sample-soil-report.pdf", {
-                          type: "application/pdf",
-                        });
-                        startUpload(sampleFile);
-                      } catch {
-                        triggerToast("Could not load the sample report file.", "warning");
-                      }
-                    }}
-                    disabled={plots.length === 0}
-                    className={`bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-2 rounded-lg cursor-pointer transition-all border-0 shadow-xs shrink-0 ${plots.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
-                  >
-                    {t('soilreportscreen.load_sample_report')}
-                  </button>
-                </div>
-
               </div>
+            </motion.div>
+          )}
+
+          {/* ================= REVIEW: values read but not yet trustworthy ================= */}
+          {stage === "review" && ocrResult && (
+            <motion.div key="review-zone" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <ExtractionReview
+                result={ocrResult}
+                onConfirmed={(r) => void applyVerified(r)}
+                onDiscard={() => {
+                  setOcrResult(null);
+                  setFile(null);
+                  setStage("upload");
+                }}
+              />
             </motion.div>
           )}
 

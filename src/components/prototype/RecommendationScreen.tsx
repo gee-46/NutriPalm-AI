@@ -5,8 +5,8 @@ import { useSavedPlots } from "../../hooks/useSavedPlots";
 import { useTranslation } from "../../translation/useTranslation";
 import { usePlots } from "../../data/plots";
 import { useLatestSoilReport } from "../../hooks/useLatestSoilReport";
-import { createRecommendation, listRecommendations } from "../../lib/apiClient";
-import type { RecommendationRecord } from "../../lib/apiClient";
+import { ApiError, createRecommendation, listRecommendations } from "../../lib/apiClient";
+import type { InsufficientDataPayload, RecommendationRecord } from "../../lib/apiClient";
 import { SUPPORTED_CROP_NAMES, getCropBaseline } from "../../constants/cropBaselines";
 import { RecommendationCard } from "../phase2/RecommendationCard";
 import {
@@ -41,10 +41,11 @@ interface Finding {
 
 interface Dosage {
   nutrient: string;
+  product_code?: string;
   product_display_name: string;
   quantity_kg_per_ha: number;
   quantity_kg_total: number;
-  estimated_cost_inr: number;
+  estimated_cost_inr: number | null;
 }
 
 const STATUS_BADGE: Record<string, BadgeKind> = { deficient: "deficient", adequate: "adequate", surplus: "surplus" };
@@ -81,7 +82,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
-  const [priceInput, setPriceInput] = useState("");
+  const [insufficient, setInsufficient] = useState<InsufficientDataPayload | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const inFlight = useRef(false);
@@ -104,7 +105,8 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
   const refreshHistory = useCallback(async () => {
     try {
-      setHistory(await listRecommendations());
+      // Rows without an engine version were not produced by the recommendation engine.
+      setHistory((await listRecommendations()).filter((r) => !!r.engine_version));
       setHistoryError(null);
     } catch (err) {
       setHistory([]);
@@ -126,15 +128,23 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
   useEffect(() => {
     setSelectedRecId(null);
     setGenerateError(null);
+    setInsufficient(null);
   }, [activePlotId]);
 
   const shown: RecommendationRecord | null = plotHistory.find((r) => r.id === selectedRecId) ?? plotHistory[0] ?? null;
   const findings: Finding[] = Array.isArray(shown?.deficiencies) ? shown!.deficiencies : [];
   const dosages: Dosage[] = Array.isArray(shown?.fertilizer_plan) ? shown!.fertilizer_plan : [];
   const explanation = shown?.explanation ?? null;
-  const yieldPred = shown?.yield_prediction ?? null;
-  const roi = shown?.roi ?? null;
+  const hasObj = (v: unknown): v is Record<string, unknown> =>
+    !!v && typeof v === "object" && Object.keys(v as object).length > 0;
+  // Stored as {} when the cited rule does not support yield/revenue figures: show nothing then.
+  const yieldPred = hasObj(shown?.yield_prediction) ? shown!.yield_prediction : null;
+  const roi = hasObj(shown?.roi) ? shown!.roi : null;
+  const provenance = shown?.provenance ?? null;
   const deficient = findings.filter((f) => f.status === "deficient");
+  const schedule = provenance?.schedule ?? null;
+  const gramsLabel = (nutrient: "n" | "p" | "k", basis: string) =>
+    nutrient === "n" ? "N" : basis === "oxide" ? (nutrient === "p" ? "P2O5" : "K2O") : nutrient.toUpperCase();
   const isStale = !!shown && !!soilReport && shown.soil_report_id !== soilReport.id;
 
   const num = (n: unknown, d = 1) => (typeof n === "number" && Number.isFinite(n) ? n.toLocaleString(locale, { maximumFractionDigits: d }) : t("p2.common.not_available"));
@@ -152,24 +162,31 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
   const handleGenerate = async () => {
     if (inFlight.current) return; // no duplicate requests
     setGenerateError(null);
+    setInsufficient(null);
     if (!isSavedPlot) return setGenerateError(t("p2.nf.err_plot"));
     if (!soilReport) return setGenerateError(t("p2.nf.err_report"));
-    const price = Number(priceInput);
-    if (!priceInput.trim() || !Number.isFinite(price) || price <= 0) return setGenerateError(t("p2.nf.err_price"));
 
     inFlight.current = true;
     setIsProcessing(true);
     try {
-      const created = await createRecommendation({
+      const outcome = await createRecommendation({
         plot_id: activePlotId,
         soil_report_id: soilReport.id,
-        crop_price_per_ton_inr: price,
       });
+      if (outcome.state === "insufficient_data") {
+        setInsufficient(outcome);
+        return;
+      }
       await refreshHistory();
-      setSelectedRecId(created.recommendation_id ?? null);
+      setSelectedRecId(outcome.recommendation_id ?? null);
       notify(t("p2.nf.done", { plot: currentPlot?.name ?? "" }), "success");
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("p2.common.error_generic");
+      const message =
+        err instanceof ApiError && err.code === "soil_report_not_verified"
+          ? t("p3.rec.not_verified")
+          : err instanceof Error
+            ? err.message
+            : t("p2.common.error_generic");
       setGenerateError(message);
       notify(message, "warning");
     } finally {
@@ -218,7 +235,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
       if (dosages.length) {
         line("Fertilizer plan", 12, true);
         dosages.forEach((d) =>
-          line(`${d.product_display_name} (${d.nutrient}): ${d.quantity_kg_per_ha} kg/ha, total ${d.quantity_kg_total} kg, est. ${rs(d.estimated_cost_inr)}`)
+          line(`${d.product_display_name} (${d.nutrient}): ${d.quantity_kg_per_ha} kg/ha, total ${d.quantity_kg_total} kg${d.estimated_cost_inr != null ? `, est. ${rs(d.estimated_cost_inr)}` : ""}`)
         );
         y += 2;
       }
@@ -233,7 +250,11 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
         explanation.warnings.forEach((w: string) => line(`- ${w}`));
       }
       y += 4;
-      line("Disclaimer: advisory generated from the uploaded soil analysis using V1 default agronomic reference values. Verify field conditions before application.", 8);
+      if (provenance) {
+        line(`Basis: engine ${shown.engine_version ?? ""}; rule ${provenance.rule.rule_version} - ${provenance.rule.source.title} (${provenance.rule.source.publisher}, ${provenance.rule.source.year}, ${provenance.rule.source.locator}).`, 8);
+        line(`Not taken into account: ${provenance.not_considered.join(", ")}.`, 8);
+      }
+      line("This is advice generated from a verified soil report. It is not a record of fertilizer applied. Verify field conditions before application.", 8);
       doc.save(`Advisory_${currentPlot.name.replace(/[^\w-]+/g, "_")}.pdf`);
     } catch (err) {
       console.error("PDF generation failed:", err);
@@ -276,20 +297,6 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
               }}
               id="nf-plot"
             />
-            <div className="w-full sm:w-56">
-              <label htmlFor="nf-price" className="mb-1 block text-sm font-bold text-gray-700">{t("p2.nf.price_label")}</label>
-              <input
-                id="nf-price"
-                aria-label={t("p2.nf.price_aria")}
-                type="number"
-                min="0"
-                inputMode="decimal"
-                value={priceInput}
-                onChange={(e) => setPriceInput(e.target.value)}
-                placeholder={t("p2.nf.price_ph")}
-                className="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-bold text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              />
-            </div>
             <button
               type="button"
               onClick={handleGenerate}
@@ -301,7 +308,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
           </div>
         }
       />
-      <p className="-mt-3 text-sm font-medium text-gray-500">{t("p2.nf.price_help")}</p>
+      <p className="-mt-3 text-sm font-medium text-gray-500">{t("p3.rec.generate_note")}</p>
 
       {isProcessing && <Spinner label={t("p2.nf.generating")} />}
 
@@ -331,6 +338,26 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
       )}
 
       {generateError && <ErrorBanner message={generateError} />}
+      {insufficient && (
+        <section role="status" className="space-y-3 rounded-3xl border border-amber-300 bg-amber-50 p-6">
+          <h2 className="text-lg font-extrabold text-amber-950">{t("p3.rec.insufficient_title")}</h2>
+          <p className="text-sm font-medium text-amber-950">{t("p3.rec.insufficient_body")}</p>
+          <ul className="list-disc space-y-1 pl-5 text-sm font-semibold text-amber-950">
+            {insufficient.reasons.map((r) => (
+              <li key={r.code}>{r.message}</li>
+            ))}
+          </ul>
+          <div>
+            <h3 className="text-sm font-extrabold text-amber-950">{t("p3.rec.required")}</h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm font-medium text-amber-950">
+              {insufficient.required.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </div>
+          <p className="text-xs font-medium text-amber-900">{t("p2.lang.backend_note")}</p>
+        </section>
+      )}
       {historyError && <ErrorBanner message={t("p2.nf.err_load", { message: historyError })} onRetry={refreshHistory} />}
       {isStale && <ErrorBanner message={t("p2.nf.stale")} />}
       {lang === "kn" && shown && <p className="text-sm font-medium text-gray-600">{t("p2.lang.backend_note")}</p>}
@@ -432,7 +459,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             )}
           </Block>
 
-          {yieldPred && (
+          {yieldPred && typeof yieldPred.expected_yield_t_ha === "number" && (
             <Block title={t("p2.nf.step.predicted")} tag={t("p2.nf.tag.predicted")}>
               <dl className="grid gap-x-6 p-5 sm:grid-cols-2">
                 <FactRow label={t("p2.nf.yield_current")} value={`${num(yieldPred.current_yield_t_ha)} t/ha`} />
@@ -451,10 +478,92 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             </Block>
           )}
 
+          {schedule && (
+            <Block title={t("p3.rec.schedule.title")} tag={t("p2.nf.tag.recommendation")}>
+              <div className="space-y-2 p-5 text-sm font-medium text-gray-800">
+                <p className="font-bold text-gray-900">
+                  {t("p3.rec.schedule.age", { year: String(schedule.age_year), date: schedule.planting_date ?? t("p2.common.not_available") })}
+                </p>
+                <p>{t("p3.rec.schedule.palms", { count: String(schedule.plant_count), perha: num(schedule.palms_per_ha, 0) })}</p>
+                <ul className="list-disc pl-5">
+                  {(["n", "p", "k"] as const).map((k) => (
+                    <li key={k}>
+                      {t("p3.rec.schedule.dose", {
+                        nutrient: gramsLabel(k, schedule.nutrient_basis[k]),
+                        grams: num(schedule.per_palm_g_per_year[k], 0),
+                      })}
+                    </li>
+                  ))}
+                </ul>
+                {dosages.some((d) => d.product_code && schedule.products_g_per_palm_per_year[d.product_code] != null) && (
+                  <ul className="list-disc pl-5">
+                    {dosages.map((d) =>
+                      d.product_code && schedule.products_g_per_palm_per_year[d.product_code] != null ? (
+                        <li key={d.product_code}>
+                          {t("p3.rec.schedule.product", {
+                            product: d.product_display_name,
+                            grams: num(schedule.products_g_per_palm_per_year[d.product_code], 0),
+                          })}
+                        </li>
+                      ) : null
+                    )}
+                  </ul>
+                )}
+                {schedule.timing_note && <p className="text-gray-700">{t("p3.rec.schedule.timing", { text: schedule.timing_note })}</p>}
+                <p className="text-gray-600">{t("p3.rec.schedule.soil_note")}</p>
+              </div>
+            </Block>
+          )}
+
+          <p role="note" className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm font-bold text-sky-950">
+            {t("p3.rec.not_applied")}{" "}
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate("Digital Twin")}
+                className="cursor-pointer border-0 bg-transparent p-0 font-extrabold text-primary underline"
+              >
+                {t("p3.rec.record")}
+              </button>
+            )}
+          </p>
+
+          {provenance && (
+            <Block title={t("p3.rec.basis")} tag={t("p2.nf.tag.recommendation")}>
+              <div className="space-y-2 p-5 text-sm font-medium text-gray-800">
+                <p>{t("p3.rec.engine", { version: shown.engine_version ?? "", date: when(shown.generated_at) })}</p>
+                <p>
+                  {t("p3.rec.rule", {
+                    version: provenance.rule.rule_version,
+                    title: provenance.rule.source.title,
+                    publisher: provenance.rule.source.publisher,
+                    year: String(provenance.rule.source.year),
+                    locator: provenance.rule.source.locator,
+                  })}
+                </p>
+                <p className="text-gray-600">{t("p3.rec.reviewed", { by: provenance.rule.reviewed_by, date: provenance.rule.reviewed_on })}</p>
+                <p className="font-bold text-gray-900">
+                  {t("p3.rec.soil_used", { status: t(`p3.verified.${provenance.soil_verification_status}`) })}
+                </p>
+                <p>
+                  {Object.entries(provenance.soil_values_used)
+                    .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+                    .join(" · ")}
+                </p>
+                <ul className="list-disc pl-5 text-gray-700">
+                  {provenance.assumptions.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+                <p className="text-gray-700">{t("p3.rec.not_considered", { list: provenance.not_considered.join(", ") })}</p>
+              </div>
+            </Block>
+          )}
+
           <RecommendationCard
             kind="fertilizer"
             title={t("p2.nf.card_title", { plot: currentPlot?.name ?? "" })}
-            badge={deficient.length > 0 ? "deficient" : "adequate"}
+            badge={schedule ? undefined : deficient.length > 0 ? "deficient" : "adequate"}
             date={t("p2.nf.saved", { date: when(shown.created_at) })}
             what={[
               explanation?.summary,

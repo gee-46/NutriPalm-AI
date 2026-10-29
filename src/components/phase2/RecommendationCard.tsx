@@ -1,9 +1,9 @@
 import React from "react";
-import { Bug, CloudSun, FlaskConical, Sprout, Wheat } from "lucide-react";
+import { FlaskConical, Wheat } from "lucide-react";
 import { useTranslation } from "../../translation/useTranslation";
 import { StatusBadge, type BadgeKind } from "./shared";
 
-export type RecommendationKind = "disease" | "suitability" | "nutrient" | "fertilizer" | "weather";
+export type RecommendationKind = "nutrient" | "fertilizer";
 
 export interface CardEvidence {
   description: string;
@@ -39,11 +39,8 @@ export interface RecommendationCardProps {
 }
 
 const ICONS: Record<RecommendationKind, React.ElementType> = {
-  disease: Bug,
-  suitability: Sprout,
   nutrient: FlaskConical,
   fertilizer: Wheat,
-  weather: CloudSun,
 };
 
 const Section: React.FC<{ heading: string; children: React.ReactNode }> = ({ heading, children }) => (
@@ -62,7 +59,7 @@ const Bullets: React.FC<{ items: string[] }> = ({ items }) => (
 );
 
 /**
- * One layout for every kind of advice (disease, crop suitability, nutrient, fertilizer, weather).
+ * One layout for fertilizer / nutrient advice.
  * It answers: what is happening / what to do / how / how much / when / why / what evidence,
  * and shows only the parts the data really contains, followed by limitations and missing inputs.
  * Values are shown exactly as received; nothing is recalculated here.
