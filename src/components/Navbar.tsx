@@ -42,7 +42,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
     { name: "Solutions", href: "#solution" },
     { name: "Features", href: "#features" },
     { name: "Workflow", href: "#workflow" },
-    { name: "Console Preview", href: "#dashboard" },
     { name: "Roadmap", href: "#roadmap" },
   ];
 

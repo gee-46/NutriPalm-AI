@@ -151,7 +151,6 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
               <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.ai_recommendations')}</button>
               <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.digital_twin')}</button>
               <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.farmer_registry')}</button>
-              <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.analytics')}</button>
               <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.roadmap')}</button>
             </div>
           </div>

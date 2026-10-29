@@ -8,7 +8,6 @@ import { ChallengeAndSolution } from './components/ChallengeAndSolution'
 import { Features } from './components/Features'
 import { Workflow } from './components/Workflow'
 import { JourneyAndRoadmap } from './components/JourneyAndRoadmap'
-import { DashboardPreview } from './components/DashboardPreview'
 import { CTA } from './components/CTA'
 import { Contact } from './components/Contact'
 import { Footer } from './components/Footer'
@@ -92,7 +91,6 @@ function App() {
               <ChallengeAndSolution />
               <Features />
               <Workflow />
-              <DashboardPreview />
               <JourneyAndRoadmap />
               <CTA onExplore={handleExplore} />
               <Contact onExplore={handleExplore} />

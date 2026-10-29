@@ -8,7 +8,6 @@ import {
   Cpu,
   FileText,
   FlaskConical,
-  BarChart3,
   Settings,
   User,
   Menu,
@@ -16,9 +15,6 @@ import {
   ChevronRight,
   Bell,
   ArrowLeft,
-  Bug,
-  Sprout,
-  CloudSun,
   History as HistoryIcon
 } from "lucide-react";
 
@@ -29,18 +25,13 @@ import { FarmPlotScreen } from "./prototype/FarmPlotScreen";
 import { DigitalTwinScreen } from "./prototype/DigitalTwinScreen";
 import { SoilReportScreen } from "./prototype/SoilReportScreen";
 import { RecommendationScreen } from "./prototype/RecommendationScreen";
-import { AnalyticsScreen } from "./prototype/AnalyticsScreen";
 import { SettingsScreen } from "./prototype/SettingsScreen";
 import { NotFoundScreen } from "./prototype/NotFoundScreen";
-import { DiseaseScreen } from "./prototype/DiseaseScreen";
-import { CropSuitabilityScreen } from "./prototype/CropSuitabilityScreen";
-import { WeatherAdvisoryScreen } from "./prototype/WeatherAdvisoryScreen";
 import { HistoryScreen } from "./prototype/HistoryScreen";
 import {
   DashboardSkeleton,
   FarmerTableSkeleton,
   SoilReportSkeleton,
-  AnalyticsSkeleton,
   GenericSkeleton
 } from "./prototype/LoadingSkeletons";
 import { LanguageToggle } from "../translation/LanguageToggle";
@@ -238,7 +229,8 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
           const { data: recsData, error: recsError } = await supabase
             .from("recommendations")
             .select("id")
-            .in("plot_id", plotIds);
+            .in("plot_id", plotIds)
+            .not("engine_version", "is", null);
 
           if (!recsError && recsData) {
             recsCount = recsData.length;
@@ -316,19 +308,13 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       key: "p2.nav.group.health",
       items: [
         { name: "Soil Reports", icon: <FileText className={iconCls} /> },
-        { name: "Disease Intelligence", icon: <Bug className={iconCls} /> },
-        { name: "Weather", icon: <CloudSun className={iconCls} /> },
         { name: "Digital Twin", icon: <Cpu className={iconCls} /> }
       ]
     },
-    { key: "p2.nav.group.suitability", items: [{ name: "Crop Suitability", icon: <Sprout className={iconCls} /> }] },
     { key: "p2.nav.group.recommendations", items: [{ name: "Recommendations", icon: <FlaskConical className={iconCls} /> }] },
     {
       key: "p2.nav.group.history",
-      items: [
-        { name: "History", icon: <HistoryIcon className={iconCls} /> },
-        { name: "Analytics", icon: <BarChart3 className={iconCls} /> }
-      ]
+      items: [{ name: "History", icon: <HistoryIcon className={iconCls} /> }]
     },
     {
       key: "p2.nav.group.profile",
@@ -387,8 +373,6 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         return <FarmerTableSkeleton />;
       case "Soil Reports":
         return <SoilReportSkeleton />;
-      case "Analytics":
-        return <AnalyticsSkeleton />;
       default:
         return <GenericSkeleton />;
     }
@@ -451,16 +435,8 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
             onNavigate={changeScreen}
           />
         );
-      case "Disease Intelligence":
-        return <DiseaseScreen onNavigate={changeScreen} />;
-      case "Crop Suitability":
-        return <CropSuitabilityScreen onNavigate={changeScreen} />;
-      case "Weather":
-        return <WeatherAdvisoryScreen onNavigate={changeScreen} />;
       case "History":
         return <HistoryScreen onNavigate={changeScreen} onOpenRecommendation={handleRecommendationNavigate} />;
-      case "Analytics":
-        return <AnalyticsScreen onNavigate={changeScreen} />;
       case "Settings":
         return (
           <SettingsScreen

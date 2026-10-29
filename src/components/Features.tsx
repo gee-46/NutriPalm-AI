@@ -1,7 +1,7 @@
 import { useTranslation } from "../translation/useTranslation";
 import React from "react";
 import { motion } from "framer-motion";
-import { UserCheck, MapPin, Layers, Pipette, Cpu, BarChart2 } from "lucide-react";
+import { UserCheck, MapPin, Layers, Pipette, Cpu } from "lucide-react";
 import { SectionHeading } from "./SectionHeading";
 
 export const Features: React.FC = () => {
@@ -218,45 +218,7 @@ export const Features: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Card 5: Analytics Dashboard (Standard - 1x) */}
-          <motion.div
-            variants={cardVariants}
-            className="glass-card rounded-3xl p-8 flex flex-col justify-between text-left hover:-translate-y-1 transition-all duration-300 group bg-white border border-gray-150 relative overflow-hidden min-h-[360px]"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600">
-                  <BarChart2 className="w-5 h-5" />
-                </div>
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                  
-                                                    {t('features.telemetry_hub')}
-                                                  </span>
-              </div>
-              <h3 className="text-xl font-extrabold text-gray-950 mb-2 group-hover:text-primary transition-colors">
-                
-                                              {t('features.analytics_dashboard')}
-                                            </h3>
-              <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6">
-                
-                                              {t('features.track_historical_yield_progress_curves_r')}
-                                            </p>
-            </div>
 
-            {/* Apple-style UI Preview */}
-            <div className="w-full mt-auto pt-4 border-t border-gray-100">
-              <div className="bg-gray-50 rounded-2xl border border-gray-150 p-3 flex flex-col justify-between h-20">
-                <div className="flex justify-between text-[9px] font-bold text-gray-400">
-                  <span>{t('features.yield_progress')}</span>
-                  <span className="text-emerald-600">+12.4%</span>
-                </div>
-                <svg className="w-full h-8 text-emerald-500" viewBox="0 0 100 40">
-                  <path d="M 0 35 Q 15 20 30 25 T 60 10 T 90 5" fill="none" stroke="currentColor" strokeWidth="2.5" />
-                  <path d="M 0 35 Q 15 20 30 25 T 60 10 T 90 5 L 100 40 L 0 40 Z" fill="rgba(16, 185, 129, 0.05)" />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
 
           {/* Card 6: AI Recommendation Engine (Large - 2x width on desktop) */}
           <motion.div
