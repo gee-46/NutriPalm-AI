@@ -4,6 +4,11 @@ FastAPI authentication and dependency wiring.
 Supports:
 - Legacy Supabase HS256 JWTs using SUPABASE_JWT_SECRET.
 - Supabase asymmetric RS256/ES256 JWTs using the project's JWKS endpoint.
+
+Verification is fail-closed: the algorithm is taken from the allow-list per path (never trusted from the token
+alone), `exp`, `aud` and `sub` are REQUIRED, the audience must be "authenticated", and any problem with the key or
+token (including a key of the wrong type) is a 401, never a 500. Implemented with PyJWT (python-jose and its `ecdsa`
+dependency were removed; see docs/PRODUCTION_READINESS_AUDIT.md section 7).
 """
 
 from __future__ import annotations
@@ -14,7 +19,8 @@ from threading import Lock
 
 import httpx
 from fastapi import Depends, Header, HTTPException, status
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError
 
 from app.config import Settings, get_settings
 
@@ -90,15 +96,22 @@ def _get_jwks(settings: Settings) -> dict:
         return jwks
 
 
+_UNAUTHORIZED = "Invalid or expired authentication token."
+_REQUIRED_CLAIMS = {"require": ["exp", "aud", "sub"]}
+# JWK key type each permitted asymmetric algorithm may be verified with.
+_KEY_TYPE_FOR_ALGORITHM = {"RS256": ("RSA", None), "ES256": ("EC", "P-256")}
+
+
+def _reject(detail: str = _UNAUTHORIZED) -> HTTPException:
+    return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
+
+
 def _decode_token(token: str, settings: Settings) -> dict:
     """Verify a Supabase JWT using HS256 or an asymmetric JWKS key."""
     try:
         header = jwt.get_unverified_header(token)
-    except JWTError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication token.",
-        ) from exc
+    except PyJWTError as exc:
+        raise _reject() from exc
 
     algorithm = header.get("alg")
 
@@ -116,33 +129,24 @@ def _decode_token(token: str, settings: Settings) -> dict:
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 audience="authenticated",
+                options=_REQUIRED_CLAIMS,
             )
-        except JWTError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired authentication token.",
-            ) from exc
+        except PyJWTError as exc:
+            raise _reject() from exc
 
     # Supabase asymmetric signing.
-    if algorithm in {"RS256", "ES256"}:
+    if algorithm in _KEY_TYPE_FOR_ALGORITHM:
         kid = header.get("kid")
 
         if not kid:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication token is missing a signing key id.",
-            )
+            raise _reject("Authentication token is missing a signing key id.")
 
         jwks = _get_jwks(settings)
 
-        key = next(
-            (
-                jwk
-                for jwk in jwks["keys"]
-                if jwk.get("kid") == kid
-            ),
-            None,
-        )
+        def find(keys):
+            return next((jwk for jwk in keys["keys"] if jwk.get("kid") == kid), None)
+
+        key = find(jwks)
 
         if key is None:
             # Refresh once in case a signing key was rotated.
@@ -152,40 +156,29 @@ def _decode_token(token: str, settings: Settings) -> dict:
                 _JWKS_CACHE = None
                 _JWKS_CACHE_EXPIRES_AT = 0.0
 
-            jwks = _get_jwks(settings)
-
-            key = next(
-                (
-                    jwk
-                    for jwk in jwks["keys"]
-                    if jwk.get("kid") == kid
-                ),
-                None,
-            )
+            key = find(_get_jwks(settings))
 
         if key is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication signing key was not found.",
-            )
+            raise _reject("Authentication signing key was not found.")
+
+        # The token's header must not be able to choose a weaker verification than the key allows.
+        kty, crv = _KEY_TYPE_FOR_ALGORITHM[algorithm]
+        if key.get("kty") != kty or (crv is not None and key.get("crv") != crv):
+            raise _reject()
 
         try:
+            public_key = jwt.PyJWK(key).key
             return jwt.decode(
                 token,
-                key,
+                public_key,
                 algorithms=[algorithm],
                 audience="authenticated",
+                options=_REQUIRED_CLAIMS,
             )
-        except JWTError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired authentication token.",
-            ) from exc
+        except PyJWTError as exc:
+            raise _reject() from exc
 
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Unsupported authentication signing algorithm.",
-    )
+    raise _reject("Unsupported authentication signing algorithm.")
 
 
 def get_current_user(
