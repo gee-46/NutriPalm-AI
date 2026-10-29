@@ -22,6 +22,7 @@ from dataclasses import dataclass
 
 from app.exceptions import ValidationFailed
 from app.services import fertilizer_catalog
+from app.services.fertilizer_catalog import NutrientBasis
 from app.services.nutrient_analyzer import (
     NutrientAnalysisResult,
     NutrientFinding,
@@ -36,6 +37,9 @@ class FertilizerDosage:
     quantity_kg_per_ha: float
     quantity_kg_total: float
     estimated_cost_inr: float
+    # Basis the nutrient deficit was expressed in when the product quantity was computed
+    # ("n" = elemental nitrogen, otherwise elemental / oxide for P and K).
+    nutrient_basis: str = "elemental"
 
 
 @dataclass(frozen=True)
@@ -75,6 +79,7 @@ def _create_dosage(
     deficit_kg_ha: float,
     area_ha: float,
     price_overrides: dict[str, float] | None,
+    basis: NutrientBasis,
 ) -> FertilizerDosage | None:
     """Convert a nutrient deficit into a physical fertilizer quantity."""
     if deficit_kg_ha <= 0:
@@ -84,11 +89,9 @@ def _create_dosage(
         nutrient
     )
 
-    nutrient_fraction = {
-        "n": product.n_fraction,
-        "p": product.p_fraction,
-        "k": product.k_fraction,
-    }[nutrient]
+    # kg of nutrient per kg of product ON THE BASIS THE DEFICIT IS EXPRESSED IN (P2O5/K2O-graded
+    # products carry 2.29x / 1.20x less elemental P / K than their label number suggests).
+    nutrient_fraction = product.fraction(nutrient, basis)
 
     if nutrient_fraction <= 0:
         raise ValidationFailed(
@@ -127,91 +130,86 @@ def _create_dosage(
             estimated_cost,
             2,
         ),
+        nutrient_basis="elemental" if nutrient == "n" else basis.value,
     )
+
+
+def plan_from_requirements(
+    *,
+    crop: str,
+    area_ha: float,
+    n_kg_ha: float,
+    p_kg_ha: float,
+    k_kg_ha: float,
+    price_overrides: dict[str, float] | None = None,
+    p_basis: NutrientBasis,
+    k_basis: NutrientBasis,
+) -> DosagePlan:
+    """
+    Turn nutrient quantities to supply (kg/ha; N elemental, P and K on the stated bases) into products.
+
+    Phosphorus is supplied by DAP, which also carries nitrogen; that nitrogen is credited against the nitrogen
+    quantity before urea is calculated, so nothing is counted twice. Potassium comes from MOP.
+    """
+    if area_ha <= 0:
+        raise ValidationFailed("area_ha must be greater than 0")
+
+    dosages: list[FertilizerDosage] = []
+
+    phosphorus_dosage = _create_dosage(
+        nutrient="p",
+        deficit_kg_ha=max(p_kg_ha, 0.0),
+        area_ha=area_ha,
+        price_overrides=price_overrides,
+        basis=p_basis,
+    )
+    n_remaining = max(n_kg_ha, 0.0)
+    if phosphorus_dosage is not None:
+        dosages.append(phosphorus_dosage)
+        dap = fertilizer_catalog.get_product(phosphorus_dosage.product_code)
+        # Credit the nitrogen carried by the DAP.
+        n_remaining = max(n_remaining - phosphorus_dosage.quantity_kg_per_ha * dap.fraction("n"), 0.0)
+
+    nitrogen_dosage = _create_dosage(
+        nutrient="n",
+        deficit_kg_ha=n_remaining,
+        area_ha=area_ha,
+        price_overrides=price_overrides,
+        basis=NutrientBasis.ELEMENTAL,
+    )
+    if nitrogen_dosage is not None:
+        dosages.append(nitrogen_dosage)
+
+    potassium_dosage = _create_dosage(
+        nutrient="k",
+        deficit_kg_ha=max(k_kg_ha, 0.0),
+        area_ha=area_ha,
+        price_overrides=price_overrides,
+        basis=k_basis,
+    )
+    if potassium_dosage is not None:
+        dosages.append(potassium_dosage)
+
+    return DosagePlan(crop=crop, area_ha=area_ha, dosages=dosages)
 
 
 def calculate(
     analysis: NutrientAnalysisResult,
     area_ha: float,
     price_overrides: dict[str, float] | None = None,
+    *,
+    p_basis: NutrientBasis = NutrientBasis.ELEMENTAL,
+    k_basis: NutrientBasis = NutrientBasis.ELEMENTAL,
 ) -> DosagePlan:
-    """
-    Build a fertilizer plan for all deficient nutrients.
-
-    When phosphorus is deficient, DAP is calculated first because DAP also
-    supplies nitrogen. The nitrogen supplied by that DAP quantity is then
-    subtracted from the nitrogen deficit before Urea is calculated.
-    """
-
-    if area_ha <= 0:
-        raise ValidationFailed(
-            "area_ha must be greater than 0"
-        )
-
+    """Build a fertilizer plan for all deficient nutrients (the deficit model; see plan_from_requirements)."""
     findings = analysis.findings
-
-    n_deficit_kg_ha = _get_deficit(findings, "n")
-    p_deficit_kg_ha = _get_deficit(findings, "p")
-    k_deficit_kg_ha = _get_deficit(findings, "k")
-
-    dosages: list[FertilizerDosage] = []
-
-    # ---------------------------------------------------------
-    # 1. Phosphorus -> DAP
-    # ---------------------------------------------------------
-    phosphorus_dosage = _create_dosage(
-        nutrient="p",
-        deficit_kg_ha=p_deficit_kg_ha,
-        area_ha=area_ha,
-        price_overrides=price_overrides,
-    )
-
-    if phosphorus_dosage is not None:
-        dosages.append(phosphorus_dosage)
-
-        # DAP also contributes nitrogen.
-        dap = fertilizer_catalog.get_product(
-            phosphorus_dosage.product_code
-        )
-
-        nitrogen_supplied_by_dap_kg_ha = (
-            phosphorus_dosage.quantity_kg_per_ha
-            * dap.n_fraction
-        )
-
-        n_deficit_kg_ha = max(
-            n_deficit_kg_ha - nitrogen_supplied_by_dap_kg_ha,
-            0.0,
-        )
-
-    # ---------------------------------------------------------
-    # 2. Remaining nitrogen -> Urea
-    # ---------------------------------------------------------
-    nitrogen_dosage = _create_dosage(
-        nutrient="n",
-        deficit_kg_ha=n_deficit_kg_ha,
-        area_ha=area_ha,
-        price_overrides=price_overrides,
-    )
-
-    if nitrogen_dosage is not None:
-        dosages.append(nitrogen_dosage)
-
-    # ---------------------------------------------------------
-    # 3. Potassium -> MOP
-    # ---------------------------------------------------------
-    potassium_dosage = _create_dosage(
-        nutrient="k",
-        deficit_kg_ha=k_deficit_kg_ha,
-        area_ha=area_ha,
-        price_overrides=price_overrides,
-    )
-
-    if potassium_dosage is not None:
-        dosages.append(potassium_dosage)
-
-    return DosagePlan(
+    return plan_from_requirements(
         crop=analysis.crop,
         area_ha=area_ha,
-        dosages=dosages,
+        n_kg_ha=_get_deficit(findings, "n"),
+        p_kg_ha=_get_deficit(findings, "p"),
+        k_kg_ha=_get_deficit(findings, "k"),
+        price_overrides=price_overrides,
+        p_basis=p_basis,
+        k_basis=k_basis,
     )

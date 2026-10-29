@@ -158,9 +158,11 @@ def test_dap_nitrogen_contribution_reduces_urea_requirement():
         if finding.nutrient == "n"
     )
 
-    # DAP contains 46% P and 18% N.
+    # DAP is labelled 18-46-0: 18% N but 46% P2O5. The oil-palm targets are on an ELEMENTAL P basis, and
+    # elemental P is 0.4364 x P2O5 (hand-written here, independent of the module's constant), so DAP carries
+    # 0.46 x 0.4364 = 20.1% elemental P. Dividing by 0.46 (the old behaviour) would under-dose P by 2.29x.
     expected_dap_kg_per_ha = (
-        phosphorus_deficit / 0.46
+        phosphorus_deficit / (0.46 * 0.4364)
     )
 
     nitrogen_supplied_by_dap = (
@@ -176,15 +178,9 @@ def test_dap_nitrogen_contribution_reduces_urea_requirement():
         remaining_nitrogen_deficit / 0.46
     )
 
-    assert urea.quantity_kg_per_ha == pytest.approx(
-        round(expected_urea_kg_per_ha, 2),
-        rel=1e-6,
-    )
-
-    assert urea.quantity_kg_per_ha == pytest.approx(
-        round(expected_urea_kg_per_ha, 2),
-        rel=1e-6,
-    )
+    assert dap.quantity_kg_per_ha == pytest.approx(expected_dap_kg_per_ha, rel=1e-3)
+    assert dap.nutrient_basis == "elemental"
+    assert urea.quantity_kg_per_ha == pytest.approx(expected_urea_kg_per_ha, rel=1e-3)
 
     # Urea must be lower than it would be if DAP's
     # nitrogen contribution were ignored.
