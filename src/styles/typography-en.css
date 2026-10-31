@@ -1,0 +1,139 @@
+/*
+ * English typography - the ONLY place the English type identity is defined (design system "Botanical").
+ *
+ *   Display   EB Garamond regular + italic   statements, page titles, section headings: close-set, regular weight, tightly tracked
+ *   Reading   Instrument Sans (variable)     paragraphs, metadata, controls, tables, forms
+ *   Mono      IBM Plex Mono                  logs and code only
+ *
+ * All fonts are self-hosted (bundled by Vite from @fontsource): no third-party font request for English.
+ *
+ * KANNADA IS NOT TOUCHED. Every rule below is scoped to html[lang="en"]. The Kannada block in index.css
+ * (html[lang="kn"] ... 'Noto Sans Kannada', 'Geist' ...), the Geist/Noto imports and the @theme font variables are unchanged,
+ * so Kannada text keeps its typeface, weight, size and spacing. supabase/tests/e2e/kn-typography.mjs proves it by comparing
+ * computed styles with a baseline taken before this file existed.
+ */
+@import "@fontsource/eb-garamond/latin-400.css";
+@import "@fontsource/eb-garamond/latin-400-italic.css";
+@import "@fontsource-variable/instrument-sans/wght.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+
+html[lang="en"] {
+  --dp-typography-display: "Botanical Garamond", "EB Garamond", Georgia, "Times New Roman", serif;
+  --dp-typography-reading: "Botanical Instrument", "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dp-typography-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* ---- reading text: Instrument Sans, relaxed leading ---------------------------------------------------------------------- */
+html[lang="en"] body {
+  font-family: var(--dp-typography-reading);
+  font-size: var(--dp-typography-body, 16px);
+  line-height: 1.55;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* Tailwind's font-sans resolves to Geist through the (unchanged) @theme variable; in English it is the reading face instead. */
+html[lang="en"] .font-sans {
+  font-family: var(--dp-typography-reading);
+}
+
+/* ---- display: EB Garamond, regular weight, tight tracking, close-set ----------------------------------------------------- */
+html[lang="en"] h1,
+html[lang="en"] .font-display,
+html[lang="en"] main:not(.app-main) h2 {
+  font-family: var(--dp-typography-display);
+  font-optical-sizing: auto;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  line-height: 1.06;
+}
+/* Garamond is small on the body: give titles the scale it needs. */
+html[lang="en"] .app-main h1 {
+  font-size: clamp(2.2rem, 1.7rem + 1.5vw, 3.1rem);
+}
+html[lang="en"] main:not(.app-main) h2 {
+  font-size: clamp(2.3rem, 1.6rem + 2.3vw, 3.75rem);
+}
+/* The wide opening: large, regular, close-set. (Capped below the system's 142px: it shares the row with the product visual.) */
+html[lang="en"] #home h1 {
+  font-size: clamp(3.25rem, 1.4rem + 5.4vw, 6.25rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+/* A selected italic word takes the clay accent. */
+html[lang="en"] h1 em,
+html[lang="en"] h2 em,
+html[lang="en"] .text-gradient {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ---- dense headings inside the application stay in the reading face (Garamond is too light at card-title sizes) ------------ */
+html[lang="en"] .app-main h2,
+html[lang="en"] .app-main h3,
+html[lang="en"] .app-main h4,
+html[lang="en"] h3,
+html[lang="en"] h4,
+html[lang="en"] h5,
+html[lang="en"] h6 {
+  font-family: var(--dp-typography-reading);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+
+/* ---- weights: restrained. 400 text / 500 emphasis / 600 labels and controls (nothing heavier is used) -------------------- */
+html[lang="en"] .font-semibold,
+html[lang="en"] .font-bold,
+html[lang="en"] .font-extrabold,
+html[lang="en"] .font-black {
+  font-weight: 600;
+}
+html[lang="en"] .font-medium {
+  font-weight: 500;
+}
+
+/* Display headings keep the regular weight even when a utility class asks for bold (only regular and italic Garamond are loaded). */
+html[lang="en"] h1[class],
+html[lang="en"] .font-display[class],
+html[lang="en"] main:not(.app-main) h2[class] {
+  font-weight: 400;
+}
+
+/* ---- tracked uppercase labels: sparing, quiet, never smaller than 11px ------------------------------------------------------ */
+html[lang="en"] .tracking-widest {
+  letter-spacing: 0.1em;
+}
+html[lang="en"] .tracking-wider {
+  letter-spacing: 0.07em;
+}
+html[lang="en"] .tracking-wide {
+  letter-spacing: 0.035em;
+}
+html[lang="en"] .tracking-tight {
+  letter-spacing: -0.012em;
+}
+html[lang="en"] [class*="text-[8px]"],
+html[lang="en"] [class*="text-[9px]"],
+html[lang="en"] [class*="text-[10px]"] {
+  font-size: 11px;
+}
+
+/* ---- numbers: aligned digits wherever values are compared (soil values, doses, dates, units) ------------------------------ */
+html[lang="en"] table,
+html[lang="en"] dl,
+html[lang="en"] input[type="number"],
+html[lang="en"] .tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1, "kern" 1;
+}
+
+/* ---- mono: logs and code only --------------------------------------------------------------------------------------------- */
+html[lang="en"] .font-mono,
+html[lang="en"] code,
+html[lang="en"] pre,
+html[lang="en"] kbd {
+  font-family: var(--dp-typography-mono);
+  font-weight: 400;
+}

@@ -1,19 +1,82 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap');
 @import "tailwindcss";
+@import "./styles/typography-en.css";
+@import "./styles/botanical.css";
 
 @theme {
-  --color-primary: #2E7D32;
-  --color-secondary: #66BB6A;
-  --color-accent: #A5D6A7;
-  --color-bg-light: #F8FAF7;
-  --color-text-main: #1F2937;
-  --color-ink: #1F2937;
+  --color-primary: #1E382C;
+  --color-secondary: #8A9D78;
+  --color-accent: #CDD6BD;
+  --color-bg-light: #F5EFDF;
+  --color-text-main: #1E382C;
+  --color-ink: #1E382C;
   
   --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
   --font-display: 'Geist', system-ui, -apple-system, sans-serif;
   --font-mono: 'Geist Mono', monospace;
   
+  /* ---- Botanical palette (design tokens: ground #F5EFDF, ink #1E382C, panel #E0E5D3, warm #E6CBB8, accent #895440) ---------------- */
+  --color-primary-dark: #2C4D3C;
+  --color-clay: #895440;
+  --color-warm: #E6CBB8;
+  --color-sage: #E0E5D3;
+  --color-rule: #D4D0BD;
+  --color-ornament: #B5BAA4;
+  --color-field-line: #697961;
+  --color-white: #FCF9F0;                 /* cards sit just above the cream ground */
+
+  /* neutrals: warm paper -> forest ink (replaces the cool grays everywhere, text contrast kept >= 4.5:1 from 500 up on cream) */
+  --color-gray-50: #F8F3E6;
+  --color-gray-100: #F0EADA;
+  --color-gray-200: #E4DDC9;
+  --color-gray-300: #D4D0BD;
+  --color-gray-400: #6C765F;
+  --color-gray-500: #5B6653;
+  --color-gray-600: #4A5845;
+  --color-gray-700: #3F5146;
+  --color-gray-800: #2C4338;
+  --color-gray-900: #1E382C;
+  --color-gray-950: #17301F;
+  --color-slate-800: #24392F;
+  --color-slate-900: #1A2F25;
+  --color-slate-950: #142820;
+
+  /* greens: sage panels to forest (replaces the bright emerald/green) */
+  --color-emerald-50: #EEF1E4;
+  --color-emerald-100: #E0E5D3;
+  --color-emerald-200: #CDD6BD;
+  --color-emerald-300: #AEBB9B;
+  --color-emerald-400: #8A9D78;
+  --color-emerald-500: #5F7D63;
+  --color-emerald-600: #3F6048;
+  --color-emerald-700: #2F4F3B;
+  --color-emerald-800: #26453A;
+  --color-emerald-900: #1E382C;
+  --color-emerald-950: #16291F;
+  --color-green-50: #EEF1E4;
+  --color-green-100: #E0E5D3;
+  --color-green-200: #CDD6BD;
+  --color-green-300: #AEBB9B;
+  --color-green-400: #8A9D78;
+  --color-green-500: #5F7D63;
+  --color-green-600: #3F6048;
+  --color-green-700: #2F4F3B;
+  --color-green-800: #26453A;
+  --color-green-900: #1E382C;
+  --color-green-950: #16291F;
+
+  /* broad, soft panels */
+  --radius-2xl: 1.4rem;
+  --radius-3xl: 2.125rem;
+
+  --shadow-xs: 0 1px 2px rgba(30, 56, 44, 0.05);
+  --shadow-sm: 0 1px 3px rgba(30, 56, 44, 0.07);
+  --shadow-md: 0 4px 12px rgba(30, 56, 44, 0.07);
+  --shadow-lg: 0 8px 22px rgba(30, 56, 44, 0.08);
+  --shadow-xl: 0 12px 30px rgba(30, 56, 44, 0.09);
+  --shadow-2xl: 0 18px 44px rgba(30, 56, 44, 0.11);
+
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float-delayed 8s ease-in-out infinite;
   --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
@@ -39,8 +102,8 @@ html {
 
 body {
   font-family: 'Geist', system-ui, -apple-system, sans-serif;
-  background-color: #F8FAF7;
-  color: #1F2937;
+  background-color: #F5EFDF;
+  color: #1E382C;
   overflow-x: hidden;
 }
 
@@ -52,7 +115,7 @@ body {
   background: #F1F5F0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #C3D8C2;
+  background: #CDD6BD;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -62,45 +125,17 @@ body {
 /* Premium Gradient Overlays */
 .bg-mesh {
   background-image: 
-    radial-gradient(at 0% 0%, rgba(165, 214, 167, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(102, 187, 106, 0.15) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(46, 125, 50, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(205, 214, 189, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(138, 157, 120, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(30, 56, 44, 0.05) 0px, transparent 50%);
 }
 
-.bg-premium-green {
-  background: linear-gradient(135deg, #1B4D22 0%, #2E7D32 50%, #1b3d1f 100%);
-}
 
-.text-gradient {
-  background: linear-gradient(135deg, #1b4d22 0%, #2E7D32 70%, #66BB6A 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
 
-.glass-nav {
-  background: rgba(248, 250, 247, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(46, 125, 50, 0.06);
-}
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(46, 125, 50, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
-}
 
-.glass-card-hover:hover {
-  border-color: rgba(46, 125, 50, 0.2);
-  box-shadow: 0 10px 40px rgba(46, 125, 50, 0.06);
-}
 
 /* Glow effects */
-.glow-green {
-  box-shadow: 0 0 50px 10px rgba(46, 125, 50, 0.1);
-}
 
 /* Seed growing animation classes */
 .seed-leaf-path {

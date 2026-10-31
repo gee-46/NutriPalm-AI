@@ -1,0 +1,119 @@
+/*
+ * Botanical - shared tokens and surfaces (both languages). Colours, radii, borders and motion only:
+ * typography lives in typography-en.css (English only) and Kannada typography is untouched.
+ *
+ * The palette itself reaches every screen through the Tailwind theme variables in index.css (@theme), so existing
+ * utility classes (bg-white, text-gray-*, bg-emerald-*, rounded-3xl ...) now render cream, forest, sage and clay.
+ */
+:root {
+  --dp-color-ground: #f5efdf;
+  --dp-color-ink: #1e382c;
+  --dp-color-panel: #e0e5d3;
+  --dp-color-warm-field: #e6cbb8;
+  --dp-color-accent: #895440;
+  --dp-color-rule: #d4d0bd;
+  --dp-color-ornament-line: #b5baa4;
+  --dp-color-field-line: #697961;
+  --dp-typography-body: 16px;
+  --dp-typography-metadata: 13px;
+  --dp-typography-label: 12px;
+  --dp-typography-compact-leading: 1.5;
+  --dp-typography-label-tracking: 0.12em;
+  --dp-spacing-panel-inline: max(30px, 4.2cqw);
+  --dp-radius-panel: 34px;
+  --dp-radius-panel-narrow: 27px;
+  --dp-radius-round: 50%;
+  --dp-border-hairline: 1px;
+  --dp-motion-interaction: 0.35s;
+  --dp-motion-easing: ease;
+}
+
+body {
+  background-color: var(--dp-color-ground);
+  color: var(--dp-color-ink);
+}
+
+/* A faint paper grain across the page. Static, behind nothing that needs to be read, never intercepts input. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.22  0 0 0 0 0.17  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* Focus is always visible. */
+:focus-visible {
+  outline: 2px solid var(--dp-color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- surfaces: solid paper and sage, hairline rules; no glass, no glow, no gradient text --------------------------------- */
+.glass-nav {
+  background: rgba(245, 239, 223, 0.96);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: var(--dp-border-hairline) solid var(--dp-color-rule);
+}
+.glass-card {
+  background: #fcf9f0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: var(--dp-border-hairline) solid var(--dp-color-rule);
+  box-shadow: none;
+}
+.glass-card-hover:hover {
+  border-color: var(--dp-color-ornament-line);
+  box-shadow: none;
+}
+.glow-green {
+  box-shadow: none;
+}
+.bg-premium-green {
+  background: var(--dp-color-ink);
+}
+.text-gradient {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: currentColor;
+  color: var(--dp-color-accent);
+}
+
+/* ---- controls: soft, rounded, a slight lift on hover -------------------------------------------------------------------- */
+.bg-primary,
+.bg-premium-green {
+  transition: background-color var(--dp-motion-interaction) var(--dp-motion-easing),
+    color var(--dp-motion-interaction) var(--dp-motion-easing), transform var(--dp-motion-interaction) var(--dp-motion-easing);
+}
+button.bg-primary:hover:not(:disabled),
+a.bg-primary:hover {
+  transform: translateY(-1px);
+}
+[class*="hover:bg-[#2C4D3C]"]:hover:not(:disabled) {
+  background-color: #2c4d3c;
+}
+
+/* ---- sprig ornament: thin, quiet, decorative ---------------------------------------------------------------------------- */
+.botanical-sprig {
+  color: var(--dp-color-ornament-line);
+  pointer-events: none;
+}
+
+/* ---- reduced motion: no transitions, no hover transforms, nothing drifts or pulses -------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+  button.bg-primary:hover:not(:disabled),
+  a.bg-primary:hover {
+    transform: none;
+  }
+}
