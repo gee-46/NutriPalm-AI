@@ -145,7 +145,7 @@ export const JourneyAndRoadmap: React.FC = () => {
                 {/* Node Top info */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-extrabold text-[#2E7D32] bg-[#2E7D32]/10 px-3 py-1 rounded-full uppercase tracking-wider">
+                    <span className="text-[10px] font-extrabold text-[#1E382C] bg-[#1E382C]/10 px-3 py-1 rounded-full uppercase tracking-wider">
                       
                                                       {t('journeyandroadmap.phase')} {item.step}
                     </span>
@@ -165,9 +165,9 @@ export const JourneyAndRoadmap: React.FC = () => {
       </section>
 
       {/* ================= SECTION 2: FUTURE ROADMAP ================= */}
-      <section className="py-24 bg-[#F8FAF7] relative overflow-hidden border-t border-gray-100">
+      <section className="py-24 bg-[#F5EFDF] relative overflow-hidden border-t border-gray-100">
         {/* Soft Background Highlight */}
-        <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#66BB6A]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#8A9D78]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           
@@ -191,12 +191,12 @@ export const JourneyAndRoadmap: React.FC = () => {
                 transition={{ duration: 0.5, delay: idx * 0.05 }}
               >
                 {/* Glow border highlight */}
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-gray-100 group-hover:bg-[#2E7D32]/50 transition-colors duration-300" />
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-gray-100 group-hover:bg-[#1E382C]/50 transition-colors duration-300" />
                 
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     {/* Icon Circle */}
-                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-[#2E7D32] group-hover:bg-[#2E7D32]/5 transition-colors duration-300">
+                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-[#1E382C] group-hover:bg-[#1E382C]/5 transition-colors duration-300">
                       {item.icon}
                     </div>
                     {/* Status Badge */}

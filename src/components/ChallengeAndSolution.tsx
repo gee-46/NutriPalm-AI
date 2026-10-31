@@ -17,7 +17,7 @@ export const ChallengeAndSolution: React.FC = () => {
       badge: t('challenge.problem1_badge')
     },
     {
-      icon: <FileText className="w-5 h-5 text-[#2E7D32]" />,
+      icon: <FileText className="w-5 h-5 text-[#1E382C]" />,
       title: t('challenge.problem2_title'),
       description: t('challenge.problem2_desc'),
       badge: t('challenge.problem2_badge')
@@ -63,7 +63,7 @@ export const ChallengeAndSolution: React.FC = () => {
     <div className="relative">
       
       {/* ================= SECTION 1: THE CHALLENGE ================= */}
-      <section id="problem" className="py-24 bg-[#F8FAF7] relative overflow-hidden border-t border-gray-100">
+      <section id="problem" className="py-24 bg-[#F5EFDF] relative overflow-hidden border-t border-gray-100">
         {/* Background Grid Accent */}
         <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
 
@@ -90,10 +90,10 @@ export const ChallengeAndSolution: React.FC = () => {
                 variants={cardVariants}
                 className="glass-card rounded-2xl p-8 flex flex-col text-left hover:scale-[1.01] transition-transform duration-300 group relative overflow-hidden bg-white"
               >
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-gray-100 group-hover:bg-[#2E7D32]/50 transition-colors duration-300" />
+                <div className="absolute top-0 left-0 w-full h-[3px] bg-gray-100 group-hover:bg-[#1E382C]/50 transition-colors duration-300" />
                 
                 <div className="flex items-center justify-between mb-6">
-                  <div className="p-3 rounded-xl bg-[#F8FAF7] border border-gray-150 group-hover:bg-[#2E7D32]/5 transition-colors duration-300">
+                  <div className="p-3 rounded-xl bg-[#F5EFDF] border border-gray-150 group-hover:bg-[#1E382C]/5 transition-colors duration-300">
                     {prob.icon}
                   </div>
                   <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
@@ -116,7 +116,7 @@ export const ChallengeAndSolution: React.FC = () => {
 
       {/* ================= STORYTELLING PIPELINE BRIDGE ================= */}
       <div className="py-12 bg-white flex flex-col items-center justify-center relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAF7] to-white pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F5EFDF] to-white pointer-events-none" />
         
         {/* Animated Connecting Bridge */}
         <motion.div
@@ -126,19 +126,19 @@ export const ChallengeAndSolution: React.FC = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <div className="h-10 w-[1.5px] bg-gradient-to-b from-red-400 to-[#2E7D32]" />
-          <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.2em] bg-[#2E7D32]/5 border border-[#2E7D32]/10 px-3 py-1 rounded-full">
+          <div className="h-10 w-[1.5px] bg-gradient-to-b from-red-400 to-[#1E382C]" />
+          <span className="text-[10px] font-extrabold text-[#1E382C] uppercase tracking-[0.2em] bg-[#1E382C]/5 border border-[#1E382C]/10 px-3 py-1 rounded-full">
             
                                   {t('challengeandsolution.bridging_the_gap')}
                                 </span>
-          <div className="h-10 w-[1.5px] bg-[#2E7D32]" />
+          <div className="h-10 w-[1.5px] bg-[#1E382C]" />
         </motion.div>
       </div>
 
       {/* ================= SECTION 2: OUR SOLUTION ================= */}
       <section id="solution" className="py-24 bg-white relative overflow-hidden">
         {/* Soft Background Highlight */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#66BB6A]/5 rounded-full filter blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#8A9D78]/5 rounded-full filter blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           
@@ -155,7 +155,7 @@ export const ChallengeAndSolution: React.FC = () => {
             {/* Horizontal Line on Desktop */}
             <div className="absolute top-1/2 left-10 right-10 h-0.5 bg-gray-100 transform -translate-y-12 hidden lg:block z-0 overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-[#2E7D32] via-[#66BB6A] to-[#A5D6A7]"
+                className="h-full bg-gradient-to-r from-[#1E382C] via-[#8A9D78] to-[#CDD6BD]"
                 initial={{ x: "-100%" }}
                 whileInView={{ x: "0%" }}
                 viewport={{ once: true }}
@@ -176,9 +176,9 @@ export const ChallengeAndSolution: React.FC = () => {
                 >
                   {/* Circle Orb */}
                   <div className="relative mb-6 group cursor-pointer">
-                    <div className="absolute -inset-2 bg-[#2E7D32]/10 rounded-2xl filter blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute -inset-2 bg-[#1E382C]/10 rounded-2xl filter blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
-                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-b from-green-50 to-green-100/50 border border-green-150 flex items-center justify-center text-[#2E7D32] shadow-sm group-hover:scale-105 transition-transform duration-300">
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-b from-green-50 to-green-100/50 border border-green-150 flex items-center justify-center text-[#1E382C] shadow-sm group-hover:scale-105 transition-transform duration-300">
                       {step.icon}
                     </div>
 

@@ -25,10 +25,10 @@ export const Features: React.FC = () => {
   };
 
   return (
-    <section id="features" className="py-28 bg-[#F8FAF7] relative overflow-hidden border-t border-gray-100">
+    <section id="features" className="py-28 bg-[#F5EFDF] relative overflow-hidden border-t border-gray-100">
       
       {/* Background decorations */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-[#66BB6A]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-[#8A9D78]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
@@ -57,7 +57,7 @@ export const Features: React.FC = () => {
           >
             <div>
               <div className="flex items-center justify-between mb-6">
-                <div className="p-3 rounded-2xl bg-green-50 border border-green-100 text-[#2E7D32]">
+                <div className="p-3 rounded-2xl bg-green-50 border border-green-100 text-[#1E382C]">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
@@ -252,7 +252,7 @@ export const Features: React.FC = () => {
                   <span className="text-[9px] font-bold text-gray-450 uppercase">{t('features.prescribed_action')}</span>
                   <span className="text-xs font-black text-gray-800 mt-0.5">{t('features.apply_npk_19_19_19_target_45kg_acre')}</span>
                 </div>
-                <button className="px-4 py-2 bg-[#2E7D32] hover:bg-[#235F26] text-white text-[10px] font-bold rounded-xl transition-all shadow-md flex-shrink-0">
+                <button className="px-4 py-2 bg-[#1E382C] hover:bg-[#2C4D3C] text-white text-[10px] font-bold rounded-xl transition-all shadow-md flex-shrink-0">
                   
                                                     {t('features.apply_prescription')}
                                                   </button>

@@ -35,7 +35,7 @@ export const Workflow: React.FC = () => {
               <span className="text-[10px] text-gray-400">{t('workflow.dakshina_kannada_09')}</span>
             </div>
           </div>
-          <span className="text-[9px] font-bold text-[#2E7D32] bg-[#2E7D32]/10 border border-[#2E7D32]/20 px-2 py-0.5 rounded-full">{t('workflow.onboarded')}</span>
+          <span className="text-[9px] font-bold text-[#1E382C] bg-[#1E382C]/10 border border-[#1E382C]/20 px-2 py-0.5 rounded-full">{t('workflow.onboarded')}</span>
         </div>
       )
     },
@@ -46,8 +46,8 @@ export const Workflow: React.FC = () => {
       description: t('workflow.steps.1.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full h-20 relative overflow-hidden flex items-center justify-center">
-          <svg className="w-14 h-14 text-[#2E7D32] drop-shadow-sm" viewBox="0 0 100 100" fill="none">
-            <polygon points="10,20 90,15 80,85 20,70" fill="rgba(46, 125, 50, 0.08)" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+          <svg className="w-14 h-14 text-[#1E382C] drop-shadow-sm" viewBox="0 0 100 100" fill="none">
+            <polygon points="10,20 90,15 80,85 20,70" fill="rgba(30, 56, 44, 0.08)" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
             <circle cx="10" cy="20" r="3.5" fill="currentColor" />
             <circle cx="90" cy="15" r="3.5" fill="currentColor" />
             <circle cx="80" cy="85" r="3.5" fill="currentColor" />
@@ -100,7 +100,7 @@ export const Workflow: React.FC = () => {
       description: t('workflow.steps.4.desc'),
       visual: (
         <div className="bg-gray-50/80 rounded-2xl border border-gray-150 p-3 w-full h-20 flex items-center justify-center overflow-hidden">
-          <svg className="w-full h-12 text-[#2E7D32]" viewBox="0 0 100 40">
+          <svg className="w-full h-12 text-[#1E382C]" viewBox="0 0 100 40">
             <line x1="10" y1="20" x2="30" y2="10" stroke="currentColor" strokeWidth="1" />
             <line x1="10" y1="20" x2="30" y2="30" stroke="currentColor" strokeWidth="1" />
             <line x1="30" y1="10" x2="70" y2="10" stroke="currentColor" strokeWidth="1.5" />
@@ -143,7 +143,7 @@ export const Workflow: React.FC = () => {
             <span>{t('workflow.yield_estimate')}</span>
             <span className="text-green-700">+12%</span>
           </div>
-          <svg className="w-full h-8 text-[#2E7D32]" viewBox="0 0 100 40">
+          <svg className="w-full h-8 text-[#1E382C]" viewBox="0 0 100 40">
             <path d="M 0 35 Q 25 10 50 30 T 100 5" fill="none" stroke="currentColor" strokeWidth="2.5" />
           </svg>
         </div>
@@ -152,10 +152,10 @@ export const Workflow: React.FC = () => {
   ];
 
   return (
-    <section id="workflow" className="py-28 bg-[#F8FAF7] relative overflow-hidden border-t border-gray-100">
+    <section id="workflow" className="py-28 bg-[#F5EFDF] relative overflow-hidden border-t border-gray-100">
       
       {/* Background decorations */}
-      <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#66BB6A]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#8A9D78]/5 to-transparent rounded-full filter blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
@@ -199,7 +199,7 @@ export const Workflow: React.FC = () => {
                    C 600 1080, 200 1080, 200 1200 
                    C 200 1320, 600 1320, 600 1440 
                    C 600 1550, 400 1550, 400 1660"
-                stroke="#2E7D32"
+                stroke="#1E382C"
                 strokeWidth="3"
                 strokeLinecap="round"
                 style={{ pathLength }}
@@ -228,7 +228,7 @@ export const Workflow: React.FC = () => {
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as any }}
                   >
                     <div className="glass-card rounded-3xl p-6 md:p-8 bg-white border border-gray-150 relative overflow-hidden group">
-                      <span className="text-[10px] font-bold text-[#2E7D32] bg-[#2E7D32]/10 border border-[#2E7D32]/15 px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-4">
+                      <span className="text-[10px] font-bold text-[#1E382C] bg-[#1E382C]/10 border border-[#1E382C]/15 px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-4">
                         {step.tag}
                       </span>
                       <h3 className="text-xl font-extrabold text-gray-950 mb-3 group-hover:text-primary transition-colors">
@@ -246,8 +246,8 @@ export const Workflow: React.FC = () => {
                       className="w-12 h-12 rounded-full border border-gray-200 bg-white shadow-md text-gray-600 flex items-center justify-center"
                       whileInView={{
                         scale: [0.8, 1.1, 1],
-                        borderColor: ["#E5E7EB", "#2E7D32"],
-                        color: ["#4B5563", "#2E7D32"]
+                        borderColor: ["#E5E7EB", "#1E382C"],
+                        color: ["#4B5563", "#1E382C"]
                       }}
                       viewport={{ once: true, margin: "-100px" }}
                       transition={{ duration: 0.5, delay: 0.1 }}

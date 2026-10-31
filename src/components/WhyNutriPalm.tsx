@@ -44,7 +44,7 @@ export const WhyNutriPalm: React.FC = () => {
     const { t } = useTranslation();
   const stats = [
     {
-      icon: <Brain className="w-5 h-5 text-[#2E7D32]" />,
+      icon: <Brain className="w-5 h-5 text-[#1E382C]" />,
       title: "AI-Driven Decisions",
       description: "Our recommendations use deep agricultural neural nets for highly precise farm forecasts.",
       value: 98,
@@ -112,7 +112,7 @@ export const WhyNutriPalm: React.FC = () => {
                 </div>
                 
                 {/* Stat Label */}
-                <span className="text-[10px] font-bold text-[#2E7D32] uppercase tracking-wider block mb-4">
+                <span className="text-[10px] font-bold text-[#1E382C] uppercase tracking-wider block mb-4">
                   {stat.statLabel}
                 </span>
 

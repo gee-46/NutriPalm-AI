@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
   };
 
   return (
-    <footer className="bg-gray-950 text-gray-400 pt-20 pb-8 relative overflow-hidden">
+    <footer className="bg-primary text-[#CDD6BD] pt-20 pb-8 relative overflow-hidden">
       {/* Top Border with Green Gradient */}
       <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-primary/10 via-primary to-primary/10" />
 
@@ -54,14 +54,14 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
         <div 
           className="absolute inset-0"
           style={{
-            backgroundImage: "radial-gradient(#2E7D32 0.75px, transparent 0.75px)",
+            backgroundImage: "radial-gradient(#1E382C 0.75px, transparent 0.75px)",
             backgroundSize: "24px 24px"
           }}
         />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 pb-16 text-left border-b border-gray-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 pb-16 text-left border-b border-[#697961]/40">
           
           {/* Column 1: Brand Info */}
           <div className="lg:col-span-4 flex flex-col items-start">
@@ -73,24 +73,24 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-lg font-extrabold tracking-tight text-white transition-colors group-hover:text-primary">
+              <span className="text-lg font-extrabold tracking-tight text-white transition-colors group-hover:text-[#E6CBB8]">
                 
-                                              {t('footer.nutripalm')} <span className="text-primary font-black">{t('footer.ai')}</span>
+                                              {t('footer.nutripalm')} <span className="text-[#CDD6BD] font-black">{t('footer.ai')}</span>
               </span>
             </a>
             
-            <span className="inline-flex items-center gap-1 text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider mb-3">
+            <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#CDD6BD] bg-[#F5EFDF]/10 px-2 py-0.5 rounded-full uppercase tracking-wider mb-3">
               <Sparkles className="w-2.5 h-2.5" />
               
                                         {t('footer.incubated_startup')}
                                       </span>
             
-            <p className="text-xs font-bold text-gray-300 mb-4 leading-normal">
+            <p className="text-xs font-bold text-[#E0E5D3] mb-4 leading-normal">
               
                                         {t('footer.an_ai_powered_precision_agriculture_plat')}
                                       </p>
             
-            <p className="text-2xs md:text-xs text-gray-500 leading-relaxed mb-6 font-normal">
+            <p className="text-2xs md:text-xs text-[#AEBB9B] leading-relaxed mb-6 font-normal">
               
                                         {t('footer.empowering_farmers_with_artificial_intel')}
                                       </p>
@@ -102,21 +102,21 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t('footer.linkedin_profile')}
-                className="p-2.5 bg-gray-900 hover:bg-primary hover:text-white rounded-xl text-gray-400 transition-all duration-300 hover:-translate-y-0.5"
+                className="p-2.5 bg-[#2C4D3C] hover:bg-[#2C4D3C] hover:text-white rounded-xl text-[#CDD6BD] transition-all duration-300 hover:-translate-y-0.5"
               >
                 <LinkedInIcon className="w-4 h-4" />
               </a>
               <a 
                 href="mailto:samruddhiorganics24@gmail.com"
                 aria-label={t('footer.send_email')}
-                className="p-2.5 bg-gray-900 hover:bg-primary hover:text-white rounded-xl text-gray-400 transition-all duration-300 hover:-translate-y-0.5"
+                className="p-2.5 bg-[#2C4D3C] hover:bg-[#2C4D3C] hover:text-white rounded-xl text-[#CDD6BD] transition-all duration-300 hover:-translate-y-0.5"
               >
                 <Mail className="w-4 h-4" />
               </a>
               <a 
                 href="tel:+919663541622"
                 aria-label={t('footer.call_office')}
-                className="p-2.5 bg-gray-900 hover:bg-primary hover:text-white rounded-xl text-gray-400 transition-all duration-300 hover:-translate-y-0.5"
+                className="p-2.5 bg-[#2C4D3C] hover:bg-[#2C4D3C] hover:text-white rounded-xl text-[#CDD6BD] transition-all duration-300 hover:-translate-y-0.5"
               >
                 <Phone className="w-4 h-4" />
               </a>
@@ -130,13 +130,13 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
                                         {t('footer.quick_links')}
                                       </h4>
             <nav className="flex flex-col gap-3">
-              <a href="#home" onClick={(e) => handleScrollTo(e, "#home")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.home')}</a>
-              <a href="#about" onClick={(e) => handleScrollTo(e, "#about")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.about')}</a>
-              <a href="#features" onClick={(e) => handleScrollTo(e, "#features")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.features')}</a>
-              <a href="#workflow" onClick={(e) => handleScrollTo(e, "#workflow")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.workflow')}</a>
-              <a href="#technology" onClick={(e) => handleScrollTo(e, "#technology")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.technology')}</a>
-              <a href="#leadership" onClick={(e) => handleScrollTo(e, "#leadership")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.leadership')}</a>
-              <a href="#contact" onClick={(e) => handleScrollTo(e, "#contact")} className="text-xs text-gray-450 hover:text-primary transition-colors cursor-pointer">{t('footer.contact')}</a>
+              <a href="#home" onClick={(e) => handleScrollTo(e, "#home")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.home')}</a>
+              <a href="#about" onClick={(e) => handleScrollTo(e, "#about")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.about')}</a>
+              <a href="#features" onClick={(e) => handleScrollTo(e, "#features")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.features')}</a>
+              <a href="#workflow" onClick={(e) => handleScrollTo(e, "#workflow")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.workflow')}</a>
+              <a href="#technology" onClick={(e) => handleScrollTo(e, "#technology")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.technology')}</a>
+              <a href="#leadership" onClick={(e) => handleScrollTo(e, "#leadership")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.leadership')}</a>
+              <a href="#contact" onClick={(e) => handleScrollTo(e, "#contact")} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors cursor-pointer">{t('footer.contact')}</a>
             </nav>
           </div>
 
@@ -147,11 +147,11 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
                                         {t('footer.console_prototype')}
                                       </h4>
             <div className="flex flex-col gap-3">
-              <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.prototype_dashboard')}</button>
-              <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.ai_recommendations')}</button>
-              <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.digital_twin')}</button>
-              <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.farmer_registry')}</button>
-              <button onClick={onExplore} className="text-xs text-gray-450 hover:text-primary transition-colors text-left cursor-pointer">{t('footer.roadmap')}</button>
+              <button onClick={onExplore} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors text-left cursor-pointer">{t('footer.prototype_dashboard')}</button>
+              <button onClick={onExplore} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors text-left cursor-pointer">{t('footer.ai_recommendations')}</button>
+              <button onClick={onExplore} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors text-left cursor-pointer">{t('footer.digital_twin')}</button>
+              <button onClick={onExplore} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors text-left cursor-pointer">{t('footer.farmer_registry')}</button>
+              <button onClick={onExplore} className="text-xs text-[#CDD6BD] hover:text-[#E6CBB8] transition-colors text-left cursor-pointer">{t('footer.roadmap')}</button>
             </div>
           </div>
 
@@ -161,9 +161,9 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
               
                                         {t('footer.contact_us')}
                                       </h4>
-            <div className="flex flex-col gap-4 text-xs text-gray-450">
+            <div className="flex flex-col gap-4 text-xs text-[#CDD6BD]">
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <MapPin className="w-4 h-4 text-[#CDD6BD] mt-0.5 shrink-0" />
                 <span className="leading-relaxed">
                   <strong>{t('footer.samruddhi_organics')}</strong><br />
                   
@@ -175,28 +175,28 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
                                                   </span>
               </div>
               <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-primary shrink-0" />
-                <a href="tel:+919663541622" className="hover:text-primary transition-colors">
+                <Phone className="w-4 h-4 text-[#CDD6BD] shrink-0" />
+                <a href="tel:+919663541622" className="hover:text-[#E6CBB8] transition-colors">
                   +91 96635 41622
                 </a>
               </div>
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-primary shrink-0" />
-                <a href="mailto:samruddhiorganics24@gmail.com" className="hover:text-primary transition-colors break-all">
+                <Mail className="w-4 h-4 text-[#CDD6BD] shrink-0" />
+                <a href="mailto:samruddhiorganics24@gmail.com" className="hover:text-[#E6CBB8] transition-colors break-all">
                   
                                                     {t('footer.samruddhiorganics24_gmail_com')}
                                                   </a>
               </div>
               <div className="flex items-start gap-3">
-                <LinkedInIcon className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <LinkedInIcon className="w-4 h-4 text-[#CDD6BD] mt-0.5 shrink-0" />
                 <a 
                   href="https://www.linkedin.com/company/samruddhiorganic/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors break-all"
+                  className="hover:text-[#E6CBB8] transition-colors break-all"
                 >
                   <strong>{t('footer.linkedin')}</strong><br />
-                  <span className="text-[11px] text-gray-500">{t('footer.linkedin_com_company_samruddhiorganic')}</span>
+                  <span className="text-[11px] text-[#AEBB9B]">{t('footer.linkedin_com_company_samruddhiorganic')}</span>
                 </a>
               </div>
             </div>
@@ -205,19 +205,19 @@ export const Footer: React.FC<FooterProps> = ({ onExplore }) => {
         </div>
 
         {/* Bottom Row */}
-        <div className="pt-8 flex flex-col items-center justify-center text-center gap-1.5 border-b border-gray-900/50 pb-6 text-2xs md:text-xs text-gray-500">
+        <div className="pt-8 flex flex-col items-center justify-center text-center gap-1.5 border-b border-[#697961]/40 pb-6 text-2xs md:text-xs text-[#AEBB9B]">
           <p className="font-normal">
             
                                   {t('footer.2026_samruddhi_organics_all_rights_reser')}
                                 </p>
-          <p className="font-bold text-gray-400">
+          <p className="font-bold text-[#CDD6BD]">
             
                                   {t('footer.nutripalm_ai_ai_powered_precision_agricu')}
                                 </p>
         </div>
 
         {/* Incubation Tag centered */}
-        <div className="pt-6 text-center text-gray-600 text-3xs md:text-2xs uppercase tracking-widest font-extrabold">
+        <div className="pt-6 text-center text-[#AEBB9B] text-3xs md:text-2xs uppercase tracking-widest font-extrabold">
           
                             {t('footer.nutripalm_ai_prototype_v1_0_developed_fo')}
                           </div>

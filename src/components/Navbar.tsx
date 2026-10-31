@@ -113,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
           <button
             onClick={handleExploreClick}
             disabled={isInitializing}
-            className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-[#235F26] active:scale-95 transition-all duration-300 cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-[#2C4D3C] active:scale-95 transition-all duration-300 cursor-pointer ${
               isInitializing
                 ? "shadow-emerald-500/50 scale-[0.98] glow-green"
                 : "shadow-md shadow-primary/10 hover:shadow-primary/20"
@@ -185,7 +185,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onExplore }) => {
                   handleExploreClick(e);
                 }}
                 disabled={isInitializing}
-                className={`w-full flex items-center justify-center gap-1.5 px-6 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#235F26] transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-center gap-1.5 px-6 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#2C4D3C] transition-all cursor-pointer ${
                   isInitializing
                     ? "shadow-emerald-500/50 scale-[0.98] glow-green"
                     : "shadow-lg shadow-primary/15"

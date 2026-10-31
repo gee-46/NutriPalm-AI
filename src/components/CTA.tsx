@@ -1,7 +1,6 @@
 import { useTranslation } from "../translation/useTranslation";
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 interface CTAProps {
   onExplore?: () => void;
@@ -24,32 +23,17 @@ export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
   };
 
   return (
-    <section id="cta" className="py-24 bg-white relative overflow-hidden border-t border-gray-100">
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+    <section id="cta" className="relative overflow-hidden bg-[#F5EFDF] pt-12 md:pt-20">
+      <div className="relative z-10">
         
         {/* Main CTA Panel */}
-        <motion.div
-          className="bg-premium-green rounded-[32px] px-8 py-16 md:py-24 text-center relative overflow-hidden shadow-2xl shadow-green-950/20"
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        <div
+          className="bg-primary rounded-t-[50%_6rem] px-8 pt-24 pb-24 md:pt-32 md:pb-28 text-center relative overflow-hidden"
         >
-          {/* Subtle Top Radial Lighting Overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_60%)] pointer-events-none" />
-          
-          {/* Wave/Grid decoration in background */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-
-          {/* Interactive Floating Sparkle */}
-          <div className="absolute top-10 right-10 opacity-30 animate-pulse-slow">
-            <Sparkles className="w-12 h-12 text-white" />
-          </div>
-
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
             
             {/* Small Tag */}
-            <span className="text-[10px] font-bold text-[#A5D6A7] uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full border border-white/15 mb-6">
+            <span className="text-[10px] font-bold text-[#CDD6BD] uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full border border-white/15 mb-6">
               
                                         {t('cta.get_incubation_access')}
                                       </span>
@@ -63,7 +47,7 @@ export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
                                       </h2>
 
             {/* Subtext */}
-            <p className="text-sm md:text-base text-[#C3D8C2] leading-relaxed mb-8 max-w-lg">
+            <p className="text-sm md:text-base text-[#CDD6BD] leading-relaxed mb-8 max-w-lg">
               
                                         {t('cta.explore_the_digital_twin_prototype_of_nu')}
                                       </p>
@@ -80,15 +64,15 @@ export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
                 }
               }}
               disabled={isInitializing}
-              className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold transition-all duration-300 cursor-pointer ${
+              className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full text-base font-semibold transition-all duration-300 cursor-pointer ${
                 isInitializing
-                  ? "bg-white text-[#1B4D22] shadow-[#A5D6A7]/50 scale-[0.98]"
-                  : "text-[#1B4D22] bg-[#A5D6A7] hover:bg-white active:scale-95 shadow-lg shadow-black/10 hover:shadow-[#A5D6A7]/25"
+                  ? "bg-white text-[#142820] shadow-[#CDD6BD]/50 scale-[0.98]"
+                  : "text-[#142820] bg-[#CDD6BD] hover:bg-white active:scale-95 shadow-lg shadow-black/10 hover:shadow-[#CDD6BD]/25"
               }`}
             >
               {isInitializing ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-[#1B4D22] border-t-transparent rounded-full animate-spin shrink-0" />
+                  <span className="w-4 h-4 border-2 border-[#142820] border-t-transparent rounded-full animate-spin shrink-0" />
                   
                                                     {t('cta.initializing_nutripalm_ai')}
                                                   </>
@@ -101,7 +85,7 @@ export const CTA: React.FC<CTAProps> = ({ onExplore }) => {
               )}
             </button>
           </div>
-        </motion.div>
+        </div>
 
       </div>
     </section>

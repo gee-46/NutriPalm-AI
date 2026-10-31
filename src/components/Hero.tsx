@@ -1,4 +1,5 @@
 import { useTranslation } from "../translation/useTranslation";
+import { BotanicalSprig } from "./BotanicalSprig";
 import React, { useState } from "react";
 import { ArrowRight, Play, CheckCircle, Shield, Sparkles, Compass, Sprout, Database } from "lucide-react";
 import { motion } from "framer-motion";
@@ -29,8 +30,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
       className="relative min-h-screen pt-32 pb-20 flex items-center bg-mesh overflow-hidden"
     >
       {/* Background Decorative Blobs */}
-      <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-gradient-to-br from-[#A5D6A7]/20 via-[#66BB6A]/5 to-transparent rounded-full filter blur-3xl pointer-events-none animate-pulse-slow" />
-      <div className="absolute bottom-10 left-10 w-[500px] h-[500px] bg-gradient-to-tr from-[#2E7D32]/5 to-transparent rounded-full filter blur-3xl pointer-events-none animate-pulse-slow" />
+      <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-gradient-to-br from-[#CDD6BD]/20 via-[#8A9D78]/5 to-transparent rounded-full filter blur-3xl pointer-events-none animate-pulse-slow" />
+      <div className="absolute bottom-10 left-10 w-[500px] h-[500px] bg-gradient-to-tr from-[#1E382C]/5 to-transparent rounded-full filter blur-3xl pointer-events-none animate-pulse-slow" />
 
       {/* Topographic Lines Agriculture Backdrop (SVG) */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -110,7 +111,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
           
           {/* Eyebrow Branding Badge */}
           <motion.div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-[#2E7D32] bg-[#2E7D32]/10 border border-[#2E7D32]/15 mb-8 shadow-sm shadow-[#2E7D32]/5"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-[#1E382C] bg-[#1E382C]/10 border border-[#1E382C]/15 mb-8 shadow-sm shadow-[#1E382C]/5"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as any }}
@@ -163,7 +164,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                 }
               }}
               disabled={isInitializing}
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#235F26] active:scale-95 transition-all duration-300 cursor-pointer ${
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-white bg-primary hover:bg-[#2C4D3C] active:scale-95 transition-all duration-300 cursor-pointer ${
                 isInitializing
                   ? "shadow-emerald-500/50 scale-[0.98] glow-green"
                   : "shadow-lg shadow-primary/20 hover:shadow-primary/30"
@@ -201,7 +202,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             transition={{ duration: 1, delay: 0.4 }}
           >
             <div className="flex gap-3 items-start">
-              <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-[#2E7D32]">
+              <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-[#1E382C]">
                 <Compass className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
@@ -211,7 +212,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             </div>
 
             <div className="flex gap-3 items-start">
-              <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-[#2E7D32]">
+              <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-[#1E382C]">
                 <Sprout className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
@@ -221,7 +222,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             </div>
 
             <div className="flex gap-3 items-start">
-              <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-[#2E7D32]">
+              <div className="p-2 rounded-lg bg-green-50 border border-green-100 text-[#1E382C]">
                 <Database className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
@@ -234,6 +235,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
 
         {/* Right Side Mockup */}
         <div className="lg:col-span-6 flex justify-center relative">
+          <BotanicalSprig className="pointer-events-none absolute -left-4 bottom-2 hidden h-48 w-auto lg:block" />
+          <BotanicalSprig flip className="pointer-events-none absolute -right-4 -top-6 hidden h-32 w-auto lg:block" />
           <motion.div
             className="relative w-full max-w-lg"
             initial={{ opacity: 0, scale: 0.9, rotateY: 5 }}
@@ -241,7 +244,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] as any }}
           >
             {/* Ambient Background Aura */}
-            <div className="absolute -inset-4 bg-gradient-to-tr from-[#2E7D32]/10 to-[#66BB6A]/10 rounded-[32px] filter blur-xl opacity-70" />
+            <div className="absolute -inset-4 bg-gradient-to-tr from-[#1E382C]/10 to-[#8A9D78]/10 rounded-[32px] filter blur-xl opacity-70" />
 
             {/* Main Floating Mockup Container */}
             <motion.div
@@ -271,7 +274,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
               {/* Digital Twin Graphic Area */}
               <div className="relative rounded-xl bg-gray-50 border border-gray-150 p-4 mb-4 h-48 flex items-center justify-center overflow-hidden">
                 {/* Simulated Farm Map Overlay */}
-                <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#2E7D32_1px,transparent_1px)] [background-size:16px_16px]" />
+                <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#1E382C_1px,transparent_1px)] [background-size:16px_16px]" />
                 
                 {/* 3D-like Farmland Outline (SVG) */}
                 <svg className="w-full h-full text-primary" viewBox="0 0 200 120" fill="none">
@@ -282,8 +285,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                   {/* Plot shapes */}
                   <motion.polygon
                     points="30,80 80,40 160,50 120,100"
-                    fill="rgba(46, 125, 50, 0.08)"
-                    stroke="rgba(46, 125, 50, 0.7)"
+                    fill="rgba(30, 56, 44, 0.08)"
+                    stroke="rgba(30, 56, 44, 0.7)"
                     strokeWidth="1.5"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
@@ -291,8 +294,8 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                   />
 
                   {/* Hotspots / Indicators */}
-                  <circle cx="80" cy="40" r="3" fill="#2E7D32" />
-                  <circle cx="120" cy="100" r="3" fill="#2E7D32" />
+                  <circle cx="80" cy="40" r="3" fill="#1E382C" />
+                  <circle cx="120" cy="100" r="3" fill="#1E382C" />
                   
                   <motion.circle
                     cx="100"
@@ -342,7 +345,7 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
                 ease: "easeInOut",
               }}
             >
-              <div className="p-2 rounded-lg bg-[#2E7D32]/10 text-[#2E7D32]">
+              <div className="p-2 rounded-lg bg-[#1E382C]/10 text-[#1E382C]">
                 <Shield className="w-5 h-5" />
               </div>
               <div className="flex flex-col text-left">

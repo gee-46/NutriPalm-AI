@@ -97,7 +97,7 @@ export const About: React.FC = () => {
   };
 
   return (
-    <section id="about" className="py-28 bg-[#F8FAF7] relative overflow-hidden border-t border-gray-100">
+    <section id="about" className="py-28 bg-[#F5EFDF] relative overflow-hidden border-t border-gray-100">
       
       {/* Background contour line decoration */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none select-none">
@@ -148,7 +148,7 @@ export const About: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] as any }}
           >
-            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] mb-4">
+            <span className="text-[10px] font-extrabold text-[#1E382C] uppercase tracking-[0.16em] mb-4">
               
                                         {t('about.venture_overview')}
                                       </span>
@@ -234,7 +234,7 @@ export const About: React.FC = () => {
                       }}
                     />
                     {/* Fallback Initials */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 text-[#2E7D32] font-black text-2xl z-0">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 text-[#1E382C] font-black text-2xl z-0">
                       {member.initials}
                     </div>
                   </div>
@@ -264,7 +264,7 @@ export const About: React.FC = () => {
         {/* SECTION 3: SECTION TRANSITION */}
         <div className="mb-28">
           <div className="text-center mb-12">
-            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-widest block mb-2">{t('about.evolution_path')}</span>
+            <span className="text-[10px] font-extrabold text-[#1E382C] uppercase tracking-widest block mb-2">{t('about.evolution_path')}</span>
             <h3 className="text-2xl font-extrabold text-gray-950 tracking-tight">{t('about.from_experience_to_innovation')}</h3>
           </div>
 
@@ -312,7 +312,7 @@ export const About: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as any }}
           >
-            <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] mb-4">{t('about.the_solution_engine')}</span>
+            <span className="text-[10px] font-extrabold text-[#1E382C] uppercase tracking-[0.16em] mb-4">{t('about.the_solution_engine')}</span>
             <h2 className="text-3xl md:text-5xl font-extrabold text-gray-950 tracking-tight leading-tight mb-6">
               
                                         {t('about.why_nutripalm_ai')}
@@ -329,8 +329,8 @@ export const About: React.FC = () => {
                                       </p>
 
             <div className="p-4 rounded-xl border border-green-150/40 bg-gradient-to-r from-green-50/50 to-green-100/10 flex items-start gap-3">
-              <ShieldCheck className="w-5 h-5 text-[#2E7D32] flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-[#2E7D32] font-semibold leading-relaxed">
+              <ShieldCheck className="w-5 h-5 text-[#1E382C] flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-[#1E382C] font-semibold leading-relaxed">
                 
                                               {t('about.by_building_a_digital_profile_for_each_f')}
                                             </p>
@@ -346,7 +346,7 @@ export const About: React.FC = () => {
             </div>
 
             <div className="p-5 rounded-2xl border border-gray-150 bg-white">
-              <EyeOff className="w-5 h-5 text-[#2E7D32] mb-4" />
+              <EyeOff className="w-5 h-5 text-[#1E382C] mb-4" />
               <h4 className="text-sm font-bold text-gray-900 mb-2">{t('about.unclear_soil_reports')}</h4>
               <p className="text-[11px] text-gray-500 leading-relaxed">{t('about.laboratory_pdf_reports_present_raw_value')}</p>
             </div>
@@ -387,7 +387,7 @@ export const About: React.FC = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.08 }}
                 >
-                  <div className="w-10 h-10 rounded-full border border-gray-150 bg-white shadow-sm flex items-center justify-center text-xs font-bold text-[#2E7D32] mb-3">
+                  <div className="w-10 h-10 rounded-full border border-gray-150 bg-white shadow-sm flex items-center justify-center text-xs font-bold text-[#1E382C] mb-3">
                     {idx + 1}
                   </div>
                   <span className="text-xs font-bold text-gray-950 text-center tracking-tight mb-1">
@@ -413,7 +413,7 @@ export const About: React.FC = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <span className="text-[10px] font-extrabold text-[#2E7D32] uppercase tracking-[0.16em] block mb-4">{t('about.the_impact_goal')}</span>
+          <span className="text-[10px] font-extrabold text-[#1E382C] uppercase tracking-[0.16em] block mb-4">{t('about.the_impact_goal')}</span>
           <h3 className="text-2xl md:text-3xl font-extrabold text-gray-950 mb-4">
             
                                   {t('about.transforming_agriculture_through_intelli')}
@@ -424,7 +424,7 @@ export const About: React.FC = () => {
                                 </p>
           <button
             onClick={() => handleScrollTo("#dashboard")}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-[#235F26] active:scale-95 shadow-md shadow-primary/10 transition-all duration-200"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-[#2C4D3C] active:scale-95 shadow-md shadow-primary/10 transition-all duration-200"
           >
             
                                   {t('about.explore_nutripalm_ai_prototype')}

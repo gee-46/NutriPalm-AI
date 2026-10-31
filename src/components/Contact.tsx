@@ -79,7 +79,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
   };
 
   return (
-    <section id="contact" className="py-24 relative overflow-hidden bg-[#F8FAF7]">
+    <section id="contact" className="py-24 relative overflow-hidden bg-[#F5EFDF]">
       {/* Background soft gradient blobs and grid */}
       <div className="absolute inset-0 z-0 opacity-40">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -87,7 +87,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "radial-gradient(#2E7D32 0.75px, transparent 0.75px)",
+            backgroundImage: "radial-gradient(#1E382C 0.75px, transparent 0.75px)",
             backgroundSize: "24px 24px",
             opacity: 0.15
           }}
@@ -309,7 +309,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                 {/* Submit button */}
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-[#43A047] text-white font-extrabold px-6 py-3.5 rounded-xl hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all duration-300 text-sm flex items-center justify-center gap-2 group cursor-pointer"
+                  className="w-full bg-gradient-to-r from-primary to-[#5F7D63] text-white font-extrabold px-6 py-3.5 rounded-xl hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all duration-300 text-sm flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
                   
@@ -347,7 +347,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
                 }
               }}
               disabled={isInitializing}
-              className={`px-6 py-3 bg-gradient-to-r from-primary to-[#43A047] text-white font-extrabold text-xs md:text-sm rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 ${
+              className={`px-6 py-3 bg-gradient-to-r from-primary to-[#5F7D63] text-white font-extrabold text-xs md:text-sm rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2 ${
                 isInitializing
                   ? "shadow-emerald-500/50 scale-[0.98] glow-green"
                   : "hover:shadow-md hover:brightness-105 active:scale-[0.98]"
@@ -383,7 +383,7 @@ export const Contact: React.FC<ContactProps> = ({ onExplore }) => {
               key={toast.id}
               className={`p-4 rounded-2xl border backdrop-blur-lg shadow-xl pointer-events-auto flex items-start gap-3 w-80 md:w-96 text-left ${
                 toast.type === "success"
-                  ? "bg-white/90 border-[#A5D6A7] text-[#1B5E20]"
+                  ? "bg-white/90 border-[#CDD6BD] text-[#1E382C]"
                   : "bg-white/90 border-blue-200 text-blue-800"
               }`}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}

@@ -32,7 +32,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
     <AnimatePresence>
       {stage < 3 && (
         <motion.div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8FAF7] px-6 select-none"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F5EFDF] px-6 select-none"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as any }}
@@ -54,7 +54,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                     cx="50"
                     cy="70"
                     r="4"
-                    fill="#2E7D32"
+                    fill="#1E382C"
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
@@ -67,7 +67,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                     {/* Main Stem - grows straight up */}
                     <motion.path
                       d="M50 70 L50 35"
-                      stroke="#2E7D32"
+                      stroke="#1E382C"
                       strokeWidth="3.5"
                       strokeLinecap="round"
                       initial={{ pathLength: 0 }}
@@ -79,7 +79,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                     <motion.path
                       d="M50 35 C38 32 30 18 48 15 C50 24 49 32 50 35"
                       fill="url(#leafGradientLeft)"
-                      stroke="#2E7D32"
+                      stroke="#1E382C"
                       strokeWidth="1.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -106,7 +106,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                     <motion.path
                       d="M50 35 C62 32 70 18 52 15 C50 24 51 32 50 35"
                       fill="url(#leafGradientRight)"
-                      stroke="#66BB6A"
+                      stroke="#8A9D78"
                       strokeWidth="1.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -138,21 +138,21 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
                   >
-                    <path d="M48 15 L40 10" stroke="#A5D6A7" strokeWidth="1" strokeLinecap="round" />
-                    <path d="M52 15 L60 10" stroke="#A5D6A7" strokeWidth="1" strokeLinecap="round" />
-                    <circle cx="40" cy="10" r="1.5" fill="#A5D6A7" />
-                    <circle cx="60" cy="10" r="1.5" fill="#A5D6A7" />
+                    <path d="M48 15 L40 10" stroke="#CDD6BD" strokeWidth="1" strokeLinecap="round" />
+                    <path d="M52 15 L60 10" stroke="#CDD6BD" strokeWidth="1" strokeLinecap="round" />
+                    <circle cx="40" cy="10" r="1.5" fill="#CDD6BD" />
+                    <circle cx="60" cy="10" r="1.5" fill="#CDD6BD" />
                   </motion.g>
                 )}
 
                 <defs>
                   <linearGradient id="leafGradientLeft" x1="50" y1="35" x2="30" y2="15" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#2E7D32" />
-                    <stop offset="100%" stopColor="#66BB6A" />
+                    <stop offset="0%" stopColor="#1E382C" />
+                    <stop offset="100%" stopColor="#8A9D78" />
                   </linearGradient>
                   <linearGradient id="leafGradientRight" x1="50" y1="35" x2="70" y2="15" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#66BB6A" />
-                    <stop offset="100%" stopColor="#A5D6A7" />
+                    <stop offset="0%" stopColor="#8A9D78" />
+                    <stop offset="100%" stopColor="#CDD6BD" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -161,17 +161,17 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
             {/* Typography Stack */}
             <div className="flex flex-col items-center">
               <motion.h1
-                className="text-3xl font-extrabold tracking-tight text-[#1F2937] mb-1"
+                className="text-3xl font-extrabold tracking-tight text-[#1E382C] mb-1"
                 initial={{ opacity: 0, y: 10 }}
                 animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
                 
-                                              {t('loader.nutripalm')} <span className="text-[#2E7D32]">{t('loader.ai')}</span>
+                                              {t('loader.nutripalm')} <span className="text-[#1E382C]">{t('loader.ai')}</span>
               </motion.h1>
 
               <motion.p
-                className="text-[10px] font-bold tracking-[0.2em] text-[#66BB6A] uppercase mb-4"
+                className="text-[10px] font-bold tracking-[0.2em] text-[#8A9D78] uppercase mb-4"
                 initial={{ opacity: 0 }}
                 animate={stage >= 2 ? { opacity: 0.8 } : { opacity: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -198,7 +198,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
                   ) : stage >= 2 ? (
                     <motion.p
                       key="slogan2"
-                      className="text-[#2E7D32] font-semibold text-xs tracking-wider"
+                      className="text-[#1E382C] font-semibold text-xs tracking-wider"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -215,7 +215,7 @@ export const Loader: React.FC<LoaderProps> = ({ onComplete }) => {
             {/* Progress Bar */}
             <div className="w-48 h-[3px] bg-[#E5E7EB] rounded-full overflow-hidden mt-2 relative">
               <motion.div
-                className="h-full bg-gradient-to-r from-[#2E7D32] via-[#66BB6A] to-[#A5D6A7]"
+                className="h-full bg-gradient-to-r from-[#1E382C] via-[#8A9D78] to-[#CDD6BD]"
                 initial={{ width: "0%" }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 3.6, ease: "easeInOut" }}
