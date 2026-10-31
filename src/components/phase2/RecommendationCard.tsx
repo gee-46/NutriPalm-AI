@@ -51,7 +51,7 @@ const Section: React.FC<{ heading: string; children: React.ReactNode }> = ({ hea
 );
 
 const Bullets: React.FC<{ items: string[] }> = ({ items }) => (
-  <ul className="list-disc space-y-1 pl-5 text-sm font-medium leading-relaxed text-gray-700">
+  <ul className="list-disc space-y-1 pl-5 text-sm font-medium leading-relaxed text-gray-700" data-server-text>
     {items.map((x, i) => (
       <li key={i}>{x}</li>
     ))}

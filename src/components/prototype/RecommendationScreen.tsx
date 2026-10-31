@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlaskConical } from "lucide-react";
-import { jsPDF } from "jspdf";
 import { useSavedPlots } from "../../hooks/useSavedPlots";
 import { useTranslation } from "../../translation/useTranslation";
 import { usePlots } from "../../data/plots";
 import { useLatestSoilReport } from "../../hooks/useLatestSoilReport";
 import { ApiError, createRecommendation, listRecommendations } from "../../lib/apiClient";
 import type { InsufficientDataPayload, RecommendationRecord } from "../../lib/apiClient";
-import { SUPPORTED_CROP_NAMES, getCropBaseline } from "../../constants/cropBaselines";
+import { useReportReadings } from "../../hooks/useReportReadings";
+import { EmptyReportError, buildAssessmentPdf, buildRecommendationPdf, downloadPdf } from "../../lib/recommendationPdf";
 import { RecommendationCard } from "../phase2/RecommendationCard";
 import {
   EmptyState,
@@ -17,7 +17,6 @@ import {
   PlotSelect,
   Spinner,
   StatusBadge,
-  UnavailableState,
   type BadgeKind,
 } from "../phase2/shared";
 
@@ -27,6 +26,8 @@ interface RecommendationScreenProps {
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
   farmerName?: string;
   onNavigate?: (screen: string) => void;
+  /** Bumped by the app when a verified soil report was saved, so this screen refreshes without a reload. */
+  reportVersion?: number;
 }
 
 interface Finding {
@@ -49,6 +50,14 @@ interface Dosage {
 }
 
 const STATUS_BADGE: Record<string, BadgeKind> = { deficient: "deficient", adequate: "adequate", surplus: "surplus" };
+/** Label key and unit of each value the engine reports having used (provenance.soil_values_used). */
+const SOIL_VALUE_LABEL: Record<string, [string, string]> = {
+  nitrogen_kg_ha: ["p2.nutrient.n", "kg/ha"],
+  phosphorus_kg_ha: ["p2.nutrient.p", "kg/ha"],
+  potassium_kg_ha: ["p2.nutrient.k", "kg/ha"],
+  organic_carbon_percent: ["p2.nutrient.oc", "%"],
+  ph: ["p2.nutrient.ph", ""],
+};
 const NUTRIENT_KEY: Record<string, string> = { nitrogen: "n", phosphorus: "p", potassium: "k", n: "n", p: "p", k: "k" };
 
 /** Small caption that says what kind of number a block shows (observed / derived / recommendation / predicted). */
@@ -72,6 +81,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
   showToast,
   farmerName,
   onNavigate,
+  reportVersion = 0,
 }) => {
   const { t, lang, locale } = useTranslation();
   const { plots } = usePlots();
@@ -79,6 +89,8 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
   const [activePlotId, setActivePlotId] = useState<string>(() => selectedPlotId || "");
   const [history, setHistory] = useState<RecommendationRecord[]>([]);
+  // Rows saved before the verified workflow existed (no engine version). Listed as earlier records, never shown as advice.
+  const [legacy, setLegacy] = useState<RecommendationRecord[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
@@ -92,24 +104,41 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
     [showToast]
   );
 
+  // The plot comes from the app-wide selection (the one the farmer uploaded the report for). Only when there is none, or the
+  // remembered id is not one of this user's plots, does it start from the first saved plot - and then it tells the app, so the
+  // next screen opens the same plot.
   useEffect(() => {
-    if (selectedPlotId) setActivePlotId(selectedPlotId);
-    else if (!activePlotId && savedPlots.length > 0) setActivePlotId(savedPlots[0].id);
-  }, [selectedPlotId, savedPlots, activePlotId]);
+    if (savedPlots.length === 0) return;
+    const valid = (id?: string) => !!id && savedPlots.some((p) => p.id === id);
+    if (valid(selectedPlotId)) {
+      if (selectedPlotId !== activePlotId) setActivePlotId(selectedPlotId as string);
+      return;
+    }
+    if (valid(activePlotId)) return;
+    const first = savedPlots[0].id;
+    setActivePlotId(first);
+    onPlotChange?.(first);
+  }, [selectedPlotId, savedPlots, activePlotId, onPlotChange]);
 
   const currentPlot = plots.find((p) => p.id === activePlotId);
   const isSavedPlot = !!currentPlot && savedPlots.some((p) => p.id === currentPlot.id);
-  const { report: soilReport, loading: isLoadingReport } = useLatestSoilReport(activePlotId || undefined, isSavedPlot);
-
-  const cropSupported = !!currentPlot && getCropBaseline(currentPlot.crop) !== null;
+  const { report: soilReport, loading: isLoadingReport, error: reportError, refetch: refetchReport } = useLatestSoilReport(
+    activePlotId || undefined,
+    isSavedPlot,
+    reportVersion
+  );
+  const { readings } = useReportReadings(activePlotId || undefined, soilReport?.id, reportVersion);
 
   const refreshHistory = useCallback(async () => {
     try {
       // Rows without an engine version were not produced by the recommendation engine.
-      setHistory((await listRecommendations()).filter((r) => !!r.engine_version));
+      const rows = await listRecommendations();
+      setHistory(rows.filter((r) => !!r.engine_version));
+      setLegacy(rows.filter((r) => !r.engine_version));
       setHistoryError(null);
     } catch (err) {
       setHistory([]);
+      setLegacy([]);
       setHistoryError(err instanceof Error ? err.message : t("p2.common.error_generic"));
     } finally {
       setHistoryLoading(false);
@@ -142,6 +171,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
   const roi = hasObj(shown?.roi) ? shown!.roi : null;
   const provenance = shown?.provenance ?? null;
   const deficient = findings.filter((f) => f.status === "deficient");
+  const legacyForPlot = legacy.filter((r) => r.plot_id === activePlotId);
   const schedule = provenance?.schedule ?? null;
   const gramsLabel = (nutrient: "n" | "p" | "k", basis: string) =>
     nutrient === "n" ? "N" : basis === "oxide" ? (nutrient === "p" ? "P2O5" : "K2O") : nutrient.toUpperCase();
@@ -164,6 +194,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
     setGenerateError(null);
     setInsufficient(null);
     if (!isSavedPlot) return setGenerateError(t("p2.nf.err_plot"));
+    if (reportError) return setGenerateError(t("p4.rec.report_load_failed"));
     if (!soilReport) return setGenerateError(t("p2.nf.err_report"));
 
     inFlight.current = true;
@@ -195,70 +226,42 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
     }
   };
 
+  const pdfPlot = currentPlot
+    ? { name: currentPlot.name, crop: currentPlot.crop, area: currentPlot.area, areaUnit: "acres" }
+    : null;
+  const pdfSoil = soilReport
+    ? {
+        id: soilReport.id,
+        created_at: soilReport.created_at,
+        verification_status: soilReport.verification_status,
+        nitrogen_kg_ha: soilReport.nitrogen_kg_ha,
+        phosphorus_kg_ha: soilReport.phosphorus_kg_ha,
+        potassium_kg_ha: soilReport.potassium_kg_ha,
+        organic_carbon_percent: soilReport.organic_carbon_percent,
+        ph: soilReport.ph,
+        electrical_conductivity: soilReport.electrical_conductivity,
+      }
+    : null;
+
   // The PDF is deliberately English-only: the built-in PDF fonts cannot draw Kannada script.
   const handleExportPDF = () => {
-    if (!shown || !currentPlot) return;
+    if (!shown || !pdfPlot) return;
     try {
-      const doc = new jsPDF();
-      const margin = 20;
-      let y = 25;
-      const line = (text: string, size = 10, bold = false) => {
-        if (y > 275) {
-          doc.addPage();
-          y = 25;
-        }
-        doc.setFont("helvetica", bold ? "bold" : "normal");
-        doc.setFontSize(size);
-        const wrapped = doc.splitTextToSize(text, 170);
-        doc.text(wrapped, margin, y);
-        y += wrapped.length * (size * 0.5 + 1.5);
-      };
-      const rs = (n: unknown) => (typeof n === "number" ? `Rs ${Math.round(n).toLocaleString("en-IN")}` : "n/a");
-
-      line("NutriPalm AI - Crop Recommendation Report", 18, true);
-      line(`Generated: ${new Date().toLocaleString("en-IN")}`, 9);
-      line(`Recommendation date: ${shown.created_at ? new Date(shown.created_at).toLocaleString("en-IN") : "n/a"}`, 9);
-      y += 4;
-      line(`Farmer: ${farmerName || "n/a"}`);
-      line(`Plot: ${currentPlot.name}   Crop: ${shown.crop}   Area: ${currentPlot.area} acres`);
-      y += 4;
-      if (explanation?.summary) {
-        line("Summary", 12, true);
-        line(explanation.summary);
-        y += 2;
-      }
-      if (findings.length) {
-        line("Nutrient status (soil vs target, kg/ha)", 12, true);
-        findings.forEach((f) => line(`${f.display_name}: ${f.soil_value_kg_ha} / ${f.target_kg_ha} (${f.status})`));
-        y += 2;
-      }
-      if (dosages.length) {
-        line("Fertilizer plan", 12, true);
-        dosages.forEach((d) =>
-          line(`${d.product_display_name} (${d.nutrient}): ${d.quantity_kg_per_ha} kg/ha, total ${d.quantity_kg_total} kg${d.estimated_cost_inr != null ? `, est. ${rs(d.estimated_cost_inr)}` : ""}`)
-        );
-        y += 2;
-      }
-      if (roi) {
-        line("Economics", 12, true);
-        line(`Fertilizer cost: ${rs(roi.fertilizer_cost)}   Additional revenue: ${rs(roi.expected_additional_revenue)}`);
-        line(`Crop price used: ${rs(roi.crop_price_per_ton_inr)}/ton   Estimated profit: ${rs(roi.estimated_profit)}`);
-      }
-      if (Array.isArray(explanation?.warnings) && explanation.warnings.length) {
-        y += 2;
-        line("Warnings", 12, true);
-        explanation.warnings.forEach((w: string) => line(`- ${w}`));
-      }
-      y += 4;
-      if (provenance) {
-        line(`Basis: engine ${shown.engine_version ?? ""}; rule ${provenance.rule.rule_version} - ${provenance.rule.source.title} (${provenance.rule.source.publisher}, ${provenance.rule.source.year}, ${provenance.rule.source.locator}).`, 8);
-        line(`Not taken into account: ${provenance.not_considered.join(", ")}.`, 8);
-      }
-      line("This is advice generated from a verified soil report. It is not a record of fertilizer applied. Verify field conditions before application.", 8);
-      doc.save(`Advisory_${currentPlot.name.replace(/[^\w-]+/g, "_")}.pdf`);
+      downloadPdf(buildRecommendationPdf({ record: shown, plot: pdfPlot, farmerName, soil: pdfSoil, readings }));
     } catch (err) {
       console.error("PDF generation failed:", err);
-      notify(t("p2.common.error_generic"), "warning");
+      notify(err instanceof EmptyReportError ? t("p4.rec.pdf_empty") : t("p2.common.error_generic"), "warning");
+    }
+  };
+
+  // The soil assessment and the reasons no advice was given. Never contains a dose.
+  const handleExportAssessment = () => {
+    if (!pdfPlot || !pdfSoil) return;
+    try {
+      downloadPdf(buildAssessmentPdf({ plot: pdfPlot, farmerName, soil: pdfSoil, insufficient, readings }));
+    } catch (err) {
+      console.error("Assessment PDF failed:", err);
+      notify(err instanceof EmptyReportError ? t("p4.rec.pdf_empty") : t("p2.common.error_generic"), "warning");
     }
   };
 
@@ -300,8 +303,8 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={isProcessing || !soilReport || !cropSupported}
-              className="min-h-11 cursor-pointer rounded-xl border-0 bg-primary px-5 py-2.5 text-sm font-extrabold text-white hover:bg-[#235F26] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isProcessing || !soilReport}
+              className="min-h-11 cursor-pointer rounded-xl border-0 bg-primary px-5 py-2.5 text-sm font-extrabold text-white hover:bg-[#2C4D3C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isProcessing ? t("p2.nf.generating") : t("p2.nf.generate")}
             </button>
@@ -322,14 +325,11 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
 
       {currentPlot && !isSavedPlot && <ErrorBanner message={t("p2.nf.sample")} />}
 
-      {isSavedPlot && !cropSupported && (
-        <UnavailableState
-          title={t("p2.nf.unsupported_title", { crop: currentPlot!.crop || t("p2.common.crop") })}
-          body={t("p2.nf.unsupported_body", { crop: currentPlot!.crop || t("p2.common.crop"), list: SUPPORTED_CROP_NAMES.join(", ") })}
-        />
+      {isSavedPlot && reportError && !isLoadingReport && (
+        <ErrorBanner message={t("p4.rec.report_load_failed")} onRetry={refetchReport} />
       )}
 
-      {isSavedPlot && cropSupported && !isLoadingReport && !soilReport && (
+      {isSavedPlot && !isLoadingReport && !reportError && !soilReport && (
         <EmptyState
           title={t("p2.nf.no_report_title")}
           body={t("p2.nf.no_report_body")}
@@ -356,6 +356,15 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             </ul>
           </div>
           <p className="text-xs font-medium text-amber-900">{t("p2.lang.backend_note")}</p>
+          {soilReport && (
+            <button
+              type="button"
+              onClick={handleExportAssessment}
+              className="min-h-11 cursor-pointer rounded-xl border border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-950 hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              {t("p4.rec.assessment_pdf")}
+            </button>
+          )}
         </section>
       )}
       {historyError && <ErrorBanner message={t("p2.nf.err_load", { message: historyError })} onRetry={refreshHistory} />}
@@ -371,7 +380,7 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
         </dl>
       )}
 
-      {isSavedPlot && cropSupported && soilReport && (
+      {isSavedPlot && soilReport && (
         <Block title={t("p2.nf.step.observed")} tag={t("p2.nf.tag.observed")}>
           <table className="w-full text-left">
             <thead>
@@ -394,8 +403,21 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
         </Block>
       )}
 
-      {!shown && isSavedPlot && cropSupported && soilReport && !historyLoading && (
+      {!shown && isSavedPlot && soilReport && !historyLoading && !insufficient && (
         <p className="rounded-3xl border border-gray-200 bg-white p-6 text-sm font-semibold text-gray-700">{t("p2.nf.no_advice_yet")}</p>
+      )}
+
+      {isSavedPlot && soilReport && !insufficient && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleExportAssessment}
+            className="min-h-11 cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {t("p4.rec.assessment_pdf")}
+          </button>
+          <span className="text-sm font-medium text-gray-600">{t("p4.rec.assessment_note")}</span>
+        </div>
       )}
 
       {shown && (
@@ -547,15 +569,19 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
                 </p>
                 <p>
                   {Object.entries(provenance.soil_values_used)
-                    .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+                    .map(([k, v]) => {
+                      const known = SOIL_VALUE_LABEL[k];
+                      return known ? `${t(known[0])}: ${num(v, 2)}${known[1] ? ` ${known[1]}` : ""}` : `${k.replace(/_/g, " ")}: ${v}`;
+                    })
                     .join(" · ")}
                 </p>
-                <ul className="list-disc pl-5 text-gray-700">
+                {/* Written by the server, in English (see the note at the top of the screen). */}
+                <ul className="list-disc pl-5 text-gray-700" data-server-text>
                   {provenance.assumptions.map((a) => (
                     <li key={a}>{a}</li>
                   ))}
                 </ul>
-                <p className="text-gray-700">{t("p3.rec.not_considered", { list: provenance.not_considered.join(", ") })}</p>
+                <p className="text-gray-700" data-server-text>{t("p3.rec.not_considered", { list: provenance.not_considered.join(", ") })}</p>
               </div>
             </Block>
           )}
@@ -609,6 +635,18 @@ export const RecommendationScreen: React.FC<RecommendationScreenProps> = ({
             </section>
           )}
         </>
+      )}
+
+      {isSavedPlot && legacyForPlot.length > 0 && (
+        <section aria-labelledby="legacy-title" className="rounded-3xl border border-gray-200 bg-white p-5 shadow-xs">
+          <h2 id="legacy-title" className="text-base font-extrabold text-gray-900">{t("p4.rec.legacy_title")}</h2>
+          <p className="mt-1 text-sm font-medium text-gray-600">{t("p4.rec.legacy_body")}</p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm font-semibold text-gray-800">
+            {legacyForPlot.map((r) => (
+              <li key={r.id}>{`${when(r.created_at)} · ${(r.crop || "").replace(/_/g, " ")}`}</li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

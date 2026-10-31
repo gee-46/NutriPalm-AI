@@ -79,7 +79,7 @@ export const EmptyState: React.FC<{ title: string; body?: string; action?: { lab
       <button
         type="button"
         onClick={action.onClick}
-        className="mt-4 min-h-11 cursor-pointer rounded-xl border-0 bg-primary px-4 py-2 text-sm font-extrabold text-white hover:bg-[#235F26] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="mt-4 min-h-11 cursor-pointer rounded-xl border-0 bg-primary px-4 py-2 text-sm font-extrabold text-white hover:bg-[#2C4D3C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         {action.label}
       </button>
