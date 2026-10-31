@@ -42,6 +42,9 @@ import { useApiHealth } from "../lib/useApiHealth";
 import { fetchFarmers, createFarmer, deleteFarmer } from "../data/farmers";
 import type { NewFarmerInput } from "../data/farmers";
 
+/** sessionStorage key of the plot the farmer is working on. */
+const ACTIVE_PLOT_KEY = "nutripalm_active_plot";
+
 interface PrototypeAppProps {
   onBackToLanding: () => void;
 }
@@ -82,7 +85,27 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [recommendationPlotId, setRecommendationPlotId] = useState<string>("");
+  // ONE active plot for the whole soil -> recommendation workflow. Soil Reports and Recommendations both read and write it,
+  // so what the farmer selected (and uploaded for) is exactly what the next screen opens. It survives a refresh (sessionStorage);
+  // a stored id that is no longer one of the user's plots is ignored by the screens, never trusted.
+  const [activePlotId, setActivePlotIdState] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem(ACTIVE_PLOT_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const setActivePlotId = useCallback((id: string) => {
+    setActivePlotIdState(id);
+    try {
+      if (id) sessionStorage.setItem(ACTIVE_PLOT_KEY, id);
+      else sessionStorage.removeItem(ACTIVE_PLOT_KEY);
+    } catch {
+      /* private mode: the in-memory value still works */
+    }
+  }, []);
+  // Bumped whenever a verified soil report is saved, so a screen that already has data refreshes it (no reload, no timers).
+  const [soilReportVersion, setSoilReportVersion] = useState(0);
 
   useEffect(() => {
     const getSessionAndProfile = async () => {
@@ -280,6 +303,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   const handleSoilReportUploaded = useCallback((data: any) => {
     // Only announce a saved report; unsaved/low-confidence results are shown on the Soil Reports screen.
     if (!data?.persisted) return;
+    setSoilReportVersion((v) => v + 1);
     setNotifications((prev) => [
       { id: Date.now(), key: "p2.app.soil_saved", read: false },
       ...prev
@@ -288,10 +312,10 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
 
   const handleRecommendationNavigate = useCallback((plotId?: string) => {
     if (plotId) {
-      setRecommendationPlotId(plotId);
+      setActivePlotId(plotId);
     }
     changeScreen("Recommendations");
-  }, [changeScreen]);
+  }, [changeScreen, setActivePlotId]);
 
   // Navigations mapping
   const iconCls = "w-5 h-5";
@@ -420,6 +444,9 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       case "Soil Reports":
         return (
           <SoilReportScreen
+            selectedPlotId={activePlotId}
+            onPlotChange={setActivePlotId}
+            reportVersion={soilReportVersion}
             onRecommendationClick={handleRecommendationNavigate}
             onUploadSuccess={handleSoilReportUploaded}
             showToast={showToast}
@@ -428,8 +455,9 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
       case "Recommendations":
         return (
           <RecommendationScreen
-            selectedPlotId={recommendationPlotId}
-            onPlotChange={(plotId) => setRecommendationPlotId(plotId)}
+            selectedPlotId={activePlotId}
+            onPlotChange={setActivePlotId}
+            reportVersion={soilReportVersion}
             showToast={showToast}
             farmerName={displayName}
             onNavigate={changeScreen}
@@ -463,7 +491,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAF7] text-gray-800">
+    <div className="flex min-h-screen bg-[#F5EFDF] text-gray-800">
 
       {/* Sidebar - Desktop */}
       <motion.aside
@@ -701,7 +729,7 @@ export const PrototypeApp: React.FC<PrototypeAppProps> = ({ onBackToLanding }) =
         </AnimatePresence>
 
         {/* Main Content Area */}
-        <main className="flex-grow p-6 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+        <main className="app-main flex-grow p-6 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentScreen + (isScreenLoading ? "-loading" : "-loaded")}

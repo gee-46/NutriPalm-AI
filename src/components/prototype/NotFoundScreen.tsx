@@ -55,7 +55,7 @@ export const NotFoundScreen: React.FC<NotFoundScreenProps> = ({ onBack }) => {
         <div className="pt-2 relative z-10">
           <button
             onClick={onBack}
-            className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
+            className="w-full bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
           >
             <LayoutDashboard className="w-4 h-4" />
             

@@ -192,15 +192,15 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f8faf7] text-gray-900 flex flex-col items-center justify-start py-12 px-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F5EFDF] text-gray-900 flex flex-col items-center justify-start py-12 px-4">
       
       {/* ================= LAYER 1: BACKGROUND LAYER ================= */}
       <div className="absolute inset-0 z-0 select-none pointer-events-none">
         
         {/* 1. Large, Highly Visible Static Gradient Mesh Blobs (20-35% opacity) */}
         <div className="absolute -top-20 -left-20 w-[650px] h-[650px] bg-emerald-600/18 rounded-full blur-[140px]" />
-        <div className="absolute -bottom-20 -right-20 w-[750px] h-[750px] bg-[#1B4D22]/18 rounded-full blur-[160px]" />
-        <div className="absolute top-[35%] right-[10%] w-[550px] h-[550px] bg-[#66BB6A]/16 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-20 -right-20 w-[750px] h-[750px] bg-[#142820]/18 rounded-full blur-[160px]" />
+        <div className="absolute top-[35%] right-[10%] w-[550px] h-[550px] bg-[#8A9D78]/16 rounded-full blur-[120px]" />
         <div className="absolute bottom-[20%] left-[-5%] w-[600px] h-[600px] bg-[#E8EFE5]/30 rounded-full blur-[110px]" />
 
         {/* 4. Visible Perspective Agricultural Field Grid Overlay (12-18% opacity) */}
@@ -278,7 +278,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
             {/* Scanning pulse across one field */}
             <motion.polygon
               points="50,5 90,25 50,45 10,25"
-              className="stroke-[#66BB6A] stroke-2"
+              className="stroke-[#8A9D78] stroke-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0.7, 0], scale: [1, 1.04, 1] }}
               transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 5 }}
@@ -348,7 +348,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
                   
                                                     {t('prototypeauth.nutripalm')} <span className="text-primary font-black">{t('prototypeauth.ai')}</span>
                 </h2>
-                <p className="text-2xs text-[#2E7D32] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
+                <p className="text-2xs text-[#1E382C] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
                   <Sparkles className="w-3 h-3" />
                   
                                                     {t('prototypeauth.ai_powered_precision_agriculture_platfor')}
@@ -435,7 +435,7 @@ export const PrototypeAuth: React.FC<PrototypeAuthProps> = ({ onAuthSuccess, onB
 
               {/* Login Card Panel (15% larger: max-w-[490px], higher opacity, thicker borders) */}
               <div className="w-full max-w-[490px] bg-white/95 border-2 border-gray-200/80 rounded-[32px] p-10 md:p-12 shadow-2xl relative overflow-visible text-left">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary to-[#43A047]" />
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary to-[#5F7D63]" />
                 
                 {/* Brand Logo & Tag */}
                 <div className="flex items-center gap-3.5 mb-6">

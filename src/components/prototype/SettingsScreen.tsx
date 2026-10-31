@@ -415,7 +415,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                           name="app-language"
                           checked={lang === code}
                           onChange={() => chooseLanguage(code)}
-                          className="h-5 w-5 accent-[#2E7D32]"
+                          className="h-5 w-5 accent-[#1E382C]"
                         />
                         {code === "en" ? t("p2.lang.english") : t("p2.lang.kannada")}
                       </label>
@@ -474,7 +474,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
               <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-primary hover:bg-[#235F26] text-white font-bold rounded-xl active:scale-95 shadow-md shadow-primary/10 transition-all text-xs cursor-pointer border-0"
+                  className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-bold rounded-xl active:scale-95 shadow-md shadow-primary/10 transition-all text-xs cursor-pointer border-0"
                 >
                   {isSaved ? (
                     <>
@@ -608,7 +608,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ activeSection, o
                                                         </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-primary hover:bg-[#235F26] text-white text-xs font-bold transition-all cursor-pointer border-0 shadow-md shadow-primary/10 flex items-center gap-1.5"
+                    className="px-5 py-2 rounded-xl bg-primary hover:bg-[#2C4D3C] text-white text-xs font-bold transition-all cursor-pointer border-0 shadow-md shadow-primary/10 flex items-center gap-1.5"
                   >
                     
                                                           {t('settingsscreen.save_changes')}

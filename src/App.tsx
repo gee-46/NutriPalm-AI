@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { Loader } from './components/Loader'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
@@ -64,7 +64,7 @@ function App() {
   };
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <AnimatePresence mode="wait">
         {isLoading ? (
           <Loader key="loader" onComplete={() => setIsLoading(false)} />
@@ -124,7 +124,7 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </MotionConfig>
   )
 }
 
