@@ -15,9 +15,17 @@ const SOURCES = import.meta.glob(["../**/*.ts", "../**/*.tsx", "!../__tests__/**
 const tokens = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join(",");
 const hasKannada = (s: string) => /[ಀ-೿]/.test(s);
 
+// kn.json is deliberately frozen while the English-only redesign and the soil -> recommendation repair land. Strings added by that
+// work live under "p4." (and "p5." for the satellite-map/location work) and exist in English only; Kannada shows the English text for them (useTranslation falls back). A native
+// speaker adds them to kn.json later - at which point they simply stop being listed here. NOTHING else may differ.
+const AWAITING_KANNADA = (k: string) => k.startsWith("p4.") || k.startsWith("p5.");
+
 describe("translation resources", () => {
-  it("English and Kannada define exactly the same keys", () => {
-    expect(Object.keys(K).sort()).toEqual(Object.keys(E).sort());
+  it("English and Kannada define the same keys, except p4.* strings still awaiting a Kannada translation", () => {
+    const kannadaOnly = Object.keys(K).filter((k) => !(k in E));
+    const englishOnly = Object.keys(E).filter((k) => !(k in K));
+    expect(kannadaOnly).toEqual([]);
+    expect(englishOnly.filter((k) => !AWAITING_KANNADA(k))).toEqual([]);
   });
 
   it("every literal t('key') used in the app exists in both languages", () => {
@@ -25,12 +33,12 @@ describe("translation resources", () => {
     for (const src of Object.values(SOURCES)) {
       for (const m of src.matchAll(/\bt\(\s*["']([a-z][\w.]*(?: [\w]+)*)["']/g)) used.add(m[1]);
     }
-    const missing = [...used].filter((k) => !(k in E) || !(k in K));
+    const missing = [...used].filter((k) => !(k in E) || (!(k in K) && !AWAITING_KANNADA(k)));
     expect(missing).toEqual([]);
   });
 
   it("{placeholders} are identical in English and Kannada for every key", () => {
-    const bad = Object.keys(E).filter((k) => tokens(E[k]) !== tokens(K[k]));
+    const bad = Object.keys(E).filter((k) => k in K && tokens(E[k]) !== tokens(K[k]));
     expect(bad).toEqual([]);
   });
 
