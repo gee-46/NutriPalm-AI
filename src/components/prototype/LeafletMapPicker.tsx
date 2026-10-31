@@ -4,21 +4,19 @@
  * GIS Boundary Map Card used in FarmPlotScreen's wizard Step 2.
  *
  * Features:
- * - Dedicated trigger to launch the TRUE FULL-SCREEN Google Maps Satellite Survey
+ * - Dedicated trigger to launch the full-screen satellite boundary survey (Leaflet)
  * - Embedded high-contrast satellite card with current boundary preview
  * - Village / mandal / district search
  * - Emits: onBoundaryChange({ geoJSON, areaAcres, centroid })
  */
 
 import { useTranslation } from "../../translation/useTranslation";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MapPin,
   AlertTriangle,
   RefreshCw,
   Search,
-  Layers as LayersIcon,
   Maximize2,
   CheckCircle2,
 } from "lucide-react";
@@ -29,12 +27,17 @@ import {
   acresToHectares,
   type GeoJSONPolygon,
 } from "../../lib/geo";
-import GoogleMapBoundarySurveyor from "./GoogleMapBoundarySurveyor";
+import BoundarySurveyor from "./BoundarySurveyor";
+import { getMapConfig } from "../../lib/mapConfig";
+import { addConfiguredImagery } from "../../lib/imageryLayer";
+import type { TileHealth } from "../../lib/tileHealth";
+import { MapImageryNotice } from "./MapImageryNotice";
 
 // ---------------------------------------------------------------------------
 // Leaflet CSS
 // ---------------------------------------------------------------------------
 import "leaflet/dist/leaflet.css";
+import "../../styles/survey-map.css";
 import L from "leaflet";
 
 // ---------------------------------------------------------------------------
@@ -61,30 +64,6 @@ export interface LeafletMapPickerProps {
 const DEFAULT_CENTER: [number, number] = [17.3912, 78.4948];
 const DEFAULT_ZOOM = 15;
 
-type BasemapId = "standard" | "satellite";
-
-const MAPTILER_KEY = (import.meta as any).env?.VITE_MAPTILER_API_KEY as string | undefined;
-
-function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number; maxNativeZoom?: number } {
-  if (MAPTILER_KEY) {
-    return {
-      url: `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-      attribution: "© MapTiler © Airbus, Maxar, CNES/Airbus",
-      maxZoom: 20,
-    };
-  }
-  return {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attribution: "© Esri, Maxar, Earthstar Geographics",
-    // Esri has no imagery at zoom 19+ in many regions: stop at native zoom 18 and upscale.
-    maxZoom: 21,
-    maxNativeZoom: 18,
-  };
-}
-
-const STANDARD_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const STANDARD_ATTRIBUTION = "© OpenStreetMap contributors";
-
 const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
   onBoundaryChange,
   initialGeoJSON,
@@ -96,13 +75,14 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const drawnLayerRef = useRef<import("leaflet").Layer | null>(null);
-  const standardLayerRef = useRef<import("leaflet").TileLayer | null>(null);
-  const satelliteLayerRef = useRef<import("leaflet").TileLayer | null>(null);
+  const tileHealthRef = useRef<TileHealth | null>(null);
+  // The ONE configured imagery provider (src/lib/mapConfig.ts). No second source and no automatic fallback.
+  const mapConfig = useMemo(() => getMapConfig(), []);
+  const [tilesFailing, setTilesFailing] = useState(false);
 
   const [isFullScreenSurveyorOpen, setIsFullScreenSurveyorOpen] = useState(false);
   const [currentGeoJSON, setCurrentGeoJSON] = useState<GeoJSONPolygon | undefined>(initialGeoJSON);
 
-  const [basemap, setBasemapState] = useState<BasemapId>("satellite");
   const [mapReady, setMapReady] = useState(false);
   const [polygonError, setPolygonError] = useState<string | null>(null);
   const [areaAcres, setAreaAcres] = useState<number | null>(null);
@@ -117,24 +97,6 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
     },
     [showToast]
   );
-
-  // ---------------------------------------------------------------------------
-  // Basemap switching
-  // ---------------------------------------------------------------------------
-  const setBasemap = (next: BasemapId) => {
-    const map = mapRef.current;
-    if (!map || !standardLayerRef.current || !satelliteLayerRef.current) return;
-    if (next === basemap) return;
-
-    if (next === "satellite") {
-      if (map.hasLayer(standardLayerRef.current)) map.removeLayer(standardLayerRef.current);
-      satelliteLayerRef.current.addTo(map);
-    } else {
-      if (map.hasLayer(satelliteLayerRef.current)) map.removeLayer(satelliteLayerRef.current);
-      standardLayerRef.current.addTo(map);
-    }
-    setBasemapState(next);
-  };
 
   // ---------------------------------------------------------------------------
   // Process layer
@@ -209,23 +171,15 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: true,
+      maxZoom: mapConfig.ok ? mapConfig.config.maxZoom : 21,
     });
 
-    const satConfig = getSatelliteTileConfig();
-    const standardLayer = L.tileLayer(STANDARD_TILE_URL, {
-      maxZoom: 19,
-      attribution: STANDARD_ATTRIBUTION,
-    });
-    const satelliteLayer = L.tileLayer(satConfig.url, {
-      maxZoom: satConfig.maxZoom,
-      maxNativeZoom: satConfig.maxNativeZoom,
-      attribution: satConfig.attribution,
-    });
-
-    standardLayerRef.current = standardLayer;
-    satelliteLayerRef.current = satelliteLayer;
-    satelliteLayer.addTo(map);
+    // Imagery from the one configured provider. If it is not enabled the map shows a notice instead (no substitute source).
+    if (mapConfig.ok) {
+      const { health } = addConfiguredImagery(map, mapConfig.config, setTilesFailing);
+      tileHealthRef.current = health;
+    }
 
     mapRef.current = map;
     setMapReady(true);
@@ -259,10 +213,10 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         mapRef.current.remove();
         mapRef.current = null;
       }
-      standardLayerRef.current = null;
-      satelliteLayerRef.current = null;
+      tileHealthRef.current?.dispose();
+      tileHealthRef.current = null;
     };
-  }, [initialGeoJSON, processLayer]);
+  }, [initialGeoJSON, processLayer, mapConfig]);
 
   // ---------------------------------------------------------------------------
   // Update Leaflet display when full-screen surveyor confirms a new boundary
@@ -345,7 +299,7 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <h4 className="text-xs font-black text-white uppercase tracking-wider">
-              {t("p2.ui.google_maps_satellite_gis_survey_16o5d4n")}
+              {t("p5.plots.open_survey")}
             </h4>
           </div>
           <p className="text-[11px] text-slate-300 font-medium leading-tight">
@@ -393,7 +347,11 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
 
       {/* Embedded Map Container */}
       <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden relative shadow-md">
-        <div ref={mapContainerRef} className="w-full touch-none" style={{ height: "260px" }} />
+        <div ref={mapContainerRef} className="survey-map w-full touch-none" style={{ height: "260px" }} />
+        {!mapConfig.ok && <MapImageryNotice kind="config" message={mapConfig.message} />}
+        {mapConfig.ok && tilesFailing && (
+          <MapImageryNotice kind="tiles" provider={mapConfig.config.provider} onRetry={() => tileHealthRef.current?.retry()} />
+        )}
 
         {/* Floating Top Controls */}
         <div className="absolute top-2.5 left-2.5 right-2.5 z-[1000] flex items-center justify-between gap-2 pointer-events-none">
@@ -415,29 +373,6 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
               <span>{t("p2.ui.full_screen_9ek6nq")}</span>
             </button>
 
-            {/* Basemap switcher */}
-            <div className="flex rounded-xl border border-slate-700 overflow-hidden bg-slate-900/90">
-              <button
-                type="button"
-                title={t("p2.ui.satellite_view_b4ddo1")}
-                onClick={() => setBasemap("satellite")}
-                className={`p-2 transition-all cursor-pointer ${
-                  basemap === "satellite" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                <LayersIcon className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                title={t("p2.ui.standard_map_b6w4xs")}
-                onClick={() => setBasemap("standard")}
-                className={`p-2 transition-all cursor-pointer border-l border-slate-700 ${
-                  basemap === "standard" ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                <MapPin className="w-3.5 h-3.5" />
-              </button>
-            </div>
           </div>
         </div>
 
@@ -497,8 +432,8 @@ const LeafletMapPicker: React.FC<LeafletMapPickerProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ================= FULL SCREEN GOOGLE MAPS SURVEYOR MODAL ================= */}
-      <GoogleMapBoundarySurveyor
+      {/* ================= FULL SCREEN BOUNDARY SURVEYOR (LEAFLET) ================= */}
+      <BoundarySurveyor
         isOpen={isFullScreenSurveyorOpen}
         onClose={() => setIsFullScreenSurveyorOpen(false)}
         onConfirm={handleSurveyorConfirm}

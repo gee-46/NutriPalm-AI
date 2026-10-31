@@ -1,0 +1,65 @@
+/*
+ * Boundary surveyor map: touch-friendly corner handles and a readable, always-visible attribution.
+ * Handles are a 44px touch target (the Leaflet divIcon box) around a small visible dot.
+ */
+.survey-map.leaflet-container {
+  background: #0f172a;
+  font: inherit;
+  /* Leaflet's panes use z-index 400-1000. Without their own stacking context they paint above the notices and controls laid
+     over the map, and a saved boundary would cover the imagery-error Retry button. */
+  isolation: isolate;
+}
+
+.survey-vertex,
+.survey-midpoint {
+  background: transparent;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+.survey-vertex:active {
+  cursor: grabbing;
+}
+.survey-vertex span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.survey-midpoint span {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #10b981;
+}
+.survey-search-pin span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #10b981;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* The provider's attribution must stay on screen and readable (small screens wrap it onto two lines). */
+.survey-map .leaflet-control-attribution {
+  max-width: calc(100vw - 12px);
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.88);
+}
+.survey-map .leaflet-control-attribution a {
+  color: #0f4c81;
+}
