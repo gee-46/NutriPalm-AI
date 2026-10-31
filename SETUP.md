@@ -9,7 +9,7 @@
 | A Supabase project | auth + database |
 | Tesseract OCR and Poppler | soil-report OCR on scanned PDFs / images |
 | Sentinel Hub OAuth client (optional) | live Sentinel-2 NDVI |
-| Google Maps JS API key (optional) | Google satellite imagery in the boundary surveyor |
+| Satellite imagery provider (owner decision) | the boundary survey map; see `docs/MAPS_AND_LOCATION.md` (a production build shows no imagery until the provider terms are confirmed) |
 
 Tesseract and Poppler are **external programs** (not Python packages). Install them with your
 OS package manager (`apt-get install tesseract-ocr poppler-utils`, `brew install tesseract poppler`)
