@@ -10,16 +10,18 @@
 // and drives the real app in Microsoft Edge/Chrome with Playwright.
 //
 // Honest scope: this is NOT a managed Supabase project. Weather / elevation / geocoding / map tiles
-// use the real public services (needs internet). Sentinel and Google Maps are not configured and are
-// asserted to degrade gracefully. Device GPS is emulated by the browser's geolocation override.
+// use the real public services (needs internet). Sentinel is not configured and is asserted to degrade
+// gracefully. The satellite map uses the one default imagery provider (src/lib/mapConfig.ts); there is no Google Maps. Device GPS is emulated by the browser's geolocation override.
 
 import { spawn, execSync } from "node:child_process";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startStack } from "../e2e-stack/stack.mjs";
+import { assertPortsFree } from "./lib.mjs";
+await assertPortsFree([54421, 8100, 5273]); // never share a port with a developer's running app: the test must talk to its OWN stack
 import { newSession, register, waitForConsole, goto, shot, createFarmerUI, surveyAndCreatePlot, KHAMMAM } from "./lib.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -48,7 +50,7 @@ const noFake = async (page, group, label) => {
 
 // ------------------------------------------------------------------ stack
 const secret = crypto.randomBytes(32).toString("hex");
-const stack = await startStack({ port: 54321, jwtSecret: secret, quiet: true });
+const stack = await startStack({ port: 54421, jwtSecret: secret, quiet: true });
 const children = [];
 const backendLog = [];
 const spawnLogged = (cmd, args, opts, name) => {
@@ -63,7 +65,7 @@ const baseEnv = {
   SUPABASE_URL: stack.url,
   SUPABASE_SERVICE_ROLE_KEY: stack.serviceRoleKey,
   SUPABASE_JWT_SECRET: secret,
-  CORS_ALLOW_ORIGINS: "http://127.0.0.1:5173",
+  CORS_ALLOW_ORIGINS: "http://127.0.0.1:5273",
   ENVIRONMENT: "development",
   RULE_PACK_PATH: path.join(files, "test_rule_pack.json"),
   // hermetic: never use a developer's local Sentinel credentials in the test run
@@ -71,28 +73,30 @@ const baseEnv = {
   SENTINEL_HUB_CLIENT_SECRET: "",
   VITE_SUPABASE_URL: stack.url,
   VITE_SUPABASE_ANON_KEY: stack.anonKey,
-  VITE_API_BASE_URL: "http://127.0.0.1:8000",
+  VITE_API_BASE_URL: "http://127.0.0.1:8100",
 };
-spawnLogged(PY, ["-m", "uvicorn", "app.main:app", "--port", "8000"], { cwd: path.join(repo, "backend"), env: baseEnv }, "backend");
-spawnLogged("npx", ["vite", "--host", "127.0.0.1", "--port", "5173", "--strictPort"], { cwd: repo, env: baseEnv }, "vite");
+spawnLogged(PY, ["-m", "uvicorn", "app.main:app", "--port", "8100"], { cwd: path.join(repo, "backend"), env: baseEnv }, "backend");
+spawnLogged("npx", ["vite", "--host", "127.0.0.1", "--port", "5273", "--strictPort"], { cwd: repo, env: baseEnv }, "vite");
 const waitUp = async (url) => { for (let i = 0; i < 60; i++) { try { if ((await fetch(url)).ok) return true; } catch {} await new Promise((r) => setTimeout(r, 500)); } return false; };
-check("setup", "backend /health reachable", await waitUp("http://127.0.0.1:8000/health"));
-check("setup", "frontend reachable", await waitUp("http://127.0.0.1:5173/"));
+check("setup", "backend /health reachable", await waitUp("http://127.0.0.1:8100/health"));
+check("setup", "frontend reachable", await waitUp("http://127.0.0.1:5273/"));
 const dbGet = async (table, q = "select=*") => (await fetch(`${stack.url}/rest/v1/${table}?${q}`, { headers: { apikey: stack.serviceRoleKey, authorization: `Bearer ${stack.serviceRoleKey}` } })).json();
 
 // Known, accepted console noise (documented in docs/PHASE1_AUDIT.md)
 const IGNORE_CONSOLE = [
   // Chrome logs every non-2xx response as a console error. Only the deliberate ones are accepted, matched by URL:
-  /status of 404 \(Not Found\) @ http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports)/, // B probing A's ids
-  /status of 401 \(Unauthorized\) @ http:\/\/127\.0\.0\.1:8000\/api\/recommendations/, // tokenless / forged call
-  /status of (401|403|404|406|409) .* @ http:\/\/127\.0\.0\.1:54321\/rest\/v1\//, // deliberate REST attacks
+  /status of 404 \(Not Found\) @ http:\/\/127\.0\.0\.1:8100\/api\/(plots|geospatial|recommendations|soil-reports)/, // B probing A's ids
+  /status of 401 \(Unauthorized\) @ http:\/\/127\.0\.0\.1:8100\/api\/recommendations/, // tokenless / forged call
+  /status of (401|403|404|406|409) .* @ http:\/\/127\.0\.0\.1:54421\/rest\/v1\//, // deliberate REST attacks
   // framework-level: framer-motion pathLength animation on the boot splash SVGs (static `d`), not app logic
   /attribute d: Expected moveto path command/,
-  /GOOGLE_MAPS_API_KEY_MISSING/, // keyless fallback is intentional
+  // kn.json is frozen: strings added by the soil->recommendation repair (keys "p4.*") exist in English only until a native speaker
+  // translates them, and the dev build warns about each fallback. Only those keys are exempt.
+  /\[i18n\] Missing Kannada key: "p4\./,
   /Download the React DevTools/,
   // deliberate in this run: confirming a review with required values still missing (422), and probing a removed endpoint (404)
-  /status of 422 .* @ http:\/\/127\.0\.0\.1:8000\/api\/soil-reports\/extractions\/[0-9a-f-]+\/confirm/,
-  /status of 404 .* @ http:\/\/127\.0\.0\.1:8000\/api\/disease\/vocabulary/,
+  /status of 422 .* @ http:\/\/127\.0\.0\.1:8100\/api\/soil-reports\/extractions\/[0-9a-f-]+\/confirm/,
+  /status of 404 .* @ http:\/\/127\.0\.0\.1:8100\/api\/disease\/vocabulary/,
 ];
 const consoleIssues = [];
 const trackIssues = (events, who) => () => {
@@ -136,6 +140,8 @@ try {
   // ---- plot + survey
   await surveyAndCreatePlot(page, { plotName: "Plot Alpha", farmer: "Ravi Kumar" });
   await page.waitForSelector("text=Registered Successfully", { timeout: 40000 }).catch(() => {});
+  // The save finishes only after live reverse-geocoding and elevation lookups (public services): wait for the ROW, not a fixed delay.
+  for (let i = 0; i < 90 && (await dbGet("plots")).length === 0; i++) await page.waitForTimeout(1000);
   await page.waitForTimeout(1500);
   const plots = await dbGet("plots");
   plotA = plots[0];
@@ -312,7 +318,7 @@ try {
   // ---- removed features are not reachable
   const navNames = await page.locator("aside nav button").allInnerTexts();
   check("A-scope", "navigation offers only the retained features", navNames.length === 9 && !navNames.some((n) => /Disease|Suitab|Analytics|Weather|ರೋಗ|ವಿಶ್ಲೇಷ/i.test(n)), navNames.join(" | "));
-  const disGone = await page.evaluate(async () => (await fetch("http://127.0.0.1:8000/api/disease/vocabulary")).status);
+  const disGone = await page.evaluate(async () => (await fetch("http://127.0.0.1:8100/api/disease/vocabulary")).status);
   check("A-scope", "the disease endpoints no longer exist on the backend (404, not just hidden)", disGone === 404, disGone);
 
   // ============================================================ PHASE 2 (farmer-first UI, English + Kannada)
@@ -346,8 +352,15 @@ try {
   // ---- language: Kannada switch, persistence, whole-app coverage, layout
   const KN = /[ಀ-೿]/;
   const ALLOWED = /Alice Farmer|Ravi Kumar|Plot (Alpha|Beta)|alice@e2e\.test|Khammam|Telangana|India|Oil Palm|oil palm|Open-Meteo|NutriPalm( AI)?|Sentinel(-2)?|NDVI|WGS[- ]?84|EPSG|GPS|GIS|IoT|OCR|PDF|Digital Twin|Google Maps|Esri|Aadhaar|ESRI|OpenStreetMap|Leaflet/g;
+  // The same documented exemption, built from en.json so it cannot drift: the English-only p4.* strings (placeholders become wildcards).
+  const PENDING_KN = Object.entries(JSON.parse(readFileSync(path.join(repo, "src", "translation", "translations", "en.json"), "utf8")))
+    .filter(([k]) => k.startsWith("p4."))
+    .map(([, v]) => {
+      const escaped = String(v).replace(/[.*+?^$()|[\]\\]/g, "\\$&"); // escape regex characters except braces
+      return new RegExp(escaped.replace(/\{\w+\}/g, ".*"), "g");
+    });
   const englishRuns = (text) =>
-    text
+    PENDING_KN.reduce((t, re) => t.replace(re, " "), text)
       .replace(ALLOWED, " ")
       .split("\n")
       .filter((l) => /(?:[A-Za-z][A-Za-z'&-]{2,}\s+){2}[A-Za-z][A-Za-z'&-]{2,}/.test(l));
@@ -381,7 +394,16 @@ try {
     const id = pageOrder[i];
     const txt = await mainText();
     const ov = await overflow();
-    const eng = englishRuns(txt);
+    // Text the SERVER writes (assumptions, not-considered list) is English by design and announced on the page; it is marked
+    // data-server-text and excluded here. Everything else on the page must be translated.
+    const txtOwn = await page.evaluate(() => {
+      const hidden = [...document.querySelectorAll("[data-server-text]")];
+      hidden.forEach((e) => { e.dataset.prev = e.style.display; e.style.display = "none"; });
+      const out = (document.querySelector("main") || document.body).innerText;
+      hidden.forEach((e) => { e.style.display = e.dataset.prev ?? ""; delete e.dataset.prev; });
+      return out;
+    });
+    const eng = englishRuns(txtOwn);
     looseReport[id] = eng.slice(0, 8);
     await page.screenshot({ path: path.join(shots, `P2-kn-${String(i).padStart(2, "0")}-${id.replace(/\W+/g, "_")}.png`), fullPage: true });
     check("P2-lang", `Kannada page "${id}": renders Kannada text and does not overflow the viewport horizontally`, KN.test(txt) && ov <= 1, `kn=${KN.test(txt)} overflowPx=${ov}`);
@@ -451,10 +473,10 @@ try {
   check("A-logout", "returns to the public landing page", /Explore Prototype/.test(afterLogout) && !/Sign Out/.test(afterLogout));
   const leftover = await page.evaluate(() => ({ keys: Object.keys(localStorage), sb: Object.keys(localStorage).filter((k) => /sb-.*auth-token/.test(k)) }));
   check("A-logout", "auth token and nutripalm* account caches removed (the device language preference is kept on purpose)", leftover.sb.length === 0 && !leftover.keys.some((k) => k.startsWith("nutripalm") && k !== "nutripalm_lang"), JSON.stringify(leftover));
-  await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  await page.goto("http://127.0.0.1:5273/", { waitUntil: "networkidle" });
   await page.waitForTimeout(2500);
   check("A-logout", "reloading the app after logout does not restore the console", !/Sign Out/.test(await page.locator("body").innerText()));
-  const stale = await page.evaluate(async () => { const r = await fetch("http://127.0.0.1:8000/api/recommendations"); return r.status; });
+  const stale = await page.evaluate(async () => { const r = await fetch("http://127.0.0.1:8100/api/recommendations"); return r.status; });
   check("A-logout", "API without a token is refused (401)", stale === 401, stale);
   flushA();
 
@@ -507,7 +529,7 @@ try {
     const rD = await fetch(`${rest}/rest/v1/soil_reports`, { method: "POST", headers: rh, body: JSON.stringify({ owner_id: uid, plot_id: ids.ownPlot, nitrogen_kg_ha: 1, phosphorus_kg_ha: 1, potassium_kg_ha: 1, organic_carbon_percent: 1, ph: 7, verification_status: "user_confirmed" }) }); out.restForgedVerified = { status: rD.status, body: await rD.json().catch(() => null) };
     const rE = await fetch(`${rest}/rest/v1/recommendations?id=eq.${ids.rec}`, { method: "PATCH", headers: rh, body: JSON.stringify({ fertilizer_plan: [] }) }); out.restRecPatch = { status: rE.status, body: await rE.json().catch(() => null) };
     return out;
-  }, { api: "http://127.0.0.1:8000", rest: stack.url, ids: { plot: plotA.id, rec: recA.id, soil: soilA.id, ext: soilA.extraction_id, ownPlot: plotA.id } });
+  }, { api: "http://127.0.0.1:8100", rest: stack.url, ids: { plot: plotA.id, rec: recA.id, soil: soilA.id, ext: soilA.extraction_id, ownPlot: plotA.id } });
   for (const k of ["twinLive", "twinPred", "ndvi", "cadastral", "rec", "recCreate", "upload"]) {
     check("B-attack", `API ${k}: B's token against A's resource -> 404 with no data`, attacks[k].status === 404 && !JSON.stringify(attacks[k].body).includes(plotA.id.slice(0, 8) + "x"), `${attacks[k].status} ${JSON.stringify(attacks[k].body)}`);
   }
@@ -525,7 +547,7 @@ try {
   const intact = await dbGet("plots", `select=id,name&id=eq.${plotA.id}`);
   check("B-attack", "A's plot is untouched after B's attacks", intact.length === 1 && intact[0].name === "Plot Alpha", JSON.stringify(intact));
   // an invalid / forged token from the browser
-  const forged = await pb.evaluate(async () => (await fetch("http://127.0.0.1:8000/api/recommendations", { headers: { Authorization: "Bearer forged.token.value" } })).status);
+  const forged = await pb.evaluate(async () => (await fetch("http://127.0.0.1:8100/api/recommendations", { headers: { Authorization: "Bearer forged.token.value" } })).status);
   check("B-attack", "forged bearer token rejected (401)", forged === 401, forged);
   flushB();
 
@@ -533,12 +555,12 @@ try {
   check("console", "no uncaught page errors / unexpected console errors across both sessions", consoleIssues.length === 0, consoleIssues.slice(0, 6).join(" || "));
   const allHttp = [...events.http, ...sb.events.http];
   const expected = (h) =>
-    /^404 (GET|POST) http:\/\/127\.0\.0\.1:8000\/api\/(plots|geospatial|recommendations|soil-reports|disease)/.test(h) || // B's attacks on A's ids
-    /^401 GET http:\/\/127\.0\.0\.1:8000\/api\/recommendations/.test(h) || // deliberate tokenless / forged calls
-    /^422 POST http:\/\/127\.0\.0\.1:8000\/api\/soil-reports\/extractions\/[0-9a-f-]+\/confirm/.test(h) || // deliberate: confirm with required values missing
-    /^404 GET http:\/\/127\.0\.0\.1:8000\/api\/disease\/vocabulary/.test(h) || // deliberate: removed endpoint
-    /^(401|403|404|406|409) \S+ http:\/\/127\.0\.0\.1:54321\/rest\/v1\//.test(h) || // deliberate REST attacks and maybeSingle probes
-    /^40[0-9] POST http:\/\/127\.0\.0\.1:54321\/rest\/v1\/soil_reports/.test(h);
+    /^404 (GET|POST) http:\/\/127\.0\.0\.1:8100\/api\/(plots|geospatial|recommendations|soil-reports|disease)/.test(h) || // B's attacks on A's ids
+    /^401 GET http:\/\/127\.0\.0\.1:8100\/api\/recommendations/.test(h) || // deliberate tokenless / forged calls
+    /^422 POST http:\/\/127\.0\.0\.1:8100\/api\/soil-reports\/extractions\/[0-9a-f-]+\/confirm/.test(h) || // deliberate: confirm with required values missing
+    /^404 GET http:\/\/127\.0\.0\.1:8100\/api\/disease\/vocabulary/.test(h) || // deliberate: removed endpoint
+    /^(401|403|404|406|409) \S+ http:\/\/127\.0\.0\.1:54421\/rest\/v1\//.test(h) || // deliberate REST attacks and maybeSingle probes
+    /^40[0-9] POST http:\/\/127\.0\.0\.1:54421\/rest\/v1\/soil_reports/.test(h);
   const unexpected = allHttp.filter((h) => !expected(h));
   check("console", "no unexpected HTTP errors in the network log (B's deliberate attacks excluded)", unexpected.length === 0, unexpected.slice(0, 6).join(" || "));
   const dupLive = events.requests.filter((r) => /\/twin\/live/.test(r)).length;

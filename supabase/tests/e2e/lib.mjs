@@ -1,7 +1,7 @@
 import { chromium } from "playwright-core";
 
 export const EDGE = process.env.E2E_BROWSER || "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
-export const APP = process.env.E2E_APP_URL || "http://127.0.0.1:5173";
+export const APP = process.env.E2E_APP_URL || "http://127.0.0.1:5273";
 
 export async function newSession(opts = {}) {
   const browser = await chromium.launch({ executablePath: EDGE, headless: true });
@@ -12,7 +12,7 @@ export async function newSession(opts = {}) {
   page.on("console", (m) => {
     if (m.type() === "error" || m.type() === "warning") events.console.push(`${m.type()}: ${m.text()}${m.location()?.url ? " @ " + m.location().url : ""}`);
   });
-  page.on("pageerror", (e) => events.pageErrors.push(e.message));
+  page.on("pageerror", (e) => events.pageErrors.push(e.stack || e.message));
   page.on("requestfailed", (r) => events.failed.push(`${r.method()} ${r.url()} ${r.failure()?.errorText}`));
   page.on("response", (r) => { if (r.status() >= 400) events.http.push(`${r.status()} ${r.request().method()} ${r.url()}`); });
   page.on("request", (r) => events.requests.push(`${r.method()} ${r.url()}`));
@@ -116,8 +116,11 @@ export const KHAMMAM = { latitude: 17.2473, longitude: 80.1514, accuracy: 12 };
 /** Draw a 4-vertex boundary in the surveyor, nudge one vertex, confirm, and create the plot. */
 export async function surveyAndCreatePlot(page, { plotName, farmer }) {
   await openSurveyor(page, { plotName, farmer });
+  // Playwright stamps its emulated fix when it is set; set it again so the position is fresh, as a real device's is.
+  await page.context().setGeolocation(KHAMMAM);
   await page.getByRole("button", { name: "Use My Current Location" }).first().click();
-  await page.waitForTimeout(5000);
+  await page.getByText(/Accuracy radius: about \d+ m/).first().waitFor({ timeout: 25000 });
+  await page.waitForTimeout(1500);
   await page.getByRole("button", { name: "Draw Boundary" }).first().click();
   for (const [x, y] of [[560, 330], [800, 340], [820, 560], [580, 580]]) { await page.mouse.click(x, y); await page.waitForTimeout(300); }
   await page.getByRole("button", { name: "Done Adding" }).click();
@@ -128,4 +131,24 @@ export async function surveyAndCreatePlot(page, { plotName, farmer }) {
   await page.getByRole("button", { name: /Confirm & Save Boundary/ }).click();
   await page.waitForTimeout(1500);
   await page.getByRole("button", { name: "Create Plot" }).click();
+}
+
+/**
+ * Refuse to run if any port is already taken. A test that finds something listening on its port would silently drive THAT
+ * process (for example a developer's dev server, with that developer's Supabase project) instead of its own emulated stack.
+ */
+export async function assertPortsFree(ports) {
+  const net = await import("node:net");
+  for (const port of ports) {
+    const busy = await new Promise((resolve) => {
+      const s = net.createServer();
+      s.once("error", () => resolve(true));
+      s.once("listening", () => s.close(() => resolve(false)));
+      s.listen(port, "127.0.0.1");
+    });
+    if (busy) {
+      console.error(`Refusing to run: port ${port} is already in use (a dev server?). Stop it or free the port; this test must talk to its own stack only.`);
+      process.exit(3);
+    }
+  }
 }

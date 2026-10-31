@@ -10,7 +10,10 @@
     "e2e:stack-selftest": "node e2e-stack/selftest.mjs",
     "verify:upgrade": "node verify-upgrade.mjs",
     "smoke:staging": "node staging-smoke.mjs",
-    "smoke:selftest": "node staging-smoke.mjs --selftest"
+    "smoke:selftest": "node staging-smoke.mjs --selftest",
+    "e2e:pipeline": "node e2e/pipeline.mjs",
+    "e2e:survey": "node e2e/survey.mjs",
+    "e2e:kn-typography": "node e2e/kn-typography.mjs --compare"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.0",
