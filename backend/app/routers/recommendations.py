@@ -209,7 +209,7 @@ def create_recommendation(
                 ))
 
     if rule is None:
-        required = ["A cited, agronomist-reviewed nutrient rule for this crop (see docs/OCR_AND_FERTILIZER_PIPELINE.md)."]
+        required = ["A cited, agronomist-reviewed nutrient rule for this crop."]
         if any(r.code == "crop_not_set" for r in reasons):
             required.insert(0, "Set the crop on the plot.")
         return JSONResponse(

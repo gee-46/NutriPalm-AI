@@ -41,15 +41,72 @@ export class ApiError extends Error {
   }
 }
 
+const LOCAL_HOST = /^(localhost|127\.|0\.0\.0\.0|\[::1\]|::1)/i;
+
+/**
+ * A production build that still points at a local API address can never work for a real visitor
+ * (the browser would call the visitor's own machine). Say so instead of failing with "Failed to fetch".
+ */
+export function apiBaseProblem(): string | null {
+  if (!import.meta.env?.PROD || !API_BASE_URL) return null;
+  try {
+    const apiHost = new URL(API_BASE_URL).hostname;
+    const pageHost = typeof location !== "undefined" ? location.hostname : "";
+    if (LOCAL_HOST.test(apiHost) && !LOCAL_HOST.test(pageHost)) {
+      return "This copy of the app was built to talk to a local server (localhost), so it cannot reach the NutriPalm server. The site owner must rebuild it with VITE_API_BASE_URL set to the deployed API address.";
+    }
+  } catch {
+    return "The app's API address (VITE_API_BASE_URL) is not a valid URL.";
+  }
+  return null;
+}
+
+/** fetch() whose failures are typed ApiErrors with an explanation a person can act on. */
+async function safeFetch(url: string, init?: RequestInit): Promise<Response> {
+  const problem = apiBaseProblem();
+  if (problem) throw new ApiError(0, { code: "api_base_misconfigured", message: problem }, problem);
+  try {
+    return await fetch(url, init);
+  } catch {
+    const where = API_BASE_URL ? ` (${API_BASE_URL.replace(/^https?:\/\//, "")})` : "";
+    const message = `Could not reach the NutriPalm server${where}. Check your connection and try again.`;
+    throw new ApiError(0, { code: "network_error", message }, message);
+  }
+}
+
+/** Parse a JSON reply; anything else (an HTML page from a wrong address, an empty body) is a clear error, never a crash. */
+async function parseJson<T>(response: Response): Promise<T> {
+  try {
+    return (await response.json()) as T;
+  } catch {
+    const message =
+      "The server's answer was not NutriPalm data. If this keeps happening, the app's API address (VITE_API_BASE_URL) may be wrong.";
+    throw new ApiError(response.status, { code: "bad_response", message }, message);
+  }
+}
+
+/** FastAPI `detail` may be a string, an object {code, message, problems} or a list of validation errors. */
+function describeDetail(detail: unknown): unknown {
+  if (Array.isArray(detail)) {
+    const msgs = detail.map((d) => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : "")).filter(Boolean);
+    return msgs.length ? msgs.join("; ") : null;
+  }
+  return detail;
+}
+
 async function failFrom(response: Response, fallback: string): Promise<never> {
+  if (response.status === 401) {
+    const message = "Your session has expired. Please sign in again.";
+    throw new ApiError(401, { code: "session_expired", message }, message);
+  }
   const body = await response.json().catch(() => null);
-  throw new ApiError(response.status, body?.detail ?? null, fallback || `Server error: ${response.status}`);
+  throw new ApiError(response.status, describeDetail(body?.detail) ?? null, fallback || `Server error: ${response.status}`);
 }
 
 /** Authenticated request to the FastAPI backend (same token handling as every other call in this file). */
 export async function authenticatedFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = await getHeaders();
-  return fetch(`${API_BASE_URL}${path}`, { ...init, headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
+  return safeFetch(`${API_BASE_URL}${path}`, { ...init, headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
 }
 
 export interface RecommendationRequestPayload {
@@ -68,9 +125,12 @@ export interface RecommendationProvenancePayload {
   rule: {
     crop: string;
     rule_version: string;
-    source: { id: string; title: string; publisher: string; year: number | string; locator: string; quote: string; url?: string };
+    rule_kind?: string;
+    source: { id: string; title: string; publisher: string; edition?: string; year: number | string; locator: string; quote: string; url?: string };
     reviewed_by: string;
     reviewed_on: string;
+    applicable_stage?: string;
+    region?: string;
   };
   assumptions: string[];
   not_considered: string[];
@@ -277,7 +337,7 @@ export async function uploadSoilReport(
   formData.append("plot_id", plotId);
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/soil-reports/upload`, {
+  const response = await safeFetch(`${API_BASE_URL}/api/soil-reports/upload`, {
     method: "POST",
     headers,
     body: formData,
@@ -285,7 +345,7 @@ export async function uploadSoilReport(
 
   if (!response.ok) return failFrom(response, "Failed to process soil report");
 
-  return response.json();
+  return parseJson<SoilReportUploadResponsePayload>(response);
 }
 
 /** The owner's confirmations/corrections for an extraction awaiting review. */
@@ -298,14 +358,14 @@ export async function confirmExtraction(
     body: JSON.stringify(payload),
   });
   if (!response.ok) return failFrom(response, "Could not confirm the soil report");
-  return response.json();
+  return parseJson<SoilReportUploadResponsePayload>(response);
 }
 
 /** Stored extractions for a plot (newest first) -- lets a pending review survive a page refresh. */
 export async function listExtractions(plotId: string): Promise<SoilReportUploadResponsePayload[]> {
   const response = await authenticatedFetch(`/api/soil-reports/extractions?plot_id=${encodeURIComponent(plotId)}`);
   if (!response.ok) return failFrom(response, "Could not load soil report extractions");
-  return response.json();
+  return parseJson<SoilReportUploadResponsePayload[]>(response);
 }
 
 /**
@@ -313,7 +373,7 @@ export async function listExtractions(plotId: string): Promise<SoilReportUploadR
  */
 export async function createRecommendation(payload: RecommendationRequestPayload): Promise<RecommendationOutcome> {
   const headers = await getHeaders();
-  const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
+  const response = await safeFetch(`${API_BASE_URL}/api/recommendations`, {
     method: "POST",
     headers,
     body: JSON.stringify(payload),
@@ -321,7 +381,7 @@ export async function createRecommendation(payload: RecommendationRequestPayload
 
   if (!response.ok) return failFrom(response, "Failed to generate recommendation");
 
-  return response.json();
+  return parseJson<RecommendationOutcome>(response);
 }
 
 /**
@@ -329,17 +389,14 @@ export async function createRecommendation(payload: RecommendationRequestPayload
  */
 export async function listRecommendations(): Promise<RecommendationRecord[]> {
   const headers = await getHeaders();
-  const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
+  const response = await safeFetch(`${API_BASE_URL}/api/recommendations`, {
     method: "GET",
     headers,
   });
 
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({ detail: "Failed to fetch recommendation list" }));
-    throw new Error(errBody.detail || `Server error: ${response.status}`);
-  }
+  if (!response.ok) return failFrom(response, "Failed to fetch recommendation list");
 
-  return response.json();
+  return parseJson<RecommendationRecord[]>(response);
 }
 
 /**
@@ -347,17 +404,14 @@ export async function listRecommendations(): Promise<RecommendationRecord[]> {
  */
 export async function getRecommendation(id: string): Promise<RecommendationRecord> {
   const headers = await getHeaders();
-  const response = await fetch(`${API_BASE_URL}/api/recommendations/${id}`, {
+  const response = await safeFetch(`${API_BASE_URL}/api/recommendations/${encodeURIComponent(id)}`, {
     method: "GET",
     headers,
   });
 
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({ detail: "Failed to retrieve recommendation" }));
-    throw new Error(errBody.detail || `Server error: ${response.status}`);
-  }
+  if (!response.ok) return failFrom(response, "Failed to retrieve recommendation");
 
-  return response.json();
+  return parseJson<RecommendationRecord>(response);
 }
 
 /**

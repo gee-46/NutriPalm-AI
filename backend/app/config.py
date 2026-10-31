@@ -124,7 +124,7 @@ class Settings(BaseSettings):
         """
         Staging and production must not start half-configured: every authenticated
         request would otherwise fail later with an opaque 500/503. Optional
-        integrations (Sentinel Hub, Google Maps) are NOT required.
+        integrations (Sentinel Hub) are NOT required.
         """
         if self.environment == "development":
             return self
