@@ -3,11 +3,12 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   UploadCloud, FileText, ArrowRight, Activity, Sparkles, 
-  Check, RefreshCw, ChevronDown, AlertTriangle
+  Check, RefreshCw, ChevronDown
 } from "lucide-react";
 import { usePlots } from "../../data/plots";
 import { supabase } from "../../lib/supabaseClient";
-import { uploadSoilReport } from "../../lib/apiClient";
+import { ApiError, listExtractions, uploadSoilReport } from "../../lib/apiClient";
+import { useReportReadings } from "../../hooks/useReportReadings";
 import type { SoilReportUploadResponsePayload } from "../../lib/apiClient";
 import { SoilNutrientAnalyticsCard } from "../analytics/SoilNutrientAnalyticsCard";
 import { ExtractionReview } from "./ExtractionReview";
@@ -16,6 +17,11 @@ import { getCropBaseline } from "../../constants/cropBaselines";
 interface SoilReportScreenProps {
   onRecommendationClick?: (plotId?: string, reportData?: any) => void;
   onUploadSuccess: (nutrients: any) => void;
+  /** The plot the farmer is working on (shared with Recommendations). Changes are reported through onPlotChange. */
+  selectedPlotId?: string;
+  onPlotChange?: (plotId: string) => void;
+  /** Bumped by the app when a verified report was saved elsewhere. */
+  reportVersion?: number;
   showToast?: (message: string, type?: "success" | "info" | "warning") => void;
 }
 
@@ -25,11 +31,23 @@ type ProcessingSubstep = "upload" | "ocr" | "extraction" | "analysis" | "complet
 export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   onRecommendationClick,
   onUploadSuccess,
-  showToast
+  showToast,
+  selectedPlotId: sharedPlotId,
+  onPlotChange,
+  reportVersion = 0
 }) => {
   const { t } = useTranslation();
   const { plots, updatePlot } = usePlots();
-  const [selectedPlotId, setSelectedPlotId] = useState<string>("");
+  const [selectedPlotId, setSelectedPlotIdState] = useState<string>(sharedPlotId ?? "");
+  const setSelectedPlotId = useCallback((id: string) => {
+    setSelectedPlotIdState(id);
+    onPlotChange?.(id);
+  }, [onPlotChange]);
+  // Follow the app's shared plot when it changes from elsewhere (e.g. chosen on the Recommendations screen).
+  useEffect(() => {
+    if (sharedPlotId && sharedPlotId !== selectedPlotId) setSelectedPlotIdState(sharedPlotId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedPlotId]);
   const [stage, setStage] = useState<ScreenStage>("upload");
   const [file, setFile] = useState<{ name: string; size: string; time: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +55,19 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   // Persistence & Update Mode State
   const [savedReport, setSavedReport] = useState<any | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
+  // The database query for the saved report FAILED (not the same as "no report"): shown with a retry.
+  const [reportError, setReportError] = useState<boolean>(false);
   const [isUpdatingReport, setIsUpdatingReport] = useState<boolean>(false);
+  // An upload that failed stays on screen with its reason and a retry, instead of silently returning to the dropzone.
+  const [uploadFailure, setUploadFailure] = useState<{ message: string; details: string[] } | null>(null);
+  const lastFileRef = useRef<File | null>(null);
+  // Each upload gets a number; only the NEWEST upload's answer may change the screen (a late answer from an older upload
+  // must never replace a newer one).
+  const uploadSeq = useRef(0);
+  // An extraction stored earlier that still waits for the owner's review (survives leaving the screen / refreshing).
+  const [pendingExtraction, setPendingExtraction] = useState<SoilReportUploadResponsePayload | null>(null);
+  // Reports saved before verification existed: kept in the database, not usable for advice.
+  const [legacyReportCount, setLegacyReportCount] = useState<number>(0);
 
   // OCR processing states
   const [progress, setProgress] = useState(0);
@@ -58,7 +88,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const sqiValue = sqiMatch ? parseFloat(sqiMatch[1]) : null;
   const sqiCategory = sqiMatch ? sqiMatch[2] : null;
 
-  const healthPercent: number | null = sqiValue ? Math.round(sqiValue * 100) : null;
+  const healthPercent: number | null = sqiValue !== null ? Math.round(sqiValue * 100) : null;
   const healthStatus = sqiCategory ? sqiCategory.toUpperCase() : "NOT REPORTED";
 
   type MicroValue = { value: number | string | null; unit?: string | null; validation?: string };
@@ -87,15 +117,13 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
   // Sync selected plot default
   useEffect(() => {
-    if (plots.length > 0 && !selectedPlotId) {
-      const realPlots = plots.filter(p => !p.id.startsWith("plot-"));
-      if (realPlots.length > 0) {
-        setSelectedPlotId(realPlots[0].id);
-      } else {
-        setSelectedPlotId(plots[0].id);
-      }
-    }
-  }, [plots, selectedPlotId]);
+    if (plots.length === 0) return;
+    const known = selectedPlotId && plots.some((p) => p.id === selectedPlotId);
+    if (known) return;
+    // No plot yet, or a remembered id that is not one of this user's plots: start from the first real plot.
+    const realPlots = plots.filter(p => !p.id.startsWith("plot-"));
+    setSelectedPlotId((realPlots[0] ?? plots[0]).id);
+  }, [plots, selectedPlotId, setSelectedPlotId]);
 
   // Reactive Supabase & Local Cache Auto-Fetch on mount & plot change
   const fetchPlotReport = useCallback(async (plotId: string) => {
@@ -110,6 +138,9 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
     // Saved plots: the database (RLS-scoped to the signed-in user) is the only source.
     setIsLoadingReport(true);
+    setReportError(false);
+    // A different plot must never show the previous plot's report while this one loads.
+    setSavedReport(null);
     try {
       const { data: report, error } = await supabase
         .from("soil_reports")
@@ -120,9 +151,16 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         .limit(1)
         .maybeSingle();
 
-      setSavedReport(!error && report ? report : null);
+      if (error) {
+        console.error("Failed to query plot soil report:", error);
+        setReportError(true);
+        setSavedReport(null);
+      } else {
+        setSavedReport(report ?? null);
+      }
     } catch (err) {
       console.error("Failed to query plot soil report:", err);
+      setReportError(true);
       setSavedReport(null);
     } finally {
       setIsLoadingReport(false);
@@ -133,7 +171,34 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     if (selectedPlotId) {
       fetchPlotReport(selectedPlotId);
     }
-  }, [selectedPlotId, fetchPlotReport]);
+  }, [selectedPlotId, fetchPlotReport, reportVersion]);
+
+  // Pending extractions and legacy rows for the plot. Neither is ever shown as a verified report.
+  useEffect(() => {
+    let cancelled = false;
+    setPendingExtraction(null);
+    setLegacyReportCount(0);
+    if (!selectedPlotId || selectedPlotId.startsWith("plot-")) return;
+    listExtractions(selectedPlotId)
+      .then((list) => {
+        if (!cancelled) setPendingExtraction(list.find((x) => x.status === "needs_review") ?? null);
+      })
+      .catch(() => {
+        /* the dropzone still works; a pending review simply is not offered */
+      });
+    supabase
+      .from("soil_reports")
+      .select("id")
+      .eq("plot_id", selectedPlotId)
+      .is("verification_status", null)
+      .limit(50)
+      .then(({ data, error }: { data: Array<{ id: string }> | null; error: unknown }) => {
+        if (!cancelled && !error) setLegacyReportCount(data?.length ?? 0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlotId, reportVersion, savedReport?.id]);
 
   useEffect(() => {
     if (consoleBottomRef.current) {
@@ -141,42 +206,18 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     }
   }, [logs]);
 
+  // A statement of what was saved - nothing more. Whether a value is adequate for the crop is NOT judged here: that needs a cited,
+  // expert-approved rule, and only the recommendation step applies those. A zero is a measurement; only null/undefined is "not reported".
   const getDynamicSummary = () => {
-    const activeReport = savedReport || (ocrResult ? {
-      nitrogen_kg_ha: ocrResult.nitrogen.value,
-      phosphorus_kg_ha: ocrResult.phosphorus.value,
-      potassium_kg_ha: ocrResult.potassium.value,
-      ph: ocrResult.ph.value,
-      organic_carbon_percent: ocrResult.organic_carbon.value
-    } : null);
-
-    if (!activeReport) return "";
-    const n = activeReport.nitrogen_kg_ha ?? activeReport.nitrogen;
-    const p = activeReport.phosphorus_kg_ha ?? activeReport.phosphorus;
-    const k = activeReport.potassium_kg_ha ?? activeReport.potassium;
-    const ph = activeReport.ph;
-    const oc = activeReport.organic_carbon_percent ?? activeReport.organic_carbon;
-
-    let text = `Soil analysis complete for plot ${plot?.name || selectedPlotId}. `;
-    text += `Extracted values: Nitrogen = ${n ?? "N/A"} kg/ha, Phosphorus = ${p ?? "N/A"} kg/ha, Potassium = ${k ?? "N/A"} kg/ha, pH = ${ph ?? "N/A"}, Organic Carbon = ${oc ?? "N/A"}%.`;
-    
-    const issues: string[] = [];
-    if (ph && (ph < 5.5 || ph > 7.5)) {
-      issues.push(`pH of ${ph} indicates ${ph < 5.5 ? "acidic" : "alkaline"} soil`);
-    }
-    if (oc && oc < 0.5) {
-      issues.push(`organic carbon of ${oc}% is low`);
-    }
-    if (k && k < 110) {
-      issues.push(`potassium is low`);
-    }
-    
-    if (issues.length > 0) {
-      text += ` Attention needed for: ${issues.join(", ")}.`;
-    } else {
-      text += " Overall, the macronutrient levels are within healthy ranges.";
-    }
-    return text;
+    if (!savedReport) return "";
+    const fmt = (v: unknown, unit = "") => (typeof v === "number" && Number.isFinite(v) ? `${v}${unit}` : "not reported");
+    const saved = savedReport.created_at ? new Date(savedReport.created_at).toLocaleDateString() : "";
+    return (
+      `Verified soil report for ${plot?.name || selectedPlotId}${saved ? `, saved ${saved}` : ""}. ` +
+      `Nitrogen ${fmt(savedReport.nitrogen_kg_ha, " kg/ha")}, phosphorus ${fmt(savedReport.phosphorus_kg_ha, " kg/ha")}, ` +
+      `potassium ${fmt(savedReport.potassium_kg_ha, " kg/ha")}, pH ${fmt(savedReport.ph)}, organic carbon ${fmt(savedReport.organic_carbon_percent, "%")}. ` +
+      `These are the measured values. Whether they are adequate for this crop is decided by the recommendation step, using approved rules.`
+    );
   };
 
   const processingTimeline = [
@@ -219,6 +260,8 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
       time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     });
     handledAnswer.current = null;
+    lastFileRef.current = selectedFile;
+    setUploadFailure(null);
     setOcrResult(null);
     setUploadError(null);
     setStage("processing");
@@ -226,12 +269,16 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
     setActiveSubstep("upload");
     setLogs(["[SYSTEM] Connection secure. Document upload received."]);
 
+    const seq = ++uploadSeq.current;
     uploadSoilReport(selectedPlotId, selectedFile)
       .then((result) => {
-        setOcrResult(result);
+        if (seq === uploadSeq.current) setOcrResult(result);
       })
       .catch((err) => {
-        setUploadError(err instanceof Error ? err.message : "Failed to process soil report.");
+        if (seq !== uploadSeq.current) return;
+        setUploadError(
+          err instanceof ApiError || err instanceof Error ? err.message : "Failed to process soil report."
+        );
       });
   };
 
@@ -298,19 +345,16 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
 
     if (uploadError) {
       setLogs(prev => [...prev, `[ERROR] ${uploadError}`]);
-      triggerToast(uploadError, "warning");
+      setUploadFailure({ message: uploadError, details: [] });
       setStage("upload");
-      setFile(null);
       return;
     }
 
     if (!ocrResult) return;
 
     if (ocrResult.status === "failed") {
-      const why = ocrResult.warnings[0] ? ` ${ocrResult.warnings[0]}` : "";
-      triggerToast(`${t("p3.soil.failed")}${why}`, "warning");
+      setUploadFailure({ message: t("p3.soil.failed"), details: ocrResult.warnings ?? [] });
       setStage("upload");
-      setFile(null);
       return;
     }
 
@@ -350,9 +394,18 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
   const rawPH = getNumVal(activeDisplayReport?.ph ?? ocrResult?.ph?.value);
   const rawEC = getNumVal(activeDisplayReport?.electrical_conductivity ?? ocrResult?.electrical_conductivity?.value);
 
-  const isShowingDashboard = (savedReport || stage === "results") && !isUpdatingReport && stage !== "processing";
+  // The results screen is the VERIFIED, saved report. Values from an unsaved reading are never presented as results.
+  const isShowingDashboard = !!savedReport && !isUpdatingReport && stage !== "processing" && stage !== "review";
+  // A report was just verified but could not be read back: say so, with a retry (never show the unsaved reading as saved).
+  const verifiedButUnreadable = !savedReport && !isLoadingReport && stage === "results" && !isUpdatingReport;
+
+  const { readings } = useReportReadings(selectedPlotId || undefined, savedReport?.id, reportVersion);
 
   const handleTriggerRecommendation = () => {
+    if (!savedReport?.id) {
+      triggerToast(t("p4.soil.no_saved_report"), "warning");
+      return;
+    }
     const activePlot = plots.find((p) => p.id === selectedPlotId);
     const formattedPayload = activeDisplayReport ? {
       id: activeDisplayReport.id,
@@ -419,6 +472,32 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
         )}
       </div>
 
+      {reportError && !isLoadingReport && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-900">
+          <span>{t("p4.soil.load_failed")}</span>
+          <button
+            type="button"
+            onClick={() => fetchPlotReport(selectedPlotId)}
+            className="min-h-11 cursor-pointer rounded-xl border border-rose-400 bg-white px-4 py-2 text-sm font-bold text-rose-900 hover:bg-rose-100"
+          >
+            {t("p4.common.retry")}
+          </button>
+        </div>
+      )}
+
+      {verifiedButUnreadable && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-950">
+          <span>{t("p4.soil.saved_unreadable")}</span>
+          <button
+            type="button"
+            onClick={() => fetchPlotReport(selectedPlotId)}
+            className="min-h-11 cursor-pointer rounded-xl border border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-950 hover:bg-amber-100"
+          >
+            {t("p4.common.retry")}
+          </button>
+        </div>
+      )}
+
       {isLoadingReport && (
         <div className="flex items-center justify-center p-12 bg-white rounded-3xl border border-slate-150 shadow-xs">
           <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
@@ -442,6 +521,66 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
             >
               <div className="bg-white rounded-3xl border border-gray-150 p-8 shadow-xs text-center space-y-6">
                 
+                {uploadFailure && (
+                  <div role="alert" className="space-y-3 rounded-2xl border border-rose-300 bg-rose-50 p-4 text-left text-sm text-rose-950">
+                    <p className="font-bold">{t("p4.soil.failed_title", { plot: plot?.name ?? "" })}</p>
+                    <p className="font-medium">{uploadFailure.message}</p>
+                    {uploadFailure.details.length > 0 && (
+                      <ul className="list-disc space-y-1 pl-5 font-medium">
+                        {uploadFailure.details.map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="font-medium">{t("p4.soil.failed_hint")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {lastFileRef.current && (
+                        <button
+                          type="button"
+                          onClick={() => lastFileRef.current && startUpload(lastFileRef.current)}
+                          className="min-h-11 cursor-pointer rounded-xl border-0 bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800"
+                        >
+                          {t("p4.soil.retry_upload", { file: lastFileRef.current.name })}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadFailure(null);
+                          handleUpload();
+                        }}
+                        className="min-h-11 cursor-pointer rounded-xl border border-rose-400 bg-white px-4 py-2 text-sm font-bold text-rose-900 hover:bg-rose-100"
+                      >
+                        {t("p4.soil.choose_other")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {pendingExtraction && !savedReport && (
+                  <div role="status" className="space-y-2 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-left text-sm text-amber-950">
+                    <p className="font-bold">{t("p4.soil.pending_title")}</p>
+                    <p className="font-medium">{t("p4.soil.pending_body")}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUploadFailure(null);
+                        setOcrResult(pendingExtraction);
+                        setStage("review");
+                      }}
+                      className="min-h-11 cursor-pointer rounded-xl border-0 bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-700"
+                    >
+                      {t("p4.soil.pending_continue")}
+                    </button>
+                  </div>
+                )}
+
+                {legacyReportCount > 0 && !savedReport && (
+                  <p role="note" className="rounded-2xl border border-gray-200 bg-gray-50 p-3 text-left text-sm font-medium text-gray-700">
+                    {t("p4.soil.legacy_note", { count: String(legacyReportCount) })}
+                  </p>
+                )}
+
                 {isUpdatingReport && savedReport && (
                   <div className="flex justify-between items-center bg-emerald-50 border border-emerald-100 rounded-2xl p-3 px-4 text-xs font-semibold text-emerald-800">
                     <span>{t("p2.ui.updating_diagnostic_telemetry_for_1yiu6po")} <strong>{plot?.name}</strong></span>
@@ -604,37 +743,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
               className="space-y-6"
             >
               {/* Action Banner */}
-              {ocrResult && !ocrResult.persisted && !savedReport ? (
-                <div className="border border-amber-200 bg-amber-50/80 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden shadow-xs">
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="p-3 text-white rounded-2xl shadow-md bg-amber-500 shrink-0">
-                      <AlertTriangle className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-extrabold text-amber-950">
-                        {t("p2.ui.low_confidence_extraction_report_not_saved_xlcu28")}
-                      </h3>
-                      <p className="text-xs font-semibold mt-1 flex items-center gap-1.5 text-amber-800">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        {t("p2.ui.plot_4la7xu")} <strong className="text-amber-950">{plot?.name || selectedPlotId}</strong> ({plot?.crop || t("p2.ui.crop_not_set_4y8vws")}{t("p2.ui.status_1imz9vw")} <span className="font-bold text-amber-700">{t("p2.ui.unsaved_low_ocr_confidence_12za4rm")}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Button Bar */}
-                  <div className="flex items-center gap-2 relative z-10 w-full md:w-auto">
-                    <button
-                      onClick={() => {
-                        setIsUpdatingReport(true);
-                        setStage("upload");
-                      }}
-                      className="flex-1 md:flex-initial bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer transition-colors shadow-xs border-0"
-                    >
-                      {t("p2.ui.re_upload_clearer_report_bnr2cm")}
-                    </button>
-                  </div>
-                </div>
-              ) : (
                 <div className="border border-emerald-100/70 bg-emerald-50/60 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden shadow-xs">
                   <div className="flex items-center gap-4 relative z-10">
                     <div className="p-3 text-white rounded-2xl shadow-md bg-emerald-600 shrink-0">
@@ -672,7 +780,6 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </button>
                   </div>
                 </div>
-              )}
 
               {/* Main Diagnostic Grid Layout */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -690,7 +797,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                       <div className="relative w-28 h-28 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle cx="56" cy="56" r="46" stroke="#F1F5F0" strokeWidth="8" fill="transparent" />
-                          <circle cx="56" cy="56" r="46" stroke="#2E7D32" strokeWidth="8" fill="transparent"
+                          <circle cx="56" cy="56" r="46" stroke="#1E382C" strokeWidth="8" fill="transparent"
                             strokeDasharray={2 * Math.PI * 46}
                             strokeDashoffset={2 * Math.PI * 46 * (1 - (healthPercent ?? 0) / 100)}
                           />
@@ -886,6 +993,41 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                     </div>
                   </div>
 
+                  {readings.length > 0 && (
+                    <section aria-labelledby="readings-title" className="bg-white rounded-3xl border border-gray-150 p-6 shadow-xs text-left space-y-3">
+                      <h4 id="readings-title" className="text-sm font-extrabold text-gray-900">{t("p4.read.title")}</h4>
+                      <p className="text-sm font-medium text-gray-600">{t("p4.read.intro")}</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[30rem] text-left text-sm">
+                          <thead>
+                            <tr className="text-gray-600">
+                              <th scope="col" className="py-2 pr-3 font-bold">{t("p4.read.col.parameter")}</th>
+                              <th scope="col" className="py-2 pr-3 font-bold">{t("p4.read.col.value")}</th>
+                              <th scope="col" className="py-2 pr-3 font-bold">{t("p4.read.col.unit")}</th>
+                              <th scope="col" className="py-2 font-bold">{t("p4.read.col.status")}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {readings.map((r) => (
+                              <tr key={r.parameter} className="border-t border-gray-100">
+                                <th scope="row" className="py-2 pr-3 font-semibold text-gray-900">{r.parameter.replace(/_/g, " ")}</th>
+                                <td className="py-2 pr-3 font-semibold">{r.value === null || r.value === undefined || r.value === "" ? t("p3.review.not_found") : String(r.value)}</td>
+                                <td className="py-2 pr-3 text-gray-700">{r.unit || t("p4.read.unit_not_stated")}</td>
+                                <td className="py-2 text-gray-700">
+                                  {r.corrected
+                                    ? t("p4.read.corrected", { original: r.originalValue === null || r.originalValue === undefined ? t("p3.review.not_found") : String(r.originalValue) })
+                                    : r.validation === "confirmed" || r.validation === "not_saved"
+                                      ? t(`p4.read.status.${r.validation}`)
+                                      : t(`p3.status.${r.validation}`)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  )}
+
                 </div>
 
                 {/* RIGHT COLUMN: AI Treatment Advice & Quick Actions (4/12 width) */}
@@ -905,7 +1047,7 @@ export const SoilReportScreen: React.FC<SoilReportScreenProps> = ({
                   <div className="space-y-2.5 pt-1">
                     <button
                       onClick={handleTriggerRecommendation}
-                      className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
+                      className="w-full bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-3.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
                     >
                       <Sparkles className="w-4 h-4 text-white" />
                       {t('soilreportscreen.generate_ai_recommendation')}

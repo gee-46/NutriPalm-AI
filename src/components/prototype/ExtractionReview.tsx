@@ -219,7 +219,7 @@ export const ExtractionReview: React.FC<Props> = ({ result, onConfirmed, onDisca
           type="button"
           onClick={submit}
           disabled={busy || !result.extraction_id}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-0 bg-primary px-5 py-2.5 text-sm font-extrabold text-white hover:bg-[#235F26] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-0 bg-primary px-5 py-2.5 text-sm font-extrabold text-white hover:bg-[#2C4D3C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
           {busy ? t("p3.review.saving") : t("p3.review.submit")}
