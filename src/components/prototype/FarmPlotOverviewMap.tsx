@@ -2,64 +2,42 @@
  * FarmPlotOverviewMap.tsx
  *
  * Interactive GIS Leaflet map for the main Farm Plot Management screen.
- * Displays all user-owned farm plots with real spatial boundaries, genuine
- * satellite/aerial imagery (Esri World Imagery / MapTiler), standard OSM basemaps,
- * and data overlays (NDVI Crop Health, Soil Moisture, Boundary Outline).
+ * Displays all user-owned farm plots with real spatial boundaries over the ONE configured satellite imagery provider
+ * (src/lib/mapConfig.ts) and data overlays (NDVI Crop Health, Soil Moisture, Boundary Outline).
  *
  * Features:
- * - Real satellite tile layer (Esri World Imagery / MapTiler) with automatic error fallback
- * - Real standard/terrain tile layer (OpenStreetMap)
- * - Clear separation of Basemap (Satellite vs Standard) and Data Overlays (NDVI vs Soil vs Boundary)
+ * - One satellite tile layer from the configured provider, with its attribution always visible. If the imagery cannot be
+ *   loaded the map says so and offers a retry; there is no second map source and no automatic fallback.
+ * - Clear separation of the basemap and Data Overlays (NDVI vs Soil vs Boundary)
  * - Non-overlapping plot polygons with clean centroid label badges (no duplication)
  * - Interactive polygon hover tooltips and click-to-select
  * - Smooth viewport fitting to encompass all plots or pan to the selected plot
  */
 
 import { useTranslation } from "../../translation/useTranslation";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "../../styles/survey-map.css";
 import { Globe, Layers, RefreshCw, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { getMapConfig } from "../../lib/mapConfig";
+import { addConfiguredImagery } from "../../lib/imageryLayer";
+import type { TileHealth } from "../../lib/tileHealth";
+import { MapImageryNotice } from "./MapImageryNotice";
 import type { Plot, GeoJSONPolygon } from "../../data/plots";
 
 import { computeCentroid } from "../../lib/geo";
 
 // ---------------------------------------------------------------------------
-// Basemap Tile Configurations
+// Imagery: see src/lib/mapConfig.ts (one provider, explicit configuration, attribution shown)
 // ---------------------------------------------------------------------------
 
-const MAPTILER_KEY = (import.meta as any).env?.VITE_MAPTILER_API_KEY as string | undefined;
-
-function getSatelliteTileConfig(): { url: string; attribution: string; maxZoom: number; maxNativeZoom?: number } {
-  if (MAPTILER_KEY) {
-    return {
-      url: `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-      attribution: "© MapTiler © Airbus, Maxar",
-      maxZoom: 20,
-    };
-  }
-  // Esri World Imagery: Real satellite/aerial imagery, free and keyless for non-commercial/app use
-  return {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attribution: "© Esri, Maxar, Earthstar Geographics",
-    // Esri has no imagery at zoom 19+ in many regions: stop at native zoom 18 and upscale.
-    maxZoom: 21,
-    maxNativeZoom: 18,
-  };
-}
-
-const STANDARD_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const STANDARD_ATTRIBUTION = "© OpenStreetMap contributors";
-
-export type BasemapMode = "Satellite" | "Terrain";
 export type DataOverlayLayer = "NDVI" | "Moisture" | "Boundary";
 
 interface FarmPlotOverviewMapProps {
   plots: Plot[];
   selectedPlotId: string;
   onSelectPlot: (plotId: string) => void;
-  basemapMode: BasemapMode;
-  onBasemapModeChange: (mode: BasemapMode) => void;
   activeLayer: DataOverlayLayer;
   onActiveLayerChange: (layer: DataOverlayLayer) => void;
   isScanning?: boolean;
@@ -71,19 +49,17 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
   plots,
   selectedPlotId,
   onSelectPlot,
-  basemapMode,
-  onBasemapModeChange,
   activeLayer,
   onActiveLayerChange,
   isScanning = false,
   onForceScan,
-  showToast,
 }) => {
   const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const standardLayerRef = useRef<L.TileLayer | null>(null);
-  const satelliteLayerRef = useRef<L.TileLayer | null>(null);
+  const tileHealthRef = useRef<TileHealth | null>(null);
+  const mapConfig = useMemo(() => getMapConfig(), []);
+  const [tilesFailing, setTilesFailing] = useState(false);
   const polygonLayersGroupRef = useRef<L.FeatureGroup | null>(null);
   const labelMarkersGroupRef = useRef<L.LayerGroup | null>(null);
 
@@ -111,43 +87,14 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
       center: [17.3890, 78.4920],
       zoom: 15,
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: true,
+      maxZoom: mapConfig.ok ? mapConfig.config.maxZoom : 21,
     });
 
-    const satConfig = getSatelliteTileConfig();
-    const standardLayer = L.tileLayer(STANDARD_TILE_URL, {
-      maxZoom: 19,
-      attribution: STANDARD_ATTRIBUTION,
-    });
-    const satelliteLayer = L.tileLayer(satConfig.url, {
-      maxZoom: satConfig.maxZoom,
-      maxNativeZoom: satConfig.maxNativeZoom,
-      attribution: satConfig.attribution,
-    });
-
-    // Satellite error fallback
-    let satelliteFailed = false;
-    satelliteLayer.on("tileerror", () => {
-      if (satelliteFailed) return;
-      satelliteFailed = true;
-      if (map.hasLayer(satelliteLayer)) {
-        map.removeLayer(satelliteLayer);
-        standardLayer.addTo(map);
-        onBasemapModeChange("Terrain");
-        if (showToast) {
-          showToast(t("p2.toast.satellite_unavailable"), "warning");
-        }
-      }
-    });
-
-    standardLayerRef.current = standardLayer;
-    satelliteLayerRef.current = satelliteLayer;
-
-    // Attach initial basemap
-    if (basemapMode === "Satellite") {
-      satelliteLayer.addTo(map);
-    } else {
-      standardLayer.addTo(map);
+    // The one configured imagery layer. No fallback: a failure is shown with a Retry (see the notice below).
+    if (mapConfig.ok) {
+      const { health } = addConfiguredImagery(map, mapConfig.config, setTilesFailing);
+      tileHealthRef.current = health;
     }
 
     const polygonGroup = L.featureGroup().addTo(map);
@@ -162,28 +109,12 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
     mapRef.current = map;
 
     return () => {
+      tileHealthRef.current?.dispose();
+      tileHealthRef.current = null;
       map.remove();
       mapRef.current = null;
     };
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // Sync Basemap Layer (Satellite vs Terrain/Standard)
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    const map = mapRef.current;
-    const standardLayer = standardLayerRef.current;
-    const satelliteLayer = satelliteLayerRef.current;
-    if (!map || !standardLayer || !satelliteLayer) return;
-
-    if (basemapMode === "Satellite") {
-      if (map.hasLayer(standardLayer)) map.removeLayer(standardLayer);
-      if (!map.hasLayer(satelliteLayer)) satelliteLayer.addTo(map);
-    } else {
-      if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
-      if (!map.hasLayer(standardLayer)) standardLayer.addTo(map);
-    }
-  }, [basemapMode]);
+  }, [mapConfig]);
 
   // ---------------------------------------------------------------------------
   // Render Plot Polygons & Centroid Labels (Strict real geometry)
@@ -398,36 +329,6 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
         {/* Left: Basemap Toggle & Data Overlay Toggle */}
         <div className="flex flex-wrap items-center gap-2">
           
-          {/* 1. Base Map Switcher */}
-          <div className="inline-flex rounded-xl p-0.5 bg-gray-100 border border-gray-200">
-            <button
-              type="button"
-              onClick={() => onBasemapModeChange("Satellite")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                basemapMode === "Satellite"
-                  ? "bg-primary text-white shadow-xs"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              {t("p2.ui.satellite_view_b4ddo1")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onBasemapModeChange("Terrain")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                basemapMode === "Terrain"
-                  ? "bg-primary text-white shadow-xs"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              {t("p2.ui.standard_terrain_1x7wkiw")}
-            </button>
-          </div>
-
-          <div className="h-5 w-[1px] bg-gray-250 mx-1 hidden sm:block" />
-
           {/* 2. Data Overlays */}
           <div className="flex items-center gap-1.5">
             <button
@@ -498,13 +399,17 @@ export const FarmPlotOverviewMap: React.FC<FarmPlotOverviewMapProps> = ({
 
       {/* ================= INTERACTIVE GIS MAP CONTAINER ================= */}
       <div className="bg-slate-950 rounded-3xl border border-slate-900 shadow-lg overflow-hidden relative">
-        
+        {!mapConfig.ok && <MapImageryNotice kind="config" message={mapConfig.message} />}
+        {mapConfig.ok && tilesFailing && (
+          <MapImageryNotice kind="tiles" provider={mapConfig.config.provider} onRetry={() => tileHealthRef.current?.retry()} />
+        )}
+
         {/* Status Overlay Badge */}
         <div className="absolute top-4 left-4 right-4 z-[400] flex justify-between items-center pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             <div className="bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[10px] text-emerald-400 font-mono flex items-center gap-2 shadow-md">
               <Globe className="w-3.5 h-3.5 text-emerald-400 animate-spin-slow" />
-              <span>{t("p2.ui.base_4ct1b6")} {basemapMode.toUpperCase()} {t("p2.ui.overlay_gtefsl")} {activeLayer.toUpperCase()}</span>
+              <span>{t("p2.ui.base_4ct1b6")} {(mapConfig.ok ? mapConfig.config.provider : "").toUpperCase()} {t("p2.ui.overlay_gtefsl")} {activeLayer.toUpperCase()}</span>
             </div>
             {isDemoDataset && (
               <div className="bg-amber-500/90 backdrop-blur-md text-slate-950 font-black text-[10px] px-3 py-2 rounded-xl shadow-md border border-amber-400 flex items-center gap-1.5 uppercase tracking-wider">

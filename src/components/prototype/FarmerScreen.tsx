@@ -270,7 +270,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
               });
               setIsAddModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
           >
             <Plus className="w-4 h-4" />
             
@@ -545,7 +545,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                         >
                           {/* Name + Avatar */}
                           <td className="p-4 pl-6 font-bold text-gray-900 flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-[#81C784] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-[#AEBB9B] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
                               {initials}
                             </div>
                             <div>
@@ -669,7 +669,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                 </div>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl active:scale-95 transition-all shadow-md shadow-primary/10 border-0 cursor-pointer"
+                  className="px-5 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold text-xs rounded-xl active:scale-95 transition-all shadow-md shadow-primary/10 border-0 cursor-pointer"
                 >
                   
                                                             {t('farmerscreen.register_first_farmer')}
@@ -762,7 +762,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
 
                 {/* Profile photo initials + Details */}
                 <div className="flex items-center gap-4 border-b border-gray-100 pb-5 mb-5">
-                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-primary to-[#81C784] text-white flex items-center justify-center font-black text-xl shadow-md">
+                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-primary to-[#AEBB9B] text-white flex items-center justify-center font-black text-xl shadow-md">
                     {selectedFarmer.name.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div>
@@ -824,7 +824,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                     setSelectedFarmer(null);
                     if (onNavigate) onNavigate("Farm Plots");
                   }}
-                  className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
+                  className="w-full bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
                 >
                   <Map className="w-4 h-4" />
                   
@@ -928,7 +928,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                   </div>
                   <button
                     onClick={() => setIsAddModalOpen(false)}
-                    className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
+                    className="w-full bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
                   >
                     
                                                           {t('farmerscreen.done')}
@@ -1077,7 +1077,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                             triggerToast("Validation Failed: Please fill Name, Phone, and Village.", "warning");
                           }
                         }}
-                        className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm"
+                        className="px-5 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm"
                       >
                         
                                                                           {t('farmerscreen.next_specs')}
@@ -1086,7 +1086,7 @@ export const FarmerScreen: React.FC<FarmerScreenProps> = ({
                     ) : (
                       <button
                         type="submit"
-                        className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm animate-pulse"
+                        className="px-5 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm animate-pulse"
                       >
                         
                                                                               {t('farmerscreen.create_farmer')}

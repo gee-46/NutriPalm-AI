@@ -9,8 +9,8 @@ import {
 import { usePlots, type Plot, getStatusColor, getStatusDotColor } from "../../data/plots";
 import LeafletMapPicker, { type BoundaryData } from "./LeafletMapPicker";
 import { SUPPORTED_CROP_NAMES } from "../../constants/cropBaselines";
-import GoogleMapBoundarySurveyor from "./GoogleMapBoundarySurveyor";
-import { FarmPlotOverviewMap, type BasemapMode, type DataOverlayLayer } from "./FarmPlotOverviewMap";
+import BoundarySurveyor from "./BoundarySurveyor";
+import { FarmPlotOverviewMap, type DataOverlayLayer } from "./FarmPlotOverviewMap";
 import { reverseGeocode, getElevation, parseGeoJSONFile, type GeoJSONPolygon } from "../../lib/geo";
 import { boundaryToSvgPath, generatePlaceholderSvgPath } from "../../lib/svgPath";
 import { useEnvironmentalData } from "../../hooks/useEnvironmentalData";
@@ -78,7 +78,6 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [activeLayer, setActiveLayer] = useState<DataOverlayLayer>("NDVI");
-  const [viewMode, setViewMode] = useState<BasemapMode>("Satellite");
   
   // Selected plot state
 
@@ -374,7 +373,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               });
               setIsAddModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
           >
             <Plus className="w-4 h-4" />
             
@@ -527,7 +526,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
               setNewPlotData({ name: "", farmerId: "", area: "", crop: "Oil Palm", soilType: "Loamy", irrigation: "Precision Drip", plantingDate: "", plantCount: "" });
               setIsAddModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md text-xs border-0 cursor-pointer transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold rounded-xl shadow-md text-xs border-0 cursor-pointer transition-all"
           >
             <Plus className="w-4 h-4" />
             
@@ -547,8 +546,6 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
             plots={plots}
             selectedPlotId={selectedPlotId}
             onSelectPlot={setSelectedPlotId}
-            basemapMode={viewMode}
-            onBasemapModeChange={setViewMode}
             activeLayer={activeLayer}
             onActiveLayerChange={setActiveLayer}
             isScanning={isScanning}
@@ -927,7 +924,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
 
               <button
                 onClick={() => onNavigate && onNavigate("Digital Twin")}
-                className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
+                className="w-full bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-3 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-2 border-0 cursor-pointer"
               >
                 <Cpu className="w-4 h-4" />
                 
@@ -1093,7 +1090,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                   <button
                     onClick={() => setIsAddModalOpen(false)}
                     disabled={isGeocodingStep3}
-                    className="w-full bg-primary hover:bg-[#235F26] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
+                    className="w-full bg-primary hover:bg-[#2C4D3C] disabled:opacity-50 text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer"
                   >
                     
                                                           {t('farmplotscreen.done')}
@@ -1301,7 +1298,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                             triggerToast("Validation Failed: Please fill Plot Name.", "warning");
                           }
                         }}
-                        className="px-5 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm"
+                        className="px-5 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 cursor-pointer shadow-sm"
                       >
                         
                                                                           {t('farmplotscreen.next_location')}
@@ -1314,7 +1311,7 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
                         className={`px-5 py-2.5 font-extrabold text-xs rounded-xl flex items-center gap-1 border-0 shadow-sm transition-all ${
                           !wizardBoundary
                             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            : "bg-primary hover:bg-[#235F26] text-white cursor-pointer animate-pulse"
+                            : "bg-primary hover:bg-[#2C4D3C] text-white cursor-pointer animate-pulse"
                         }`}
                       >
                         
@@ -1331,8 +1328,8 @@ export const FarmPlotScreen: React.FC<FarmPlotScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Full-Screen Google Maps Boundary Surveyor for selected plot */}
-      <GoogleMapBoundarySurveyor
+      {/* Full-screen Leaflet boundary surveyor for the selected plot */}
+      <BoundarySurveyor
         isOpen={isDirectSurveyOpen}
         onClose={() => setIsDirectSurveyOpen(false)}
         onConfirm={handleDirectSurveyConfirm}
