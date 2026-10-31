@@ -435,7 +435,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
           <button
             onClick={() => onNavigate && onNavigate("Recommendations")}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#235F26] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-95 transition-all text-xs cursor-pointer border-0"
           >
             <FlaskConical className="w-4 h-4" />
             {t('digitaltwinscreen.generate_ai_recommendation')}
@@ -778,11 +778,11 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
                 <g style={{ transformOrigin: "100px 150px" }}>
                   <path d="M 100 150 C 95 165 80 170 78 185 M 100 150 C 105 165 120 170 122 185" stroke="#7c2d12" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                   <rect x="96" y="105" width="8" height="45" fill="#5c3a21" rx="1.5" />
-                  <path d="M 100 105 C 60 90 35 90 20 115" fill="none" stroke="#2e7d32" strokeWidth="3" strokeLinecap="round" />
-                  <path d="M 100 105 C 140 90 165 90 180 115" fill="none" stroke="#2e7d32" strokeWidth="3" strokeLinecap="round" />
-                  <path d="M 100 105 C 80 75 70 50 85 30" fill="none" stroke="#2e7d32" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M 100 105 C 120 75 130 50 115 30" fill="none" stroke="#2e7d32" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M 100 105 C 95 65 95 45 100 25" fill="none" stroke="#66bb6a" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M 100 105 C 60 90 35 90 20 115" fill="none" stroke="#1E382C" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M 100 105 C 140 90 165 90 180 115" fill="none" stroke="#1E382C" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M 100 105 C 80 75 70 50 85 30" fill="none" stroke="#1E382C" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 100 105 C 120 75 130 50 115 30" fill="none" stroke="#1E382C" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 100 105 C 95 65 95 45 100 25" fill="none" stroke="#8A9D78" strokeWidth="2.5" strokeLinecap="round" />
                 </g>
 
                 <polygon points="50,40 150,40 100,160" fill="rgba(16, 185, 129, 0.02)" stroke="rgba(16, 185, 129, 0.04)" strokeWidth="1" />
@@ -989,7 +989,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
               <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="56" cy="56" r="48" stroke="#F1F5F0" strokeWidth="8" fill="transparent" />
-                  <circle cx="56" cy="56" r="48" stroke="#2E7D32" strokeWidth="8" fill="transparent"
+                  <circle cx="56" cy="56" r="48" stroke="#1E382C" strokeWidth="8" fill="transparent"
                     strokeDasharray={2 * Math.PI * 48}
                     strokeDashoffset={2 * Math.PI * 48 * (1 - (overallTwinHealth / 100))}
                   />
@@ -1234,7 +1234,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => onNavigate && onNavigate("Recommendations")}
-                className="flex-1 bg-primary hover:bg-[#235F26] text-white font-extrabold py-2.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 border-0 cursor-pointer"
+                className="flex-1 bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-2.5 rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 border-0 cursor-pointer"
               >
                 {t('digitaltwinscreen.view_advisory')}
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -1376,7 +1376,7 @@ export const DigitalTwinScreen: React.FC<DigitalTwinScreenProps> = ({
 
                   <button
                     type="submit"
-                    className="w-full bg-primary hover:bg-[#235F26] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer mt-4"
+                    className="w-full bg-primary hover:bg-[#2C4D3C] text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs border-0 cursor-pointer mt-4"
                   >
                     {t('digitaltwinscreen.compile__download')}
                   </button>
